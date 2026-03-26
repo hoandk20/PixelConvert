@@ -1,22 +1,23 @@
-# Pixel 32x32 Batch Converter
+# Pixel Tools Studio
 
-Web tĩnh để convert nhiều ảnh thường sang ảnh pixel art kích thước nhỏ như `32x32`.
+Static web app for batch image-to-pixel-art conversion and spritesheet generation.
 
-## Chạy local
+## Run locally
 
-Mở trực tiếp file `index.html` trong trình duyệt hoặc chạy server tĩnh:
+Open `index.html` directly in a browser or start a static server:
 
 ```bash
 python3 -m http.server 8080
 ```
 
-Sau đó truy cập `http://localhost:8080`.
+Then visit `http://localhost:8080`.
 
-## Tính năng
+## Features
 
-- Kéo thả hoặc chọn nhiều ảnh cùng lúc
-- Convert hàng loạt sang `32x32`, `16x16`, hoặc `64x64`
-- Hỗ trợ `contain`, `cover`, `stretch`
-- Cho phép nền trong suốt hoặc nền màu cố định
-- Preview ảnh gốc và ảnh pixel ngay trên web
-- Tải từng ảnh PNG hoặc tải hàng loạt
+- Drag and drop or select multiple images at once
+- Batch convert to `32x32`, `16x16`, or `64x64`
+- Support for `contain`, `cover`, and `stretch`
+- Transparent or solid background output
+- Live preview for original images and pixel outputs
+- Download individual PNG files or batch download all
+- Build spritesheets and export JSON in custom or Phaser/TexturePacker-friendly formats

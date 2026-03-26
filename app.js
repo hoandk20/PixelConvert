@@ -32,6 +32,7 @@ const elements = {
     columns: document.querySelector("#sheetColumns"),
     cellSize: document.querySelector("#sheetCellSize"),
     padding: document.querySelector("#sheetPadding"),
+    jsonFormat: document.querySelector("#sheetJsonFormat"),
     fitSelect: document.querySelector("#sheetFitSelect"),
     backgroundMode: document.querySelector("#sheetBackgroundMode"),
     backgroundColor: document.querySelector("#sheetBackgroundColor"),
@@ -65,6 +66,12 @@ function sanitizeFileBase(name) {
 
 function sanitizeName(name) {
   return `${sanitizeFileBase(name)}_pixel.png`;
+}
+
+function getSpritesheetJsonFilename(format) {
+  if (format === "phaser-array") return "spritesheet-phaser-array.json";
+  if (format === "phaser-hash") return "spritesheet-phaser-hash.json";
+  return "spritesheet.json";
 }
 
 function revokeIfExists(url) {
@@ -201,6 +208,154 @@ function updateSheetCounters() {
   elements.sheet.previewWrap.hidden = !state.sheetOutputUrl;
   elements.sheet.downloadBtn.disabled = !state.sheetOutputUrl;
   elements.sheet.downloadJsonBtn.disabled = !state.sheetJsonUrl;
+}
+
+function buildCustomSpritesheetMetadata({
+  width,
+  height,
+  columns,
+  rows,
+  cellSize,
+  padding,
+  fit,
+  backgroundMode,
+  backgroundColor,
+  frameData,
+}) {
+  return {
+    meta: {
+      app: "Pixel Tools Studio",
+      image: "spritesheet.png",
+      format: "RGBA8888",
+      size: { w: width, h: height },
+      scale: 1,
+      columns,
+      rows,
+      cellSize,
+      padding,
+      fitMode: fit,
+      backgroundMode,
+      backgroundColor: backgroundMode === "solid" ? backgroundColor : null,
+      frameCount: frameData.length,
+      jsonFormat: "custom",
+    },
+    frames: frameData.map((frame) => ({
+      index: frame.index,
+      name: frame.name,
+      file: frame.file,
+      baseName: frame.baseName,
+      frame: frame.frame,
+      sourceSize: frame.sourceSize,
+      grid: frame.grid,
+    })),
+  };
+}
+
+function buildPhaserArrayMetadata({
+  width,
+  height,
+  backgroundColor,
+  frameData,
+}) {
+  return {
+    frames: frameData.map((frame) => ({
+      filename: frame.name,
+      frame: {
+        x: frame.frame.x,
+        y: frame.frame.y,
+        w: frame.frame.w,
+        h: frame.frame.h,
+      },
+      rotated: false,
+      trimmed: false,
+      spriteSourceSize: {
+        x: 0,
+        y: 0,
+        w: frame.frame.w,
+        h: frame.frame.h,
+      },
+      sourceSize: {
+        w: frame.sourceSize.w,
+        h: frame.sourceSize.h,
+      },
+      pivot: {
+        x: 0.5,
+        y: 0.5,
+      },
+    })),
+    meta: {
+      app: "Pixel Tools Studio",
+      version: "1.0.0",
+      image: "spritesheet.png",
+      format: "RGBA8888",
+      size: { w: width, h: height },
+      scale: 1,
+      smartupdate: backgroundColor ?? "",
+    },
+  };
+}
+
+function buildPhaserHashMetadata({
+  width,
+  height,
+  backgroundColor,
+  frameData,
+}) {
+  const frames = {};
+
+  frameData.forEach((frame) => {
+    frames[frame.name] = {
+      frame: {
+        x: frame.frame.x,
+        y: frame.frame.y,
+        w: frame.frame.w,
+        h: frame.frame.h,
+      },
+      rotated: false,
+      trimmed: false,
+      spriteSourceSize: {
+        x: 0,
+        y: 0,
+        w: frame.frame.w,
+        h: frame.frame.h,
+      },
+      sourceSize: {
+        w: frame.sourceSize.w,
+        h: frame.sourceSize.h,
+      },
+      pivot: {
+        x: 0.5,
+        y: 0.5,
+      },
+    };
+  });
+
+  return {
+    frames,
+    meta: {
+      app: "Pixel Tools Studio",
+      version: "1.0.0",
+      image: "spritesheet.png",
+      format: "RGBA8888",
+      size: { w: width, h: height },
+      scale: 1,
+      smartupdate: backgroundColor ?? "",
+    },
+  };
+}
+
+function buildSpritesheetMetadata(options) {
+  const format = options.jsonFormat;
+
+  if (format === "phaser-array") {
+    return buildPhaserArrayMetadata(options);
+  }
+
+  if (format === "phaser-hash") {
+    return buildPhaserHashMetadata(options);
+  }
+
+  return buildCustomSpritesheetMetadata(options);
 }
 
 function bindPixelCard(item) {
@@ -397,6 +552,7 @@ function buildSpritesheet() {
   const columns = Math.max(1, Number(elements.sheet.columns.value) || 1);
   const cellSize = Math.max(1, Number(elements.sheet.cellSize.value) || 32);
   const padding = Math.max(0, Number(elements.sheet.padding.value) || 0);
+  const jsonFormat = elements.sheet.jsonFormat.value;
   const fit = elements.sheet.fitSelect.value;
   const backgroundMode = elements.sheet.backgroundMode.value;
   const backgroundColor = elements.sheet.backgroundColor.value;
@@ -454,24 +610,19 @@ function buildSpritesheet() {
   state.sheetOutputUrl = canvas.toDataURL("image/png");
   revokeIfExists(state.sheetJsonUrl);
 
-  const metadata = {
-    meta: {
-      app: "Pixel Tools Studio",
-      image: "spritesheet.png",
-      format: "RGBA8888",
-      size: { w: width, h: height },
-      scale: 1,
-      columns,
-      rows,
-      cellSize,
-      padding,
-      fitMode: fit,
-      backgroundMode,
-      backgroundColor: backgroundMode === "solid" ? backgroundColor : null,
-      frameCount: state.sheetItems.length,
-    },
-    frames: frameData,
-  };
+  const metadata = buildSpritesheetMetadata({
+    width,
+    height,
+    columns,
+    rows,
+    cellSize,
+    padding,
+    fit,
+    backgroundMode,
+    backgroundColor,
+    frameData,
+    jsonFormat,
+  });
 
   state.sheetJsonUrl = URL.createObjectURL(
     new Blob([JSON.stringify(metadata, null, 2)], {
@@ -480,7 +631,7 @@ function buildSpritesheet() {
   );
   updateSheetCounters();
   updateSheetStatus(
-    `Spritesheet ${width}x${height} built with ${state.sheetItems.length} frame(s). PNG and JSON are ready.`,
+    `Spritesheet ${width}x${height} built with ${state.sheetItems.length} frame(s). PNG and ${jsonFormat} JSON are ready.`,
   );
 }
 
@@ -499,7 +650,10 @@ function downloadSpritesheetJson() {
     return;
   }
 
-  triggerDownload(state.sheetJsonUrl, "spritesheet.json");
+  triggerDownload(
+    state.sheetJsonUrl,
+    getSpritesheetJsonFilename(elements.sheet.jsonFormat.value),
+  );
 }
 
 function clearSheetItems() {
