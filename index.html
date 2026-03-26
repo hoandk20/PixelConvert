@@ -1,6 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9205579999231437"
+     crossorigin="anonymous"></script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pixel Tools Studio | Batch Image to Pixel Art & Spritesheet Generator</title>
@@ -279,12 +281,30 @@
             </label>
 
             <label class="field">
+              <span>Frame sizing</span>
+              <select id="sheetSizingMode">
+                <option value="fixed" selected>Fixed cell size</option>
+                <option value="original">Keep original size</option>
+              </select>
+            </label>
+
+            <label class="field">
               <span>Padding</span>
               <input id="sheetPadding" type="number" min="0" value="0" />
             </label>
 
             <label class="field">
-              <span>Fit mode</span>
+              <span class="field-label">
+                Fit mode
+                <button
+                  type="button"
+                  class="info-trigger"
+                  aria-label="Fit mode help"
+                  data-tooltip="Use Contain to reduce images into pixel art while keeping the original aspect ratio."
+                >
+                  i
+                </button>
+              </span>
               <select id="sheetFitSelect">
                 <option value="contain" selected>Contain</option>
                 <option value="cover">Cover</option>

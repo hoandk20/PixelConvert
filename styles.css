@@ -214,6 +214,63 @@ select {
   font-weight: 500;
 }
 
+.field-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  min-width: 20px;
+  height: 20px;
+  min-height: 20px;
+  padding: 0;
+  border-radius: 999px;
+  background: rgba(29, 27, 25, 0.08);
+  color: var(--accent-dark);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.info-trigger::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  transform: translateX(-50%) translateY(4px);
+  width: min(240px, 70vw);
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(29, 27, 25, 0.94);
+  color: #fff7ef;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  text-align: left;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.18);
+}
+
+.info-trigger:hover::after,
+.info-trigger:focus-visible::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.info-trigger:focus-visible {
+  outline: 2px solid rgba(217, 93, 57, 0.35);
+  outline-offset: 2px;
+}
+
 .field select,
 .field input {
   width: 100%;

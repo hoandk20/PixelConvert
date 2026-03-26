@@ -31,6 +31,7 @@ const elements = {
     fileInput: document.querySelector("#sheetFileInput"),
     columns: document.querySelector("#sheetColumns"),
     cellSize: document.querySelector("#sheetCellSize"),
+    sizingMode: document.querySelector("#sheetSizingMode"),
     padding: document.querySelector("#sheetPadding"),
     jsonFormat: document.querySelector("#sheetJsonFormat"),
     fitSelect: document.querySelector("#sheetFitSelect"),
@@ -551,15 +552,41 @@ function buildSpritesheet() {
 
   const columns = Math.max(1, Number(elements.sheet.columns.value) || 1);
   const cellSize = Math.max(1, Number(elements.sheet.cellSize.value) || 32);
+  const sizingMode = elements.sheet.sizingMode.value;
   const padding = Math.max(0, Number(elements.sheet.padding.value) || 0);
   const jsonFormat = elements.sheet.jsonFormat.value;
   const fit = elements.sheet.fitSelect.value;
   const backgroundMode = elements.sheet.backgroundMode.value;
   const backgroundColor = elements.sheet.backgroundColor.value;
   const rows = Math.ceil(state.sheetItems.length / columns);
-  const width = columns * cellSize + Math.max(0, columns - 1) * padding;
-  const height = rows * cellSize + Math.max(0, rows - 1) * padding;
   const frameData = [];
+
+  const framesPerRow = [];
+  for (let start = 0; start < state.sheetItems.length; start += columns) {
+    framesPerRow.push(state.sheetItems.slice(start, start + columns));
+  }
+
+  const rowHeights = framesPerRow.map((rowItems) =>
+    Math.max(
+      ...rowItems.map((item) =>
+        sizingMode === "original" ? item.image.height : cellSize,
+      ),
+    ),
+  );
+
+  const rowWidths = framesPerRow.map((rowItems) => {
+    const contentWidth = rowItems.reduce(
+      (total, item) =>
+        total + (sizingMode === "original" ? item.image.width : cellSize),
+      0,
+    );
+    return contentWidth + Math.max(0, rowItems.length - 1) * padding;
+  });
+
+  const width = rowWidths.length > 0 ? Math.max(...rowWidths) : 0;
+  const height =
+    rowHeights.reduce((total, rowHeight) => total + rowHeight, 0) +
+    Math.max(0, rowHeights.length - 1) * padding;
 
   const canvas = elements.sheet.previewCanvas;
   canvas.width = width;
@@ -574,37 +601,52 @@ function buildSpritesheet() {
     ctx.fillRect(0, 0, width, height);
   }
 
-  state.sheetItems.forEach((item, index) => {
-    const column = index % columns;
-    const row = Math.floor(index / columns);
-    const x = column * (cellSize + padding);
-    const y = row * (cellSize + padding);
+  let yCursor = 0;
 
-    ctx.save();
-    ctx.translate(x, y);
-    drawFittedImage(ctx, item.image, cellSize, fit);
-    ctx.restore();
+  framesPerRow.forEach((rowItems, row) => {
+    let xCursor = 0;
 
-    frameData.push({
-      index,
-      name: item.file.name,
-      file: item.file.name,
-      baseName: sanitizeFileBase(item.file.name),
-      frame: {
-        x,
-        y,
-        w: cellSize,
-        h: cellSize,
-      },
-      sourceSize: {
-        w: item.image.width,
-        h: item.image.height,
-      },
-      grid: {
-        row,
-        column,
-      },
+    rowItems.forEach((item, column) => {
+      const index = row * columns + column;
+      const frameWidth = sizingMode === "original" ? item.image.width : cellSize;
+      const frameHeight = sizingMode === "original" ? item.image.height : cellSize;
+      const x = xCursor;
+      const y = yCursor;
+
+      if (sizingMode === "original") {
+        ctx.drawImage(item.image, x, y, frameWidth, frameHeight);
+      } else {
+        ctx.save();
+        ctx.translate(x, y);
+        drawFittedImage(ctx, item.image, cellSize, fit);
+        ctx.restore();
+      }
+
+      frameData.push({
+        index,
+        name: item.file.name,
+        file: item.file.name,
+        baseName: sanitizeFileBase(item.file.name),
+        frame: {
+          x,
+          y,
+          w: frameWidth,
+          h: frameHeight,
+        },
+        sourceSize: {
+          w: item.image.width,
+          h: item.image.height,
+        },
+        grid: {
+          row,
+          column,
+        },
+      });
+
+      xCursor += frameWidth + padding;
     });
+
+    yCursor += rowHeights[row] + padding;
   });
 
   state.sheetOutputUrl = canvas.toDataURL("image/png");
@@ -617,6 +659,7 @@ function buildSpritesheet() {
     rows,
     cellSize,
     padding,
+    sizingMode,
     fit,
     backgroundMode,
     backgroundColor,
@@ -631,7 +674,7 @@ function buildSpritesheet() {
   );
   updateSheetCounters();
   updateSheetStatus(
-    `Spritesheet ${width}x${height} built with ${state.sheetItems.length} frame(s). PNG and ${jsonFormat} JSON are ready.`,
+    `Spritesheet ${width}x${height} built with ${state.sheetItems.length} frame(s) using ${sizingMode} sizing. PNG and ${jsonFormat} JSON are ready.`,
   );
 }
 
@@ -700,6 +743,14 @@ function attachDropzone(dropzone, fileInput, onFiles) {
   });
 }
 
+function applyAspectRatioPreset() {
+  elements.sheet.sizingMode.value = "fixed";
+  elements.sheet.fitSelect.value = "contain";
+  updateSheetStatus(
+    "Aspect ratio preset applied: Fixed cell size + Contain.",
+  );
+}
+
 elements.tabButtons.forEach((button) => {
   button.addEventListener("click", () => switchTab(button.dataset.tab));
 });
@@ -715,6 +766,27 @@ elements.sheet.buildBtn.addEventListener("click", buildSpritesheet);
 elements.sheet.downloadBtn.addEventListener("click", downloadSpritesheet);
 elements.sheet.downloadJsonBtn.addEventListener("click", downloadSpritesheetJson);
 elements.sheet.clearBtn.addEventListener("click", clearSheetItems);
+elements.sheet.jsonFormat.value = "phaser-array";
+elements.sheet.fitSelect.addEventListener("change", () => {
+  if (elements.sheet.fitSelect.value === "contain") {
+    updateSheetStatus(
+      "Contain keeps the original aspect ratio while reducing images into pixel art.",
+    );
+  }
+});
+elements.sheet.sizingMode.addEventListener("change", () => {
+  if (elements.sheet.sizingMode.value === "original") {
+    updateSheetStatus(
+      "Original size mode keeps each frame's native dimensions. Switch back to Fixed cell size if you want uniform sprite cells.",
+    );
+    return;
+  }
+
+  if (elements.sheet.fitSelect.value !== "contain") {
+    applyAspectRatioPreset();
+  }
+});
+applyAspectRatioPreset();
 
 updatePixelCounters();
 updateSheetCounters();
