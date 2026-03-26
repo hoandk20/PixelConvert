@@ -69,8 +69,8 @@ function sanitizeName(name) {
 }
 
 function getSpritesheetJsonFilename(format) {
-  if (format === "phaser-array") return "spritesheet-phaser-array.json";
-  if (format === "phaser-hash") return "spritesheet-phaser-hash.json";
+  if (format === "phaser-array") return "spritesheet.json";
+  if (format === "phaser-hash") return "spritesheet-hash.json";
   return "spritesheet.json";
 }
 
@@ -275,8 +275,8 @@ function buildPhaserArrayMetadata({
         h: frame.frame.h,
       },
       sourceSize: {
-        w: frame.sourceSize.w,
-        h: frame.sourceSize.h,
+        w: frame.frame.w,
+        h: frame.frame.h,
       },
       pivot: {
         x: 0.5,
@@ -320,8 +320,8 @@ function buildPhaserHashMetadata({
         h: frame.frame.h,
       },
       sourceSize: {
-        w: frame.sourceSize.w,
-        h: frame.sourceSize.h,
+        w: frame.frame.w,
+        h: frame.frame.h,
       },
       pivot: {
         x: 0.5,
