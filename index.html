@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pixel Tools Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="hero">
+        <p class="eyebrow">Pixel Workflow</p>
+        <h1>Convert images to pixel art and build spritesheets in one place</h1>
+        <p class="hero-copy">
+          Turn regular images into 32x32 pixel art, or combine multiple frames
+          into a spritesheet for games, animation, and asset pipelines.
+        </p>
+      </section>
+
+      <section class="tab-bar panel">
+        <button class="tab-button is-active" data-tab="pixel" type="button">
+          Pixel Convert
+        </button>
+        <button class="tab-button" data-tab="spritesheet" type="button">
+          Spritesheet
+        </button>
+      </section>
+
+      <section id="pixelTab" class="tab-panel is-active">
+        <section class="panel controls">
+          <div
+            id="dropzone"
+            class="dropzone"
+            role="button"
+            tabindex="0"
+            aria-label="Choose or drag and drop images for pixel conversion"
+          >
+            <input id="fileInput" type="file" accept="image/*" multiple hidden />
+            <div class="dropzone-content">
+              <span class="dropzone-badge">Batch Upload</span>
+              <h2>Drop images here</h2>
+              <p>or click to select multiple files at once</p>
+            </div>
+          </div>
+
+          <div class="settings-grid">
+            <label class="field">
+              <span>Output size</span>
+              <select id="sizeSelect">
+                <option value="32" selected>32 x 32</option>
+                <option value="16">16 x 16</option>
+                <option value="64">64 x 64</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Image fit</span>
+              <select id="fitSelect">
+                <option value="contain" selected>Contain</option>
+                <option value="cover">Cover</option>
+                <option value="stretch">Stretch</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Canvas background</span>
+              <select id="backgroundMode">
+                <option value="transparent" selected>Transparent</option>
+                <option value="solid">Solid color</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Background color</span>
+              <input id="backgroundColor" type="color" value="#f5deb3" />
+            </label>
+          </div>
+
+          <div class="action-row">
+            <button id="convertBtn" class="primary" type="button">
+              Convert all
+            </button>
+            <button
+              id="downloadAllBtn"
+              class="secondary"
+              type="button"
+              disabled
+            >
+              Download all
+            </button>
+            <button id="clearBtn" class="ghost" type="button">
+              Clear list
+            </button>
+          </div>
+
+          <div class="status-bar">
+            <span id="fileCount">No images added yet</span>
+            <span id="statusText">Ready for batch processing</span>
+          </div>
+        </section>
+
+        <section class="panel results">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Results</p>
+              <h2>Converted images</h2>
+            </div>
+          </div>
+
+          <div id="emptyState" class="empty-state">
+            Add images to preview your 32x32 pixel outputs here.
+          </div>
+
+          <div id="resultsGrid" class="results-grid" aria-live="polite"></div>
+        </section>
+      </section>
+
+      <section id="spritesheetTab" class="tab-panel">
+        <section class="panel controls">
+          <div
+            id="sheetDropzone"
+            class="dropzone"
+            role="button"
+            tabindex="0"
+            aria-label="Choose or drag and drop images to build a spritesheet"
+          >
+            <input
+              id="sheetFileInput"
+              type="file"
+              accept="image/*"
+              multiple
+              hidden
+            />
+            <div class="dropzone-content">
+              <span class="dropzone-badge">Sprite Frames</span>
+              <h2>Upload frames for the spritesheet</h2>
+              <p>images will be arranged in a grid and exported as one PNG</p>
+            </div>
+          </div>
+
+          <div class="settings-grid sprite-grid">
+            <label class="field">
+              <span>Columns</span>
+              <input id="sheetColumns" type="number" min="1" value="4" />
+            </label>
+
+            <label class="field">
+              <span>Cell size</span>
+              <input id="sheetCellSize" type="number" min="1" value="32" />
+            </label>
+
+            <label class="field">
+              <span>Padding</span>
+              <input id="sheetPadding" type="number" min="0" value="0" />
+            </label>
+
+            <label class="field">
+              <span>Fit mode</span>
+              <select id="sheetFitSelect">
+                <option value="contain" selected>Contain</option>
+                <option value="cover">Cover</option>
+                <option value="stretch">Stretch</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Spritesheet background</span>
+              <select id="sheetBackgroundMode">
+                <option value="transparent" selected>Transparent</option>
+                <option value="solid">Solid color</option>
+              </select>
+            </label>
+
+            <label class="field">
+              <span>Background color</span>
+              <input id="sheetBackgroundColor" type="color" value="#0f172a" />
+            </label>
+          </div>
+
+          <div class="action-row">
+            <button id="buildSheetBtn" class="primary" type="button">
+              Build spritesheet
+            </button>
+            <button
+              id="downloadSheetBtn"
+              class="secondary"
+              type="button"
+              disabled
+            >
+              Download spritesheet PNG
+            </button>
+            <button
+              id="downloadSheetJsonBtn"
+              class="secondary"
+              type="button"
+              disabled
+            >
+              Download spritesheet JSON
+            </button>
+            <button id="clearSheetBtn" class="ghost" type="button">
+              Clear frames
+            </button>
+          </div>
+
+          <div class="status-bar">
+            <span id="sheetCount">No frames added yet</span>
+            <span id="sheetStatusText">Ready to build a spritesheet</span>
+          </div>
+        </section>
+
+        <section class="sheet-layout">
+          <section class="panel results">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Spritesheet</p>
+                <h2>Preview canvas</h2>
+              </div>
+            </div>
+
+            <div id="sheetEmptyState" class="empty-state">
+              Add frames and click build spritesheet to preview the result.
+            </div>
+
+            <div id="sheetPreviewWrap" class="sheet-preview-wrap" hidden>
+              <canvas
+                id="sheetPreviewCanvas"
+                class="sheet-preview-canvas"
+                width="128"
+                height="128"
+              ></canvas>
+            </div>
+          </section>
+
+          <section class="panel results">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Frames</p>
+                <h2>Frame list</h2>
+              </div>
+            </div>
+
+            <div id="sheetFramesEmpty" class="empty-state">
+              No frames in the spritesheet yet.
+            </div>
+
+            <div id="sheetFramesGrid" class="frame-grid"></div>
+          </section>
+        </section>
+      </section>
+    </main>
+
+    <template id="cardTemplate">
+      <article class="result-card">
+        <div class="canvas-pair">
+          <div>
+            <p>Original</p>
+            <img class="source-preview" alt="" />
+          </div>
+          <div>
+            <p>Pixel</p>
+            <canvas class="pixel-preview" width="32" height="32"></canvas>
+          </div>
+        </div>
+        <div class="card-meta">
+          <strong class="file-name"></strong>
+          <span class="file-info"></span>
+        </div>
+        <div class="card-actions">
+          <button class="secondary download-btn" disabled type="button">
+            Download PNG
+          </button>
+        </div>
+      </article>
+    </template>
+
+    <template id="frameTemplate">
+      <article class="frame-card">
+        <img class="frame-preview" alt="" />
+        <div class="card-meta">
+          <strong class="frame-name"></strong>
+          <span class="frame-info"></span>
+        </div>
+      </article>
+    </template>
+
+    <script src="./app.js" type="module"></script>
+  </body>
+</html>
