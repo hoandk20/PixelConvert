@@ -3,7 +3,40 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pixel Tools Studio</title>
+    <title>Pixel Tools Studio | Batch Image to Pixel Art & Spritesheet Generator</title>
+    <meta
+      name="description"
+      content="Convert images to pixel art in batches, resize to 32x32, and build downloadable PNG and JSON spritesheets online with Pixel Tools Studio."
+    />
+    <meta
+      name="keywords"
+      content="pixel art converter, image to pixel art, 32x32 pixel art, spritesheet generator, spritesheet json, batch image converter, game asset tool"
+    />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="author" content="Pixel Tools Studio" />
+    <meta name="theme-color" content="#efe4d4" />
+    <meta name="application-name" content="Pixel Tools Studio" />
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:title"
+      content="Pixel Tools Studio | Batch Pixel Art & Spritesheet Generator"
+    />
+    <meta
+      property="og:description"
+      content="Turn regular images into pixel art, batch export PNG files, and generate spritesheets with matching JSON metadata."
+    />
+    <meta property="og:site_name" content="Pixel Tools Studio" />
+    <meta property="og:locale" content="en_US" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="twitter:title"
+      content="Pixel Tools Studio | Batch Pixel Art & Spritesheet Generator"
+    />
+    <meta
+      name="twitter:description"
+      content="Batch convert images to pixel art and export spritesheets with PNG and JSON output."
+    />
+    <link rel="manifest" href="./site.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -11,29 +44,112 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Pixel Tools Studio",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Web",
+        "description": "A web app for batch image to pixel art conversion and spritesheet generation with PNG and JSON export.",
+        "featureList": [
+          "Batch image to pixel art conversion",
+          "32x32, 16x16, and 64x64 export",
+          "Spritesheet PNG export",
+          "Spritesheet JSON metadata export",
+          "Transparent or solid background output"
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What does Pixel Tools Studio do?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Pixel Tools Studio converts regular images into pixel art, supports batch downloads, and builds spritesheets with matching PNG and JSON output."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What is fit mode in the pixel art and spritesheet tools?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Fit mode controls how an image is placed inside a square cell. Contain keeps the full image visible, cover fills the entire square and may crop edges, and stretch forces the image to match the square exactly."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I export spritesheet metadata as JSON?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. The spritesheet tool can export both a PNG spritesheet and a JSON file with frame positions, rows, columns, sizes, and layout settings."
+            }
+          }
+        ]
+      }
+    </script>
   </head>
   <body>
     <main class="app-shell">
-      <section class="hero">
+      <header class="hero">
         <p class="eyebrow">Pixel Workflow</p>
         <h1>Convert images to pixel art and build spritesheets in one place</h1>
         <p class="hero-copy">
           Turn regular images into 32x32 pixel art, or combine multiple frames
           into a spritesheet for games, animation, and asset pipelines.
         </p>
-      </section>
+      </header>
 
-      <section class="tab-bar panel">
-        <button class="tab-button is-active" data-tab="pixel" type="button">
+      <nav class="tab-bar panel" aria-label="Tool navigation">
+        <button
+          class="tab-button is-active"
+          data-tab="pixel"
+          type="button"
+          aria-controls="pixelTab"
+          aria-selected="true"
+        >
           Pixel Convert
         </button>
-        <button class="tab-button" data-tab="spritesheet" type="button">
+        <button
+          class="tab-button"
+          data-tab="spritesheet"
+          type="button"
+          aria-controls="spritesheetTab"
+          aria-selected="false"
+        >
           Spritesheet
         </button>
+      </nav>
+
+      <section class="panel seo-intro">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Overview</p>
+            <h2>Online pixel art converter and spritesheet maker</h2>
+          </div>
+        </div>
+        <p class="seo-copy">
+          Pixel Tools Studio helps artists, indie game developers, and content
+          teams convert regular images into crisp pixel art, batch export PNG
+          files, and generate spritesheets with JSON metadata for engines and
+          animation workflows.
+        </p>
       </section>
 
-      <section id="pixelTab" class="tab-panel is-active">
+      <section
+        id="pixelTab"
+        class="tab-panel is-active"
+        aria-labelledby="pixel-tool-heading"
+      >
         <section class="panel controls">
+          <div class="sr-only">
+            <h2 id="pixel-tool-heading">Batch pixel art converter</h2>
+          </div>
           <div
             id="dropzone"
             class="dropzone"
@@ -121,8 +237,15 @@
         </section>
       </section>
 
-      <section id="spritesheetTab" class="tab-panel">
+      <section
+        id="spritesheetTab"
+        class="tab-panel"
+        aria-labelledby="spritesheet-tool-heading"
+      >
         <section class="panel controls">
+          <div class="sr-only">
+            <h2 id="spritesheet-tool-heading">Spritesheet generator with JSON export</h2>
+          </div>
           <div
             id="sheetDropzone"
             class="dropzone"
@@ -253,7 +376,82 @@
           </section>
         </section>
       </section>
+
+      <section class="panel seo-content">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Use Cases</p>
+            <h2>Who this image to pixel art tool is for</h2>
+          </div>
+        </div>
+        <div class="seo-grid">
+          <article>
+            <h3>Game asset pipelines</h3>
+            <p>
+              Convert icons, portraits, props, and frame-by-frame animation into
+              pixel-ready assets, then export a spritesheet with matching JSON.
+            </p>
+          </article>
+          <article>
+            <h3>Batch content production</h3>
+            <p>
+              Process multiple images at once, keep output sizing consistent,
+              and download PNG files in one workflow for fast asset iteration.
+            </p>
+          </article>
+          <article>
+            <h3>Rapid prototyping</h3>
+            <p>
+              Test different fit modes, cell sizes, padding values, and
+              background settings directly in the browser without extra tools.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel faq-section" aria-labelledby="faq-heading">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">FAQ</p>
+            <h2 id="faq-heading">Common questions</h2>
+          </div>
+        </div>
+        <div class="faq-list">
+          <details>
+            <summary>What does fit mode mean?</summary>
+            <p>
+              Fit mode controls how each image sits inside a square cell.
+              <strong>Contain</strong> keeps the whole image visible,
+              <strong>Cover</strong> fills the full square and may crop, and
+              <strong>Stretch</strong> resizes the image to match the square
+              exactly.
+            </p>
+          </details>
+          <details>
+            <summary>Can I build a spritesheet and export JSON metadata?</summary>
+            <p>
+              Yes. The spritesheet tab can export both
+              <code>spritesheet.png</code> and <code>spritesheet.json</code>
+              with frame coordinates, row and column positions, and layout
+              settings.
+            </p>
+          </details>
+          <details>
+            <summary>Is this tool good for 32x32 pixel art conversion?</summary>
+            <p>
+              Yes. The default output size is 32x32, and you can also switch to
+              16x16 or 64x64 depending on your art style and target game engine.
+            </p>
+          </details>
+        </div>
+      </section>
     </main>
+    <footer class="site-footer">
+      <p>
+        Pixel Tools Studio is a browser-based pixel art converter and
+        spritesheet generator for PNG and JSON export.
+      </p>
+    </footer>
 
     <template id="cardTemplate">
       <article class="result-card">

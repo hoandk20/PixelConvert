@@ -168,7 +168,9 @@ function drawPixelImage(image, size, fit, backgroundMode, backgroundColor) {
 
 function switchTab(tabName) {
   elements.tabButtons.forEach((button) => {
-    button.classList.toggle("is-active", button.dataset.tab === tabName);
+    const isActive = button.dataset.tab === tabName;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-selected", String(isActive));
   });
 
   Object.entries(elements.tabPanels).forEach(([name, panel]) => {
