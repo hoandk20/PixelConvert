@@ -13,6 +13,7 @@ const DEFAULT_GRID_COLOR = "#7f7895";
 const DEFAULT_PROJECT_NAME = "Untitled project";
 const UNDO_LIMIT = 50;
 const DEFAULT_LAYOUT_NAME = "Layout";
+const DEFAULT_PROJECT_TILESET_URL = "./zombie_woman.png";
 
 const editorState = {
   tool: "brush",
@@ -167,6 +168,24 @@ function getProjectName(value) {
   return value?.trim() || DEFAULT_PROJECT_NAME;
 }
 
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("Could not read default tileset image."));
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function loadDefaultTilesetImageDataUrl() {
+  const response = await fetch(DEFAULT_PROJECT_TILESET_URL);
+  if (!response.ok) {
+    throw new Error("Could not load the default tileset image.");
+  }
+
+  return blobToDataUrl(await response.blob());
+}
+
 function getSafeFileBaseName(value) {
   return getProjectName(value)
     .replace(/[\\/:*?"<>|]+/g, "-")
@@ -262,6 +281,64 @@ function createDefaultProjectData(name = DEFAULT_PROJECT_NAME, id = createProjec
     },
     selectedTileIndex: -1,
     selectedTileIndices: [],
+    showGrid: true,
+  };
+}
+
+async function createProjectDataWithDefaultTileset(name = DEFAULT_PROJECT_NAME, id = createProjectId()) {
+  const imageSrc = await loadDefaultTilesetImageDataUrl();
+  const image = await createImage(imageSrc);
+  const source = createTilesetSource(image, {}, 0);
+
+  return {
+    version: 5,
+    editor: "Pixel Tools Studio",
+    project: {
+      id,
+      name: getProjectName(name),
+    },
+    tileset: {
+      name: "zombie_woman",
+      reference: "zombie_woman.png",
+      imageSrc,
+      tileWidth: source.tileWidth,
+      tileHeight: source.tileHeight,
+      spacing: source.spacing,
+      margin: source.margin,
+      columns: source.columns,
+      rows: source.rows,
+      count: source.count,
+      sources: [
+        {
+          id: "sheet_1",
+          offsetY: 0,
+          width: image.width,
+          height: image.height,
+          spacing: source.spacing,
+          margin: source.margin,
+          columns: source.columns,
+          rows: source.rows,
+          count: source.count,
+        },
+      ],
+    },
+    map: {
+      columns: 32,
+      rows: 20,
+      tileWidth: DEFAULT_TILE_SIZE,
+      tileHeight: DEFAULT_TILE_SIZE,
+      backgroundColor: DEFAULT_MAP_BACKGROUND,
+      gridColor: DEFAULT_GRID_COLOR,
+      layers: [
+        {
+          id: "base",
+          name: "Base",
+          data: createLayerData(32, 20),
+        },
+      ],
+    },
+    selectedTileIndex: source.count > 0 ? 0 : -1,
+    selectedTileIndices: source.count > 0 ? [0] : [],
     showGrid: true,
   };
 }
@@ -725,14 +802,22 @@ function applyProjectData(
   return Promise.resolve();
 }
 
-function createProject(name = DEFAULT_PROJECT_NAME) {
-  const projectData = createDefaultProjectData(name);
-  return applyProjectData(projectData, {
-    persist: true,
-    statusMessage: `Created project "${projectData.project.name}".`,
-  }).then(() => {
+async function createProject(name = DEFAULT_PROJECT_NAME) {
+  try {
+    const projectData = await createProjectDataWithDefaultTileset(name);
+    await applyProjectData(projectData, {
+      persist: true,
+      statusMessage: `Created project "${projectData.project.name}" with the default tileset.`,
+    });
     closeProjectsPopup();
-  });
+  } catch (error) {
+    const projectData = createDefaultProjectData(name);
+    await applyProjectData(projectData, {
+      persist: true,
+      statusMessage: error?.message || `Created project "${projectData.project.name}".`,
+    });
+    closeProjectsPopup();
+  }
 }
 
 async function loadStoredProject(projectId, statusMessage = "Project loaded.") {
