@@ -2594,12 +2594,24 @@ function setTool(tool, { silent = false } = {}) {
 function syncToolbarState() {
   const copy = getUiCopy();
   elements.toggleGridBtn.textContent = editorState.showGrid ? copy.gridOn : copy.gridOff;
-  const isFullscreen = document.fullscreenElement === elements.appShell;
+  const isFullscreen = isEditorFullscreenActive();
   elements.fullscreenBtn.textContent = isFullscreen ? copy.fullscreenExit : copy.fullscreenEnter;
   elements.fullscreenBtn.setAttribute("aria-pressed", String(isFullscreen));
   elements.undoBtn.disabled = editorState.history.undoStack.length === 0;
   elements.redoBtn.disabled = editorState.history.redoStack.length === 0;
   updateToolButtons();
+}
+
+function isIpadLikeDevice() {
+  const ua = navigator.userAgent || "";
+  return /iPad|iPhone|iPod/.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+}
+
+function isEditorFullscreenActive() {
+  return (
+    document.fullscreenElement === elements.appShell ||
+    elements.appShell.classList.contains("is-editor-fullscreen")
+  );
 }
 
 async function toggleFullscreenMode() {
@@ -2609,6 +2621,15 @@ async function toggleFullscreenMode() {
   }
 
   try {
+    if (isIpadLikeDevice()) {
+      const nextState = !target.classList.contains("is-editor-fullscreen");
+      target.classList.toggle("is-editor-fullscreen", nextState);
+      document.body.classList.toggle("no-scroll", nextState);
+      syncToolbarState();
+      markDirty();
+      return;
+    }
+
     if (document.fullscreenElement === target) {
       if (document.exitFullscreen) {
         await document.exitFullscreen();
@@ -3971,6 +3992,17 @@ function bindEvents() {
     syncToolbarState();
     markDirty();
   });
+  document.addEventListener(
+    "touchmove",
+    (event) => {
+      if (!isIpadLikeDevice() || !isEditorFullscreenActive()) {
+        return;
+      }
+
+      event.preventDefault();
+    },
+    { passive: false },
+  );
 
   elements.sliceTilesheetBtn.addEventListener("click", async () => {
     try {
