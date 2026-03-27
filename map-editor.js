@@ -1,6 +1,8 @@
 const LEGACY_STORAGE_KEY = "pixel-map-editor-project";
 const PROJECTS_STORAGE_KEY = "pixel-map-editor-projects";
 const ACTIVE_PROJECT_STORAGE_KEY = "pixel-map-editor-active-project";
+const UI_LANGUAGE_STORAGE_KEY = "pixel-map-editor-ui-language";
+const DEFAULT_UI_LANGUAGE = "en";
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 4;
 const ZOOM_STEP = 1.2;
@@ -79,6 +81,7 @@ const editorState = {
 };
 
 const elements = {
+  languageSelect: document.querySelector("#languageSelect"),
   undoBtn: document.querySelector("#undoBtn"),
   redoBtn: document.querySelector("#redoBtn"),
   brushToolBtn: document.querySelector("#brushToolBtn"),
@@ -233,6 +236,407 @@ function getExportTilesetReference() {
 
 function getLayoutBaseName(value) {
   return value?.trim() || DEFAULT_LAYOUT_NAME;
+}
+
+const UI_TRANSLATIONS = {
+  en: {
+    pageTitle: "Pixel Tools | 2D Tile Map Editor",
+    backLink: "Back to main tools",
+    pageEyebrow: "Tile Map Editor",
+    projects: "Projects",
+    shortcuts: "Shortcuts",
+    import: "Import",
+    export: "Export",
+    deleteLocal: "Delete local",
+    tilesetSection: "Tileset",
+    clearTileset: "Clear tileset",
+    tilesetHint: "Click, Ctrl/Cmd-click, or drag on the tileset to select multiple tiles.",
+    tilesetEmptyState: "Import a spritesheet to build the selectable tileset.",
+    noSpritesheetLoaded: "No spritesheet loaded",
+    layoutsSection: "Layouts",
+    layoutOrderHint: "Lower layer draws first. Higher layer draws later.",
+    blockLayerHint: "Use Block to mark a collision / solid layer.",
+    showLayout: "Show",
+    hideLayout: "Hide",
+    renameLayout: "Rename layout",
+    deleteLayout: "Delete layout",
+    addLayout: "Add layout",
+    canvasSection: "Canvas",
+    toolsSection: "Tools",
+    controlsSection: "Controls",
+    undo: "Undo",
+    redo: "Redo",
+    brush: "Brush",
+    rectangle: "Rectangle",
+    erase: "Erase",
+    zoomOut: "Zoom -",
+    zoomIn: "Zoom +",
+    resetView: "Reset View",
+    gridOn: "Grid On",
+    gridOff: "Grid Off",
+    mapInstruction:
+      "Drag to paint. Right click the map to pick a tile. Hold space and drag to pan. Shortcuts: B brush, R rectangle, E erase, G grid.",
+    mapSetupSection: "Map Setup",
+    mapMeta: (columns, rows, tileWidth, tileHeight) => `${columns} x ${rows} tiles • ${tileWidth}x${tileHeight}px`,
+    selectedTileNone: "Selected tile: none",
+    selectedTileOne: (index) => `Selected tile: #${index}`,
+    selectedTiles: (preview, extra) => `Selected tiles: ${preview}${extra}`,
+    hoverNone: "Hover: -, -",
+    hover: (column, row) => `Hover: ${column}, ${row}`,
+    columns: "Columns",
+    rows: "Rows",
+    background: "Background",
+    gridColor: "Grid color",
+    applyMapSize: "Apply map size",
+    resetSetup: "Reset setup",
+    clearMap: "Clear map",
+    saveLocal: "Save local",
+    projectsPopupEyebrow: "Projects",
+    projectsPopupTitle: "Choose a project",
+    close: "Close",
+    createProjectTitle: "Create Project",
+    createProjectDescription: "Start a new tilemap project and save it in this browser.",
+    projectName: "Project name",
+    projectNamePlaceholder: "Project name",
+    createProject: "Create project",
+    openSavedProjectTitle: "Open Saved Project",
+    openSavedProjectDescription: "Select one of the projects already stored in this browser.",
+    savedProjects: "Saved projects",
+    openProject: "Open project",
+    shortcutsPopupEyebrow: "Help",
+    shortcutsPopupTitle: "Keyboard shortcuts",
+    shortcutsToolsTitle: "Tools",
+    shortcutsZoomTitle: "Zoom",
+    shortcutsNavigationTitle: "Navigation",
+    shortcutsToolsHtml:
+      "<p><strong>B</strong> switch to Brush</p><p><strong>R</strong> switch to Rectangle</p><p><strong>E</strong> switch to Erase</p><p><strong>G</strong> toggle Grid</p><p><strong>Ctrl/Cmd + Z</strong> undo</p><p><strong>Ctrl/Cmd + Shift + Z</strong> redo</p><p><strong>Ctrl + Y</strong> redo on Windows</p>",
+    shortcutsZoomHtml:
+      "<p><strong>Q</strong> zoom out on the map</p><p><strong>W</strong> zoom in on the map</p><p><strong>0</strong> reset the view</p>",
+    shortcutsNavigationHtml:
+      "<p><strong>Arrow Left</strong> move camera left</p><p><strong>Arrow Right</strong> move camera right</p><p><strong>Arrow Up</strong> move camera up</p><p><strong>Arrow Down</strong> move camera down</p><p><strong>Space + Drag</strong> pan with the mouse</p>",
+    importPopupEyebrow: "Import",
+    importPopupTitle: "Load tiles or project data",
+    importSpritesheetTitle: "Import Spritesheet",
+    importSpritesheetDescription:
+      "Load one or more PNG spritesheets and rebuild the tileset palette for this map.",
+    importSpritesheetHint: "Hold Cmd/Ctrl to select multiple files at once.",
+    spritesheetPng: "Spritesheet PNG",
+    tilesetName: "Tileset name",
+    spacing: "Spacing",
+    margin: "Margin",
+    loadTilesets: "Load tilesets",
+    importProjectJsonTitle: "Import Project JSON",
+    importProjectJsonDescription:
+      "Import a previously saved editor project and redraw the tilemap.",
+    importProjectJsonButton: "Import Project JSON",
+    exportPopupEyebrow: "Export",
+    exportPopupTitle: "Download your tilemap",
+    saveProjectJsonTitle: "Save Project JSON",
+    saveProjectJsonDescription:
+      "Keeps editor data so you can import the project back into this tool later.",
+    saveProjectJsonButton: "Save Project JSON",
+    engineBundleTitle: "Export Engine Bundle",
+    engineBundleDescription:
+      "Exports a tilemap JSON and bundles it with the spritesheet PNG.",
+    engineFormat: "Engine format",
+    phaserStandard: "Phaser standard",
+    tiledJson: "Tiled JSON",
+    unityJson: "Unity JSON",
+    exportEngineZip: "Export Engine ZIP",
+    csvBundleTitle: "Export CSV Bundle",
+    csvBundleDescription:
+      "Downloads the active layer CSV bundled with the spritesheet PNG.",
+    exportCsvZip: "Export CSV ZIP",
+    tilesetMetaOneSheet: (count, cols) => `${count} tiles • ${cols} cols`,
+    tilesetMetaMultiSheet: (count, sheets) => `${count} tiles • ${sheets} sheets`,
+  },
+  vi: {
+    pageTitle: "Pixel Tools | Trình chỉnh sửa bản đồ 2D",
+    backLink: "Quay lại công cụ chính",
+    pageEyebrow: "Trình chỉnh sửa bản đồ",
+    projects: "Dự án",
+    shortcuts: "Phím tắt",
+    import: "Nhập",
+    export: "Xuất",
+    deleteLocal: "Xóa local",
+    tilesetSection: "Tileset",
+    clearTileset: "Xóa tileset",
+    tilesetHint: "Nhấn, Ctrl/Cmd-click hoặc kéo trên tileset để chọn nhiều tile.",
+    tilesetEmptyState: "Nhập spritesheet để tạo tileset có thể chọn.",
+    noSpritesheetLoaded: "Chưa có spritesheet",
+    layoutsSection: "Layout",
+    layoutOrderHint: "Layer ở dưới được vẽ trước. Layer ở trên được vẽ sau.",
+    blockLayerHint: "Bật Block để đánh dấu layer va chạm / solid.",
+    showLayout: "Hiện",
+    hideLayout: "Ẩn",
+    renameLayout: "Đổi tên layout",
+    deleteLayout: "Xóa layout",
+    addLayout: "Thêm layout",
+    canvasSection: "Canvas",
+    toolsSection: "Công cụ",
+    controlsSection: "Điều khiển",
+    undo: "Hoàn tác",
+    redo: "Làm lại",
+    brush: "Cọ vẽ",
+    rectangle: "Hình chữ nhật",
+    erase: "Xóa",
+    zoomOut: "Thu phóng -",
+    zoomIn: "Thu phóng +",
+    resetView: "Đặt lại khung nhìn",
+    gridOn: "Lưới bật",
+    gridOff: "Lưới tắt",
+    mapInstruction:
+      "Kéo để vẽ. Nhấp chuột phải lên bản đồ để lấy tile. Giữ phím cách và kéo để di chuyển. Phím tắt: B cọ vẽ, R hình chữ nhật, E xóa, G lưới.",
+    mapSetupSection: "Thiết lập bản đồ",
+    mapMeta: (columns, rows, tileWidth, tileHeight) => `${columns} x ${rows} ô • ${tileWidth}x${tileHeight}px`,
+    selectedTileNone: "Tile đã chọn: không có",
+    selectedTileOne: (index) => `Tile đã chọn: #${index}`,
+    selectedTiles: (preview, extra) => `Các tile đã chọn: ${preview}${extra}`,
+    hoverNone: "Di chuột: -, -",
+    hover: (column, row) => `Di chuột: ${column}, ${row}`,
+    columns: "Cột",
+    rows: "Hàng",
+    background: "Nền",
+    gridColor: "Màu lưới",
+    applyMapSize: "Áp dụng kích thước",
+    resetSetup: "Đặt lại thiết lập",
+    clearMap: "Xóa bản đồ",
+    saveLocal: "Lưu local",
+    projectsPopupEyebrow: "Dự án",
+    projectsPopupTitle: "Chọn dự án",
+    close: "Đóng",
+    createProjectTitle: "Tạo dự án",
+    createProjectDescription: "Bắt đầu một dự án bản đồ mới và lưu trong trình duyệt này.",
+    projectName: "Tên dự án",
+    projectNamePlaceholder: "Tên dự án",
+    createProject: "Tạo dự án",
+    openSavedProjectTitle: "Mở dự án đã lưu",
+    openSavedProjectDescription: "Chọn một dự án đã được lưu trong trình duyệt này.",
+    savedProjects: "Dự án đã lưu",
+    openProject: "Mở dự án",
+    shortcutsPopupEyebrow: "Trợ giúp",
+    shortcutsPopupTitle: "Phím tắt",
+    shortcutsToolsTitle: "Công cụ",
+    shortcutsZoomTitle: "Thu phóng",
+    shortcutsNavigationTitle: "Điều hướng",
+    shortcutsToolsHtml:
+      "<p><strong>B</strong> chuyển sang Cọ vẽ</p><p><strong>R</strong> chuyển sang Hình chữ nhật</p><p><strong>E</strong> chuyển sang Xóa</p><p><strong>G</strong> bật/tắt Lưới</p><p><strong>Ctrl/Cmd + Z</strong> hoàn tác</p><p><strong>Ctrl/Cmd + Shift + Z</strong> làm lại</p><p><strong>Ctrl + Y</strong> làm lại trên Windows</p>",
+    shortcutsZoomHtml:
+      "<p><strong>Q</strong> thu nhỏ trên bản đồ</p><p><strong>W</strong> phóng to trên bản đồ</p><p><strong>0</strong> đặt lại khung nhìn</p>",
+    shortcutsNavigationHtml:
+      "<p><strong>Mũi tên trái</strong> di chuyển camera sang trái</p><p><strong>Mũi tên phải</strong> di chuyển camera sang phải</p><p><strong>Mũi tên lên</strong> di chuyển camera lên</p><p><strong>Mũi tên xuống</strong> di chuyển camera xuống</p><p><strong>Phím cách + kéo</strong> di chuyển bằng chuột</p>",
+    importPopupEyebrow: "Nhập",
+    importPopupTitle: "Tải tiles hoặc dữ liệu dự án",
+    importSpritesheetTitle: "Nhập Spritesheet",
+    importSpritesheetDescription:
+      "Tải một hoặc nhiều PNG spritesheet và tạo lại tileset cho bản đồ này.",
+    importSpritesheetHint: "Giữ Cmd/Ctrl để chọn nhiều file cùng lúc.",
+    spritesheetPng: "PNG spritesheet",
+    tilesetName: "Tên tileset",
+    spacing: "Khoảng cách",
+    margin: "Lề",
+    loadTilesets: "Tải tileset",
+    importProjectJsonTitle: "Nhập JSON dự án",
+    importProjectJsonDescription:
+      "Nhập dự án editor đã lưu trước đó và vẽ lại tilemap.",
+    importProjectJsonButton: "Nhập JSON dự án",
+    exportPopupEyebrow: "Xuất",
+    exportPopupTitle: "Tải tilemap của bạn",
+    saveProjectJsonTitle: "Lưu JSON dự án",
+    saveProjectJsonDescription:
+      "Giữ lại dữ liệu editor để bạn có thể nhập lại dự án sau này.",
+    saveProjectJsonButton: "Lưu JSON dự án",
+    engineBundleTitle: "Xuất gói engine",
+    engineBundleDescription:
+      "Xuất JSON tilemap và gộp kèm PNG spritesheet.",
+    engineFormat: "Định dạng engine",
+    phaserStandard: "Phaser standard",
+    tiledJson: "Tiled JSON",
+    unityJson: "Unity JSON",
+    exportEngineZip: "Xuất ZIP engine",
+    csvBundleTitle: "Xuất gói CSV",
+    csvBundleDescription:
+      "Tải CSV của layer đang hoạt động kèm theo PNG spritesheet.",
+    exportCsvZip: "Xuất ZIP CSV",
+    tilesetMetaOneSheet: (count, cols) => `${count} tile • ${cols} cột`,
+    tilesetMetaMultiSheet: (count, sheets) => `${count} tile • ${sheets} sheet`,
+  },
+};
+
+function getUiLanguage() {
+  return window.localStorage.getItem(UI_LANGUAGE_STORAGE_KEY) || DEFAULT_UI_LANGUAGE;
+}
+
+function setUiText(selector, value, index = 0) {
+  const nodes = document.querySelectorAll(selector);
+  const node = nodes[index];
+  if (node && typeof value === "string") {
+    node.textContent = value;
+  }
+}
+
+function applyLanguage(language = DEFAULT_UI_LANGUAGE) {
+  const key = UI_TRANSLATIONS[language] ? language : DEFAULT_UI_LANGUAGE;
+  const copy = UI_TRANSLATIONS[key];
+
+  document.documentElement.lang = key === "vi" ? "vi" : "en";
+  document.body.dataset.uiLanguage = key;
+  document.title = copy.pageTitle;
+  elements.languageSelect.value = key;
+
+  setUiText(".hero .text-link", copy.backLink);
+  setUiText(".hero .eyebrow", copy.pageEyebrow);
+  elements.openProjectsPopupBtn.textContent = copy.projects;
+  elements.openShortcutsPopupBtn.textContent = copy.shortcuts;
+  elements.openImportPopupBtn.textContent = copy.import;
+  elements.openExportPopupBtn.textContent = copy.export;
+  elements.deleteLocalProjectBtn.textContent = copy.deleteLocal;
+
+  setUiText(".map-sidebar .panel .eyebrow", copy.tilesetSection, 0);
+  elements.clearTilesetBtn.textContent = copy.clearTileset;
+  setUiText(".tileset-hint", copy.tilesetHint);
+  setUiText("#paletteEmptyState", copy.tilesetEmptyState);
+
+  setUiText(".map-layers-panel .section-heading .eyebrow", copy.layoutsSection);
+  const layoutHints = document.querySelectorAll(".map-layers-panel .layer-help");
+  if (layoutHints[0]) layoutHints[0].setAttribute("data-tooltip", copy.layoutOrderHint);
+  if (layoutHints[1]) layoutHints[1].setAttribute("data-tooltip", copy.blockLayerHint);
+  elements.addLayerBtn.textContent = copy.addLayout;
+
+  setUiText(".map-main-column .results .eyebrow", copy.canvasSection);
+  setUiText(".tool-fab-menu .eyebrow", copy.toolsSection);
+  setUiText("#undoBtn", copy.undo);
+  setUiText("#redoBtn", copy.redo);
+  setUiText("#brushToolBtn", copy.brush);
+  setUiText("#rectangleToolBtn", copy.rectangle);
+  setUiText("#eraseToolBtn", copy.erase);
+
+  setUiText(".control-fab-menu .eyebrow", copy.controlsSection);
+  setUiText("#zoomOutBtn", copy.zoomOut);
+  setUiText("#zoomInBtn", copy.zoomIn);
+  setUiText("#resetViewBtn", copy.resetView);
+  setUiText("#toggleGridBtn", copy.gridOn);
+
+  setUiText(".map-instruction", copy.mapInstruction);
+  setUiText(".map-setup-panel .eyebrow", copy.mapSetupSection);
+  const mapFieldLabels = document.querySelectorAll(".map-bottom-dock-fields .field > span");
+  if (mapFieldLabels[0]) mapFieldLabels[0].textContent = copy.columns;
+  if (mapFieldLabels[1]) mapFieldLabels[1].textContent = copy.rows;
+  if (mapFieldLabels[2]) mapFieldLabels[2].textContent = copy.background;
+  if (mapFieldLabels[3]) mapFieldLabels[3].textContent = copy.gridColor;
+  setUiText("#applyMapSizeBtn", copy.applyMapSize);
+  setUiText("#resetSetupBtn", copy.resetSetup);
+  setUiText("#clearMapBtn", copy.clearMap);
+  setUiText("#saveLocalBtn", copy.saveLocal);
+
+  setUiText("#projectsPopup .eyebrow", copy.projectsPopupEyebrow);
+  setUiText("#projectsPopupTitle", copy.projectsPopupTitle);
+  elements.closeProjectsPopupBtn.textContent = copy.close;
+  const projectArticles = document.querySelectorAll("#projectsPopup .export-option");
+  if (projectArticles[0]) {
+    projectArticles[0].querySelector("h3").textContent = copy.createProjectTitle;
+    projectArticles[0].querySelector("p").textContent = copy.createProjectDescription;
+    projectArticles[0].querySelector(".field span").textContent = copy.projectName;
+    projectArticles[0].querySelector("input").placeholder = copy.projectNamePlaceholder;
+    projectArticles[0].querySelector("button").textContent = copy.createProject;
+  }
+  if (projectArticles[1]) {
+    projectArticles[1].querySelector("h3").textContent = copy.openSavedProjectTitle;
+    projectArticles[1].querySelector("p").textContent = copy.openSavedProjectDescription;
+    projectArticles[1].querySelector(".field span").textContent = copy.savedProjects;
+    projectArticles[1].querySelector("select").setAttribute("aria-label", copy.savedProjects);
+    projectArticles[1].querySelector("button").textContent = copy.openProject;
+  }
+
+  setUiText("#shortcutsPopup .eyebrow", copy.shortcutsPopupEyebrow);
+  setUiText("#shortcutsPopupTitle", copy.shortcutsPopupTitle);
+  elements.closeShortcutsPopupBtn.textContent = copy.close;
+  const shortcutArticles = document.querySelectorAll("#shortcutsPopup .export-option");
+  if (shortcutArticles[0]) {
+    shortcutArticles[0].querySelector("h3").textContent = copy.shortcutsToolsTitle;
+    shortcutArticles[0].innerHTML =
+      `<h3>${copy.shortcutsToolsTitle}</h3>${copy.shortcutsToolsHtml}`;
+  }
+  if (shortcutArticles[1]) {
+    shortcutArticles[1].querySelector("h3").textContent = copy.shortcutsZoomTitle;
+    shortcutArticles[1].innerHTML =
+      `<h3>${copy.shortcutsZoomTitle}</h3>${copy.shortcutsZoomHtml}`;
+  }
+  if (shortcutArticles[2]) {
+    shortcutArticles[2].querySelector("h3").textContent = copy.shortcutsNavigationTitle;
+    shortcutArticles[2].innerHTML =
+      `<h3>${copy.shortcutsNavigationTitle}</h3>${copy.shortcutsNavigationHtml}`;
+  }
+
+  setUiText("#importPopup .eyebrow", copy.importPopupEyebrow);
+  setUiText("#importPopupTitle", copy.importPopupTitle);
+  elements.closeImportPopupBtn.textContent = copy.close;
+  const importArticles = document.querySelectorAll("#importPopup .export-option");
+  if (importArticles[0]) {
+    importArticles[0].querySelector("h3").textContent = copy.importSpritesheetTitle;
+    importArticles[0].querySelector("p").textContent = copy.importSpritesheetDescription;
+    importArticles[0].querySelector(".tileset-hint").textContent = copy.importSpritesheetHint;
+    const importLabels = importArticles[0].querySelectorAll(".field span");
+    if (importLabels[0]) importLabels[0].textContent = copy.spritesheetPng;
+    if (importLabels[1]) importLabels[1].textContent = copy.tilesetName;
+    if (importLabels[2]) importLabels[2].textContent = copy.spacing;
+    if (importLabels[3]) importLabels[3].textContent = copy.margin;
+    importArticles[0].querySelector("#sliceTilesheetBtn").textContent = copy.loadTilesets;
+  }
+  if (importArticles[1]) {
+    importArticles[1].querySelector("h3").textContent = copy.importProjectJsonTitle;
+    importArticles[1].querySelector("p").textContent = copy.importProjectJsonDescription;
+    importArticles[1].querySelector("button").textContent = copy.importProjectJsonButton;
+  }
+
+  setUiText("#exportPopup .eyebrow", copy.exportPopupEyebrow);
+  setUiText("#exportPopupTitle", copy.exportPopupTitle);
+  elements.closeExportPopupBtn.textContent = copy.close;
+  const exportArticles = document.querySelectorAll("#exportPopup .export-option");
+  if (exportArticles[0]) {
+    exportArticles[0].querySelector("h3").textContent = copy.saveProjectJsonTitle;
+    exportArticles[0].querySelector("p").textContent = copy.saveProjectJsonDescription;
+    exportArticles[0].querySelector("button").textContent = copy.saveProjectJsonButton;
+  }
+  if (exportArticles[1]) {
+    exportArticles[1].querySelector("h3").textContent = copy.engineBundleTitle;
+    exportArticles[1].querySelector("p").textContent = copy.engineBundleDescription;
+    exportArticles[1].querySelector(".field span").textContent = copy.engineFormat;
+    const options = exportArticles[1].querySelectorAll("option");
+    if (options[0]) options[0].textContent = copy.phaserStandard;
+    if (options[1]) options[1].textContent = copy.tiledJson;
+    if (options[2]) options[2].textContent = copy.unityJson;
+    exportArticles[1].querySelector("#exportGameJsonBtn").textContent = copy.exportEngineZip;
+  }
+  if (exportArticles[2]) {
+    exportArticles[2].querySelector("h3").textContent = copy.csvBundleTitle;
+    exportArticles[2].querySelector("p").textContent = copy.csvBundleDescription;
+    exportArticles[2].querySelector("#exportCsvBtn").textContent = copy.exportCsvZip;
+  }
+
+  const tilesetMetaText = elements.tilesetMetaText;
+  if (tilesetMetaText && editorState.tileset.count > 0) {
+    tilesetMetaText.textContent =
+      editorState.tileset.sources.length > 1
+        ? copy.tilesetMetaMultiSheet(editorState.tileset.count, editorState.tileset.sources.length)
+        : copy.tilesetMetaOneSheet(editorState.tileset.count, editorState.tileset.columns);
+  } else if (tilesetMetaText) {
+    tilesetMetaText.textContent = copy.noSpritesheetLoaded;
+  }
+
+  syncToolbarState();
+}
+
+function setUiLanguage(language, { persist = true } = {}) {
+  const key = UI_TRANSLATIONS[language] ? language : DEFAULT_UI_LANGUAGE;
+  if (persist) {
+    window.localStorage.setItem(UI_LANGUAGE_STORAGE_KEY, key);
+  }
+  applyLanguage(key);
+}
+
+function getUiCopy() {
+  return UI_TRANSLATIONS[getUiLanguage()] || UI_TRANSLATIONS[DEFAULT_UI_LANGUAGE];
 }
 
 function getUniqueLayoutName(desiredName, excludeIndex = -1) {
@@ -559,6 +963,7 @@ function reorderLayout(fromIndex, toIndex) {
 }
 
 function renderLayerList() {
+  const copy = getUiCopy();
   elements.layerList.innerHTML = "";
 
   editorState.map.layers.forEach((layer, index) => {
@@ -586,18 +991,18 @@ function renderLayerList() {
     blockCheckbox.type = "checkbox";
     blockCheckbox.className = "layer-block-checkbox";
     blockCheckbox.checked = Boolean(layer.block);
-    blockCheckbox.setAttribute("aria-label", `Mark ${layer.name} as blocked`);
-    blockCheckbox.title = layer.block ? "Blocked layout" : "Not blocked";
+    blockCheckbox.setAttribute("aria-label", `${copy.blockLayerHint}: ${layer.name}`);
+    blockCheckbox.title = copy.blockLayerHint;
 
     const visibility = document.createElement("button");
     visibility.type = "button";
     visibility.className = "layer-visibility";
     visibility.setAttribute(
       "aria-label",
-      layer.hidden ? `Show ${layer.name}` : `Hide ${layer.name}`,
+      layer.hidden ? `${copy.showLayout} ${layer.name}` : `${copy.hideLayout} ${layer.name}`,
     );
     visibility.setAttribute("aria-pressed", String(!layer.hidden));
-    visibility.title = layer.hidden ? "Show layout" : "Hide layout";
+    visibility.title = layer.hidden ? copy.showLayout : copy.hideLayout;
     visibility.append(
       createLayerIcon(
         "M12 5C6.5 5 2.1 8.4 1 12c1.1 3.6 5.5 7 11 7s9.9-3.4 11-7c-1.1-3.6-5.5-7-11-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm0-2.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z",
@@ -613,8 +1018,8 @@ function renderLayerList() {
         "M3 17.25V21h3.75L18.8 8.95l-3.75-3.75L3 17.25zm2.92 2.33H5v-.92l9.55-9.55.92.92-9.55 9.55z",
       ),
     );
-    edit.setAttribute("aria-label", `Edit ${layer.name}`);
-    edit.title = "Rename layout";
+    edit.setAttribute("aria-label", `${copy.renameLayout} ${layer.name}`);
+    edit.title = copy.renameLayout;
 
     const remove = document.createElement("button");
     remove.type = "button";
@@ -624,15 +1029,14 @@ function renderLayerList() {
         "M9 3.75h6l1 .75h3v1.5H5v-1.5h3l1-.75zm-3 4.5h12l-1 12h-10l-1-12zm4 2.25v7.5h1.5v-7.5H10zm3 0v7.5h1.5v-7.5H13z",
       ),
     );
-    remove.setAttribute("aria-label", `Delete ${layer.name}`);
-    remove.title = "Delete layout";
+    remove.setAttribute("aria-label", `${copy.deleteLayout} ${layer.name}`);
+    remove.title = copy.deleteLayout;
 
     const drag = document.createElement("span");
     drag.className = "layer-drag";
     drag.classList.add("sr-only");
     drag.textContent = "Drag";
 
-    blockCheckbox.title = "Enable this if the layer should act as a blocked / collision layer.";
     block.append(blockCheckbox);
     item.append(order, label, block, edit, visibility, remove, drag);
     item.addEventListener("click", () => {
@@ -1493,8 +1897,9 @@ function closeShortcutsPopup() {
 }
 
 function updateMetaText() {
+  const copy = getUiCopy();
   const { columns, rows, tileWidth, tileHeight } = editorState.map;
-  elements.mapMetaText.textContent = `${columns} x ${rows} tiles • ${tileWidth}x${tileHeight}px`;
+  elements.mapMetaText.textContent = copy.mapMeta(columns, rows, tileWidth, tileHeight);
 
   const selectedTiles =
     editorState.selectedTileIndices.length > 0
@@ -1503,28 +1908,28 @@ function updateMetaText() {
         ? [editorState.selectedTileIndex]
         : [];
   if (selectedTiles.length === 0) {
-    elements.selectedTileText.textContent = "Selected tile: none";
+    elements.selectedTileText.textContent = copy.selectedTileNone;
   } else if (selectedTiles.length === 1) {
-    elements.selectedTileText.textContent = `Selected tile: #${selectedTiles[0]}`;
+    elements.selectedTileText.textContent = copy.selectedTileOne(selectedTiles[0]);
   } else {
     const preview = selectedTiles.slice(0, 4).map((index) => `#${index}`).join(", ");
     const extra = selectedTiles.length > 4 ? ` +${selectedTiles.length - 4}` : "";
-    elements.selectedTileText.textContent = `Selected tiles: ${preview}${extra}`;
+    elements.selectedTileText.textContent = copy.selectedTiles(preview, extra);
   }
 
   if (editorState.hoveredCell) {
     const { column, row } = editorState.hoveredCell;
-    elements.hoverTileText.textContent = `Hover: ${column}, ${row}`;
+    elements.hoverTileText.textContent = copy.hover(column, row);
   } else {
-    elements.hoverTileText.textContent = "Hover: -, -";
+    elements.hoverTileText.textContent = copy.hoverNone;
   }
 
   elements.tilesetMetaText.textContent =
     editorState.tileset.count > 0
       ? editorState.tileset.sources.length > 1
-        ? `${editorState.tileset.count} tiles • ${editorState.tileset.sources.length} sheets`
-        : `${editorState.tileset.count} tiles • ${editorState.tileset.columns} cols`
-      : "No spritesheet loaded";
+        ? copy.tilesetMetaMultiSheet(editorState.tileset.count, editorState.tileset.sources.length)
+        : copy.tilesetMetaOneSheet(editorState.tileset.count, editorState.tileset.columns)
+      : copy.noSpritesheetLoaded;
 }
 
 function markDirty() {
@@ -2022,7 +2427,8 @@ function setTool(tool, { silent = false } = {}) {
 }
 
 function syncToolbarState() {
-  elements.toggleGridBtn.textContent = editorState.showGrid ? "Grid On" : "Grid Off";
+  const copy = getUiCopy();
+  elements.toggleGridBtn.textContent = editorState.showGrid ? copy.gridOn : copy.gridOff;
   elements.undoBtn.disabled = editorState.history.undoStack.length === 0;
   elements.redoBtn.disabled = editorState.history.redoStack.length === 0;
   updateToolButtons();
@@ -3310,6 +3716,12 @@ function handlePointerMove(event) {
 }
 
 function bindEvents() {
+  applyLanguage(getUiLanguage());
+
+  elements.languageSelect.addEventListener("change", () => {
+    setUiLanguage(elements.languageSelect.value);
+  });
+
   elements.brushToolBtn.addEventListener("click", () => setTool("brush"));
   elements.rectangleToolBtn.addEventListener("click", () => setTool("rectangle"));
   elements.eraseToolBtn.addEventListener("click", () => setTool("erase"));
