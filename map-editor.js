@@ -1608,7 +1608,7 @@ function buildTiledMapExport() {
         spacing: editorState.tileset.spacing,
         columns: editorState.tileset.columns,
         tilecount: editorState.tileset.count,
-        image: editorState.tileset.reference || "tileset.png",
+        image: getExportTilesetReference(),
         imagewidth: tilesetWidth,
         imageheight: tilesetHeight,
       },
