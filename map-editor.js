@@ -1592,9 +1592,15 @@ function rebuildTilesetFromSources(image, sources, config = {}) {
   }
 
   const gridSources = sourceInputs.map((source) => {
-    const slice = createTilesetSource(source.image, source, 0);
+    const paddedImage = padTilesetSourceImage(
+      source.image,
+      Math.max(1, Number(source.slotWidth) || Number(source.width) || source.image.width || DEFAULT_TILE_SIZE),
+      Math.max(1, Number(source.slotHeight) || Number(source.height) || source.image.height || DEFAULT_TILE_SIZE),
+    );
+    const slice = createTilesetSource(paddedImage, source, 0);
     return {
       ...source,
+      image: paddedImage,
       tileWidth: slice.tileWidth,
       tileHeight: slice.tileHeight,
       columns: slice.columns,
@@ -1636,7 +1642,7 @@ function rebuildTilesetFromSources(image, sources, config = {}) {
     const paddedImage = padTilesetSourceImage(source.image, slotWidth, slotHeight);
     nextImage = composeTilesetAtlas(nextImage, paddedImage);
 
-    const slice = createTilesetSource(source.image, source, offsetY);
+    const slice = createTilesetSource(paddedImage, source, offsetY);
     for (const tile of slice.tiles) {
       tiles.push({
         ...tile,
@@ -1725,9 +1731,62 @@ function getSelectedTileStamp() {
     .sort((a, b) => a.offsetRow - b.offsetRow || a.offsetColumn - b.offsetColumn);
 }
 
+function drawTilesetGridOverlay(ctx, overlayCanvas, selectionState) {
+  const gridStepX = Math.max(1, Number(selectionState.gridStepX) || DEFAULT_TILE_SIZE);
+  const gridStepY = Math.max(1, Number(selectionState.gridStepY) || DEFAULT_TILE_SIZE);
+  const gridOffsetX = Math.max(0, Number(selectionState.gridOffsetX) || 0);
+  const gridOffsetY = Math.max(0, Number(selectionState.gridOffsetY) || 0);
+  const gridColor = selectionState.gridColor || "rgba(255, 255, 255, 0.12)";
+
+  ctx.save();
+  ctx.strokeStyle = gridColor;
+  ctx.lineWidth = 1;
+
+  const sources =
+    Array.isArray(editorState.tileset.sources) && editorState.tileset.sources.length > 0
+      ? editorState.tileset.sources
+      : [
+          {
+            offsetY: 0,
+            slotHeight: overlayCanvas.height,
+          },
+        ];
+
+  const canvasWidth = overlayCanvas.width;
+  for (const source of sources) {
+    const sourceTop = Math.max(0, Number(source.offsetY) || 0);
+    const sourceHeight = Math.max(
+      1,
+      Number(source.slotHeight) || Number(source.height) || overlayCanvas.height,
+    );
+    const startY = sourceTop + gridOffsetY;
+    const endY = sourceTop + sourceHeight;
+
+    for (let x = gridOffsetX; x <= canvasWidth; x += gridStepX) {
+      const snappedX = Math.round(x) + 0.5;
+      ctx.beginPath();
+      ctx.moveTo(snappedX, startY);
+      ctx.lineTo(snappedX, endY);
+      ctx.stroke();
+    }
+
+    for (let y = startY; y <= endY; y += gridStepY) {
+      const snappedY = Math.round(y) + 0.5;
+      ctx.beginPath();
+      ctx.moveTo(gridOffsetX, snappedY);
+      ctx.lineTo(canvasWidth, snappedY);
+      ctx.stroke();
+    }
+  }
+
+  ctx.restore();
+}
+
 function drawTilesetSelectionOverlay(overlayCanvas, selectionState) {
   const ctx = overlayCanvas.getContext("2d", { alpha: true });
   ctx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+  drawTilesetGridOverlay(ctx, overlayCanvas, selectionState);
 
   if (!selectionState.isDragging) {
     return;
@@ -3030,6 +3089,19 @@ function renderTilesetPalette() {
   overlayCanvas.width = canvas.width;
   overlayCanvas.height = canvas.height;
   overlayCanvas.style.touchAction = "none";
+  tilesetInteractionState.gridStepX = Math.max(
+    1,
+    (Number(editorState.tileset.tileWidth) || DEFAULT_TILE_SIZE) +
+      (Number(editorState.tileset.spacing) || 0),
+  );
+  tilesetInteractionState.gridStepY = Math.max(
+    1,
+    (Number(editorState.tileset.tileHeight) || DEFAULT_TILE_SIZE) +
+      (Number(editorState.tileset.spacing) || 0),
+  );
+  tilesetInteractionState.gridOffsetX = Math.max(0, Number(editorState.tileset.margin) || 0);
+  tilesetInteractionState.gridOffsetY = Math.max(0, Number(editorState.tileset.margin) || 0);
+  tilesetInteractionState.gridColor = "rgba(255, 255, 255, 0.12)";
   tilesetInteractionState.viewport = viewport;
   tilesetInteractionState.stage = stage;
   tilesetInteractionState.canvas = canvas;
@@ -3314,6 +3386,7 @@ function renderTilesetPalette() {
   elements.tilePalette.append(viewport);
   viewport.scrollLeft = previousScrollLeft;
   viewport.scrollTop = previousScrollTop;
+  drawTilesetSelectionOverlay(overlayCanvas, tilesetInteractionState);
   updateMetaText();
 }
 
