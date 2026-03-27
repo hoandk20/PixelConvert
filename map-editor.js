@@ -79,6 +79,8 @@ const editorState = {
 };
 
 const elements = {
+  undoBtn: document.querySelector("#undoBtn"),
+  redoBtn: document.querySelector("#redoBtn"),
   brushToolBtn: document.querySelector("#brushToolBtn"),
   rectangleToolBtn: document.querySelector("#rectangleToolBtn"),
   eraseToolBtn: document.querySelector("#eraseToolBtn"),
@@ -153,7 +155,32 @@ const tilesetInteractionState = {
   pointerId: null,
   startScrollLeft: 0,
   startScrollTop: 0,
+  zoom: 1,
+  gestureActive: false,
+  gestureStartZoom: 1,
+  gestureStartDistance: 0,
+  gestureStartCenterX: 0,
+  gestureStartCenterY: 0,
+  gestureStartOffsetX: 0,
+  gestureStartOffsetY: 0,
+  gestureStartScrollLeft: 0,
+  gestureStartScrollTop: 0,
+  touchPointers: new Map(),
+  viewport: null,
+  stage: null,
+  canvas: null,
   overlayCanvas: null,
+};
+
+const mapTouchGestureState = {
+  active: false,
+  startZoom: 1,
+  startOffsetX: 0,
+  startOffsetY: 0,
+  startCenterX: 0,
+  startCenterY: 0,
+  startDistance: 0,
+  pointers: new Map(),
 };
 
 const mapRectangleState = {
@@ -813,6 +840,7 @@ function applyProjectData(
       };
       editorState.map.tileWidth = editorState.tileset.tileWidth;
       editorState.map.tileHeight = editorState.tileset.tileHeight;
+      tilesetInteractionState.zoom = 1;
       syncMapInputs();
       syncToolbarState();
       syncProjectControls();
@@ -840,6 +868,7 @@ function applyProjectData(
     sources: Array.isArray(raw.tileset.sources) ? raw.tileset.sources : [],
     tiles: [],
   };
+  tilesetInteractionState.zoom = 1;
 
   syncMapInputs();
   syncToolbarState();
@@ -1370,6 +1399,7 @@ function pushUndoState() {
   if (undoStack.length > UNDO_LIMIT) {
     undoStack.shift();
   }
+  syncToolbarState();
 }
 
 async function undoLastAction() {
@@ -1391,6 +1421,7 @@ async function undoLastAction() {
     statusMessage: "Undo applied.",
   });
   persistProject();
+  syncToolbarState();
 }
 
 async function redoLastAction() {
@@ -1412,6 +1443,7 @@ async function redoLastAction() {
     statusMessage: "Redo applied.",
   });
   persistProject();
+  syncToolbarState();
 }
 
 function openExportPopup() {
@@ -1991,6 +2023,8 @@ function setTool(tool, { silent = false } = {}) {
 
 function syncToolbarState() {
   elements.toggleGridBtn.textContent = editorState.showGrid ? "Grid On" : "Grid Off";
+  elements.undoBtn.disabled = editorState.history.undoStack.length === 0;
+  elements.redoBtn.disabled = editorState.history.redoStack.length === 0;
   updateToolButtons();
 }
 
@@ -2278,6 +2312,188 @@ function panCamera(deltaX, deltaY) {
   markDirty();
 }
 
+function getPointerPairMetrics(pointers) {
+  const [first, second] = Array.from(pointers.values());
+  if (!first || !second) {
+    return null;
+  }
+
+  const centerX = (first.clientX + second.clientX) / 2;
+  const centerY = (first.clientY + second.clientY) / 2;
+  const distance = Math.hypot(first.clientX - second.clientX, first.clientY - second.clientY);
+
+  return { centerX, centerY, distance };
+}
+
+function startMapPinchGesture() {
+  const metrics = getPointerPairMetrics(mapTouchGestureState.pointers);
+  if (!metrics) {
+    return;
+  }
+
+  mapTouchGestureState.active = true;
+  mapTouchGestureState.startZoom = editorState.camera.zoom;
+  mapTouchGestureState.startOffsetX = editorState.camera.offsetX;
+  mapTouchGestureState.startOffsetY = editorState.camera.offsetY;
+  mapTouchGestureState.startCenterX = metrics.centerX;
+  mapTouchGestureState.startCenterY = metrics.centerY;
+  mapTouchGestureState.startDistance = Math.max(metrics.distance, 1);
+  editorState.isPointerDown = false;
+  editorState.isPanning = false;
+  resetRectangleDragState();
+}
+
+function updateMapPinchGesture() {
+  if (!mapTouchGestureState.active) {
+    return;
+  }
+
+  const metrics = getPointerPairMetrics(mapTouchGestureState.pointers);
+  if (!metrics) {
+    return;
+  }
+
+  const scale = metrics.distance / mapTouchGestureState.startDistance;
+  const nextZoom = Math.max(
+    MIN_ZOOM,
+    Math.min(MAX_ZOOM, mapTouchGestureState.startZoom * scale),
+  );
+  const worldX =
+    (mapTouchGestureState.startCenterX - mapTouchGestureState.startOffsetX) /
+    mapTouchGestureState.startZoom;
+  const worldY =
+    (mapTouchGestureState.startCenterY - mapTouchGestureState.startOffsetY) /
+    mapTouchGestureState.startZoom;
+
+  editorState.camera.zoom = nextZoom;
+  editorState.camera.offsetX = metrics.centerX - worldX * nextZoom;
+  editorState.camera.offsetY = metrics.centerY - worldY * nextZoom;
+  markDirty();
+}
+
+function stopMapTouchGesture() {
+  if (mapTouchGestureState.pointers.size < 2) {
+    mapTouchGestureState.active = false;
+  }
+}
+
+function getTilesetViewportClientPoint(viewport, clientX, clientY) {
+  const rect = viewport.getBoundingClientRect();
+  return {
+    x: clientX - rect.left,
+    y: clientY - rect.top,
+  };
+}
+
+function applyTilesetZoomLayout(zoom = tilesetInteractionState.zoom) {
+  const { canvas, overlayCanvas, stage, viewport } = tilesetInteractionState;
+  if (!canvas || !overlayCanvas || !stage || !viewport) {
+    return;
+  }
+
+  const scaledWidth = canvas.width * zoom;
+  const scaledHeight = canvas.height * zoom;
+  canvas.style.width = `${scaledWidth}px`;
+  canvas.style.height = `${scaledHeight}px`;
+  overlayCanvas.style.width = `${scaledWidth}px`;
+  overlayCanvas.style.height = `${scaledHeight}px`;
+  stage.style.width = `${scaledWidth}px`;
+  stage.style.height = `${scaledHeight}px`;
+}
+
+function setTilesetZoom(nextZoom, clientX, clientY) {
+  const viewport = tilesetInteractionState.viewport;
+  if (!viewport) {
+    return;
+  }
+
+  const previousZoom = tilesetInteractionState.zoom;
+  const clampedZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, nextZoom));
+  if (clampedZoom === previousZoom) {
+    return;
+  }
+
+  const rect = viewport.getBoundingClientRect();
+  const localX = clientX != null ? clientX - rect.left : rect.width / 2;
+  const localY = clientY != null ? clientY - rect.top : rect.height / 2;
+  const contentX = (viewport.scrollLeft + localX) / previousZoom;
+  const contentY = (viewport.scrollTop + localY) / previousZoom;
+
+  tilesetInteractionState.zoom = clampedZoom;
+  applyTilesetZoomLayout(clampedZoom);
+  viewport.scrollLeft = contentX * clampedZoom - localX;
+  viewport.scrollTop = contentY * clampedZoom - localY;
+}
+
+function startTilesetPinchGesture() {
+  const metrics = getPointerPairMetrics(tilesetInteractionState.touchPointers);
+  if (!metrics) {
+    return;
+  }
+
+  const viewport = tilesetInteractionState.viewport;
+  if (!viewport) {
+    return;
+  }
+
+  const rect = viewport.getBoundingClientRect();
+  const localX = metrics.centerX - rect.left;
+  const localY = metrics.centerY - rect.top;
+
+  tilesetInteractionState.gestureActive = true;
+  tilesetInteractionState.gestureStartZoom = tilesetInteractionState.zoom;
+  tilesetInteractionState.gestureStartDistance = Math.max(metrics.distance, 1);
+  tilesetInteractionState.gestureStartCenterX = metrics.centerX;
+  tilesetInteractionState.gestureStartCenterY = metrics.centerY;
+  tilesetInteractionState.gestureStartOffsetX = localX;
+  tilesetInteractionState.gestureStartOffsetY = localY;
+  tilesetInteractionState.gestureStartScrollLeft = viewport.scrollLeft;
+  tilesetInteractionState.gestureStartScrollTop = viewport.scrollTop;
+  tilesetInteractionState.isPointerDown = false;
+  tilesetInteractionState.isDragging = false;
+  tilesetInteractionState.isPanning = false;
+  tilesetInteractionState.pointerId = null;
+  drawTilesetSelectionOverlay(tilesetInteractionState.overlayCanvas, tilesetInteractionState);
+}
+
+function updateTilesetPinchGesture() {
+  if (!tilesetInteractionState.gestureActive) {
+    return;
+  }
+
+  const metrics = getPointerPairMetrics(tilesetInteractionState.touchPointers);
+  const viewport = tilesetInteractionState.viewport;
+  if (!metrics || !viewport) {
+    return;
+  }
+
+  const scale = metrics.distance / tilesetInteractionState.gestureStartDistance;
+  const nextZoom = Math.max(
+    MIN_ZOOM,
+    Math.min(MAX_ZOOM, tilesetInteractionState.gestureStartZoom * scale),
+  );
+  const rect = viewport.getBoundingClientRect();
+  const localX = metrics.centerX - rect.left;
+  const localY = metrics.centerY - rect.top;
+  const contentX =
+    (tilesetInteractionState.gestureStartScrollLeft + tilesetInteractionState.gestureStartOffsetX) /
+    tilesetInteractionState.gestureStartZoom;
+  const contentY =
+    (tilesetInteractionState.gestureStartScrollTop + tilesetInteractionState.gestureStartOffsetY) /
+    tilesetInteractionState.gestureStartZoom;
+
+  tilesetInteractionState.zoom = nextZoom;
+  applyTilesetZoomLayout(nextZoom);
+  viewport.scrollLeft = contentX * nextZoom - localX;
+  viewport.scrollTop = contentY * nextZoom - localY;
+}
+
+function stopTilesetTouchGesture() {
+  if (tilesetInteractionState.touchPointers.size < 2) {
+    tilesetInteractionState.gestureActive = false;
+  }
+}
+
 function renderTilesetPalette() {
   const existingViewport = elements.tilePalette.querySelector(".tileset-viewport");
   const previousScrollLeft = existingViewport?.scrollLeft ?? 0;
@@ -2296,6 +2512,7 @@ function renderTilesetPalette() {
   const viewport = document.createElement("div");
   viewport.className = "tileset-viewport";
   viewport.tabIndex = 0;
+  viewport.style.touchAction = "none";
 
   const stage = document.createElement("div");
   stage.className = "tileset-stage";
@@ -2312,7 +2529,11 @@ function renderTilesetPalette() {
   overlayCanvas.width = canvas.width;
   overlayCanvas.height = canvas.height;
   overlayCanvas.style.touchAction = "none";
+  tilesetInteractionState.viewport = viewport;
+  tilesetInteractionState.stage = stage;
+  tilesetInteractionState.canvas = canvas;
   tilesetInteractionState.overlayCanvas = overlayCanvas;
+  applyTilesetZoomLayout();
 
   const ctx = canvas.getContext("2d", { alpha: true });
   ctx.imageSmoothingEnabled = false;
@@ -2423,6 +2644,26 @@ function renderTilesetPalette() {
   };
 
   const handleTilesetPointerMove = (event) => {
+    if (event.pointerType === "touch" && tilesetInteractionState.touchPointers.has(event.pointerId)) {
+      event.preventDefault();
+      tilesetInteractionState.touchPointers.set(event.pointerId, {
+        clientX: event.clientX,
+        clientY: event.clientY,
+      });
+
+      if (tilesetInteractionState.touchPointers.size >= 2) {
+        if (!tilesetInteractionState.gestureActive) {
+          startTilesetPinchGesture();
+        }
+        updateTilesetPinchGesture();
+        return;
+      }
+    }
+
+    if (tilesetInteractionState.gestureActive) {
+      return;
+    }
+
     if (!tilesetInteractionState.isPointerDown) {
       return;
     }
@@ -2450,6 +2691,15 @@ function renderTilesetPalette() {
   };
 
   const handleTilesetPointerUp = (event) => {
+    if (event.pointerType === "touch") {
+      tilesetInteractionState.touchPointers.delete(event.pointerId);
+      stopTilesetTouchGesture();
+      if (tilesetInteractionState.gestureActive) {
+        event.preventDefault();
+        return;
+      }
+    }
+
     if (!tilesetInteractionState.isPointerDown || tilesetInteractionState.pointerId !== event.pointerId) {
       return;
     }
@@ -2509,11 +2759,17 @@ function renderTilesetPalette() {
     drawTilesetSelectionOverlay(overlayCanvas, tilesetInteractionState);
   };
 
-  const handleTilesetPointerLeave = () => {
+  const handleTilesetPointerLeave = (event) => {
+    if (event?.type === "pointerleave" && tilesetInteractionState.touchPointers.size > 0) {
+      return;
+    }
+
     tilesetInteractionState.isPointerDown = false;
     tilesetInteractionState.isDragging = false;
     tilesetInteractionState.isPanning = false;
     tilesetInteractionState.pointerId = null;
+    tilesetInteractionState.gestureActive = false;
+    tilesetInteractionState.touchPointers.clear();
     drawTilesetSelectionOverlay(overlayCanvas, tilesetInteractionState);
   };
 
@@ -2525,8 +2781,22 @@ function renderTilesetPalette() {
 
       if (target === canvas) {
         canvas.setPointerCapture(event.pointerId);
-      } else if (!editorState.spacePressed && event.button !== 1) {
+      } else if (event.pointerType === "touch") {
+        viewport.setPointerCapture(event.pointerId);
+      } else if (!editorState.spacePressed && event.button !== 1 && event.pointerType !== "touch") {
         return;
+      }
+
+      if (event.pointerType === "touch") {
+        event.preventDefault();
+        tilesetInteractionState.touchPointers.set(event.pointerId, {
+          clientX: event.clientX,
+          clientY: event.clientY,
+        });
+        if (tilesetInteractionState.touchPointers.size === 2) {
+          startTilesetPinchGesture();
+          return;
+        }
       }
 
       handleTilesetPointerDown(event);
@@ -2535,6 +2805,7 @@ function renderTilesetPalette() {
 
   viewport.addEventListener("pointermove", handleTilesetPointerMove);
   viewport.addEventListener("pointerup", handleTilesetPointerUp);
+  viewport.addEventListener("pointercancel", handleTilesetPointerLeave);
   viewport.addEventListener("pointerleave", handleTilesetPointerLeave);
 
   stage.append(canvas, overlayCanvas);
@@ -2618,6 +2889,7 @@ async function loadTilesetFromFile(file) {
   const src = await readFileAsDataUrl(file);
   const image = await createImage(src);
   sliceTilesetFromImage(image);
+  tilesetInteractionState.zoom = 1;
   rebuildMapSurface();
   renderTilesetPalette();
   persistProject();
@@ -2653,6 +2925,7 @@ function clearTileset() {
   editorState.selectedTileIndex = -1;
   editorState.selectedTileIndices = [];
   editorState.selectedTilePaintCursor = 0;
+  tilesetInteractionState.zoom = 1;
   resetLayerData();
   rebuildMapSurface();
   renderLayerList();
@@ -2884,6 +3157,22 @@ async function restoreStartupProject() {
 }
 
 function handlePointerMove(event) {
+  if (event.pointerType === "touch") {
+    const touchPoint = mapTouchGestureState.pointers.get(event.pointerId);
+    if (touchPoint) {
+      touchPoint.clientX = event.clientX;
+      touchPoint.clientY = event.clientY;
+      if (mapTouchGestureState.pointers.size >= 2) {
+        updateMapPinchGesture();
+        return;
+      }
+    }
+  }
+
+  if (mapTouchGestureState.active) {
+    return;
+  }
+
   const cell = screenToCell(event.clientX, event.clientY);
   editorState.hoveredCell = cell;
 
@@ -2914,6 +3203,12 @@ function bindEvents() {
   elements.brushToolBtn.addEventListener("click", () => setTool("brush"));
   elements.rectangleToolBtn.addEventListener("click", () => setTool("rectangle"));
   elements.eraseToolBtn.addEventListener("click", () => setTool("erase"));
+  elements.undoBtn.addEventListener("click", () => {
+    void undoLastAction();
+  });
+  elements.redoBtn.addEventListener("click", () => {
+    void redoLastAction();
+  });
   elements.openProjectsPopupBtn.addEventListener("click", openProjectsPopup);
   elements.closeProjectsPopupBtn.addEventListener("click", closeProjectsPopup);
   elements.projectsPopupBackdrop.addEventListener("click", closeProjectsPopup);
@@ -3021,6 +3316,23 @@ function bindEvents() {
     editorState.isPointerDown = true;
     editorState.isPanning = event.button === 1 || editorState.spacePressed;
 
+    if (event.pointerType === "touch") {
+      event.preventDefault();
+      mapTouchGestureState.pointers.set(event.pointerId, {
+        clientX: event.clientX,
+        clientY: event.clientY,
+      });
+      if (mapTouchGestureState.pointers.size === 2) {
+        startMapPinchGesture();
+        return;
+      }
+    }
+
+    if (mapTouchGestureState.active) {
+      event.preventDefault();
+      return;
+    }
+
     const cell = screenToCell(event.clientX, event.clientY);
     editorState.hoveredCell = cell;
 
@@ -3076,12 +3388,21 @@ function bindEvents() {
   });
 
   elements.mapCanvas.addEventListener("pointermove", handlePointerMove);
+  elements.mapCanvas.addEventListener("pointercancel", (event) => {
+    mapTouchGestureState.pointers.delete(event.pointerId);
+    stopMapTouchGesture();
+  });
   elements.mapCanvas.addEventListener("pointerleave", () => {
     editorState.hoveredCell = null;
     markDirty();
   });
 
-  window.addEventListener("pointerup", () => {
+  window.addEventListener("pointerup", (event) => {
+    if (event.pointerType === "touch") {
+      mapTouchGestureState.pointers.delete(event.pointerId);
+      stopMapTouchGesture();
+    }
+
     if (
       editorState.tool === "rectangle" &&
       mapRectangleState.startCell &&
