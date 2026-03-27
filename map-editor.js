@@ -186,6 +186,10 @@ const mapTouchGestureState = {
   startCenterY: 0,
   startDistance: 0,
   pointers: new Map(),
+  paintArmed: false,
+  paintPointerId: null,
+  paintStartClientX: 0,
+  paintStartClientY: 0,
 };
 
 const mapRectangleState = {
@@ -2928,6 +2932,8 @@ function startMapPinchGesture() {
   }
 
   mapTouchGestureState.active = true;
+  mapTouchGestureState.paintArmed = false;
+  mapTouchGestureState.paintPointerId = null;
   mapTouchGestureState.startZoom = editorState.camera.zoom;
   mapTouchGestureState.startOffsetX = editorState.camera.offsetX;
   mapTouchGestureState.startOffsetY = editorState.camera.offsetY;
@@ -2970,6 +2976,10 @@ function updateMapPinchGesture() {
 function stopMapTouchGesture() {
   if (mapTouchGestureState.pointers.size < 2) {
     mapTouchGestureState.active = false;
+  }
+  if (mapTouchGestureState.pointers.size === 0) {
+    mapTouchGestureState.paintArmed = false;
+    mapTouchGestureState.paintPointerId = null;
   }
 }
 
@@ -3865,6 +3875,16 @@ function handlePointerMove(event) {
         updateMapPinchGesture();
         return;
       }
+      if (mapTouchGestureState.paintArmed && mapTouchGestureState.paintPointerId === event.pointerId) {
+        const movedDistance = Math.hypot(
+          event.clientX - mapTouchGestureState.paintStartClientX,
+          event.clientY - mapTouchGestureState.paintStartClientY,
+        );
+        if (movedDistance < 6) {
+          return;
+        }
+        editorState.isPointerDown = true;
+      }
     }
   }
 
@@ -4019,7 +4039,6 @@ function bindEvents() {
 
   elements.mapCanvas.addEventListener("pointerdown", (event) => {
     elements.mapCanvas.setPointerCapture(event.pointerId);
-    editorState.isPointerDown = true;
     editorState.isPanning = event.button === 1 || editorState.spacePressed;
 
     if (event.pointerType === "touch") {
@@ -4028,11 +4047,21 @@ function bindEvents() {
         clientX: event.clientX,
         clientY: event.clientY,
       });
+      mapTouchGestureState.paintArmed = true;
+      mapTouchGestureState.paintPointerId = event.pointerId;
+      mapTouchGestureState.paintStartClientX = event.clientX;
+      mapTouchGestureState.paintStartClientY = event.clientY;
+      editorState.isPointerDown = false;
+      editorState.isPanning = false;
       if (mapTouchGestureState.pointers.size === 2) {
         startMapPinchGesture();
         return;
       }
+      event.preventDefault();
+      return;
     }
+
+    editorState.isPointerDown = true;
 
     if (mapTouchGestureState.active) {
       event.preventDefault();
@@ -4096,6 +4125,10 @@ function bindEvents() {
   elements.mapCanvas.addEventListener("pointermove", handlePointerMove);
   elements.mapCanvas.addEventListener("pointercancel", (event) => {
     mapTouchGestureState.pointers.delete(event.pointerId);
+    if (mapTouchGestureState.paintPointerId === event.pointerId) {
+      mapTouchGestureState.paintArmed = false;
+      mapTouchGestureState.paintPointerId = null;
+    }
     stopMapTouchGesture();
   });
   elements.mapCanvas.addEventListener("pointerleave", () => {
@@ -4106,6 +4139,10 @@ function bindEvents() {
   window.addEventListener("pointerup", (event) => {
     if (event.pointerType === "touch") {
       mapTouchGestureState.pointers.delete(event.pointerId);
+      if (mapTouchGestureState.paintPointerId === event.pointerId) {
+        mapTouchGestureState.paintArmed = false;
+        mapTouchGestureState.paintPointerId = null;
+      }
       stopMapTouchGesture();
     }
 
