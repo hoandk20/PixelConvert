@@ -11,6 +11,7 @@ const DEFAULT_MAP_ROWS = 20;
 const DEFAULT_MAP_BACKGROUND = "#141220";
 const DEFAULT_GRID_COLOR = "#7f7895";
 const DEFAULT_PROJECT_NAME = "Untitled project";
+const PROJECT_DATA_VERSION = 6;
 const UNDO_LIMIT = 50;
 const DEFAULT_LAYOUT_NAME = "Layout";
 const DEFAULT_PROJECT_TILESET_URL = "./zombie_woman.png";
@@ -56,6 +57,7 @@ const editorState = {
       {
         id: "base",
         name: "Base",
+        block: false,
         data: [],
       },
     ],
@@ -246,7 +248,7 @@ function normalizeLayerNames() {
 
 function createDefaultProjectData(name = DEFAULT_PROJECT_NAME, id = createProjectId()) {
   return {
-    version: 5,
+    version: PROJECT_DATA_VERSION,
     editor: "Pixel Tools Studio",
     project: {
       id,
@@ -276,6 +278,7 @@ function createDefaultProjectData(name = DEFAULT_PROJECT_NAME, id = createProjec
         {
           id: "base",
           name: "Base",
+          block: false,
           data: createLayerData(32, 20),
         },
       ],
@@ -292,7 +295,7 @@ async function createProjectDataWithDefaultTileset(name = DEFAULT_PROJECT_NAME, 
   const source = createTilesetSource(image, {}, 0);
 
   return {
-    version: 5,
+    version: PROJECT_DATA_VERSION,
     editor: "Pixel Tools Studio",
     project: {
       id,
@@ -334,6 +337,7 @@ async function createProjectDataWithDefaultTileset(name = DEFAULT_PROJECT_NAME, 
         {
           id: "base",
           name: "Base",
+          block: false,
           data: createLayerData(32, 20),
         },
       ],
@@ -537,6 +541,7 @@ function renderLayerList() {
     item.setAttribute("role", "button");
     item.draggable = true;
     item.classList.toggle("is-active", index === editorState.map.activeLayer);
+    item.classList.toggle("is-blocked", Boolean(layer.block));
     item.dataset.layerIndex = String(index);
 
     const order = document.createElement("span");
@@ -546,6 +551,16 @@ function renderLayerList() {
     const label = document.createElement("span");
     label.className = "layer-name";
     label.textContent = layer.name;
+
+    const block = document.createElement("div");
+    block.className = "layer-block";
+
+    const blockCheckbox = document.createElement("input");
+    blockCheckbox.type = "checkbox";
+    blockCheckbox.className = "layer-block-checkbox";
+    blockCheckbox.checked = Boolean(layer.block);
+    blockCheckbox.setAttribute("aria-label", `Mark ${layer.name} as blocked`);
+    blockCheckbox.title = layer.block ? "Blocked layout" : "Not blocked";
 
     const visibility = document.createElement("button");
     visibility.type = "button";
@@ -590,7 +605,9 @@ function renderLayerList() {
     drag.classList.add("sr-only");
     drag.textContent = "Drag";
 
-    item.append(order, label, edit, visibility, remove, drag);
+    blockCheckbox.title = "Enable this if the layer should act as a blocked / collision layer.";
+    block.append(blockCheckbox);
+    item.append(order, label, block, edit, visibility, remove, drag);
     item.addEventListener("click", () => {
       setActiveLayer(index);
     });
@@ -616,6 +633,25 @@ function renderLayerList() {
       event.preventDefault();
       const fromIndex = Number(event.dataTransfer.getData("text/plain"));
       reorderLayout(fromIndex, index);
+    });
+
+    blockCheckbox.addEventListener("click", (event) => {
+      event.stopPropagation();
+    });
+
+    blockCheckbox.addEventListener("change", (event) => {
+      event.stopPropagation();
+      pushUndoState();
+      layer.block = blockCheckbox.checked;
+      item.classList.toggle("is-blocked", Boolean(layer.block));
+      blockCheckbox.title = layer.block ? "Blocked layout" : "Not blocked";
+      persistProject();
+      updateStatus(
+        layer.block
+          ? `${layer.name} marked as blocked.`
+          : `${layer.name} unmarked as blocked.`,
+      );
+      markDirty();
     });
 
     visibility.addEventListener("click", (event) => {
@@ -704,6 +740,7 @@ function applyProjectData(
     id: layer.id || `layer_${index}`,
     name: getLayoutBaseName(layer.name || `Layout ${index + 1}`),
     hidden: Boolean(layer.hidden),
+    block: Boolean(layer.block),
     data: normalizeLayerData(layer.data, Number(raw.map.columns) || 32, Number(raw.map.rows) || 20),
   }));
 
@@ -1280,6 +1317,7 @@ function createLayer(name, columns, rows) {
     id: `layer_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
     name,
     hidden: false,
+    block: false,
     data: createLayerData(columns, rows),
   };
 }
@@ -1290,6 +1328,7 @@ function resetLayerData() {
       id: "base",
       name: DEFAULT_LAYOUT_NAME,
       hidden: false,
+      block: false,
       data: createLayerData(editorState.map.columns, editorState.map.rows),
     },
   ];
@@ -1607,7 +1646,12 @@ function buildTiledMapExport() {
         {
           name: "collider",
           type: "bool",
-          value: false,
+          value: Boolean(layer.block),
+        },
+        {
+          name: "block",
+          type: "bool",
+          value: Boolean(layer.block),
         },
       ],
     })),
@@ -1659,6 +1703,7 @@ function buildPhaserMapExport() {
       id: layer.id,
       name: layer.name,
       hidden: Boolean(layer.hidden),
+      block: Boolean(layer.block),
       index,
       width: editorState.map.columns,
       height: editorState.map.rows,
@@ -1688,6 +1733,7 @@ function buildUnityMapExport() {
       id: layer.id,
       name: layer.name,
       hidden: Boolean(layer.hidden),
+      block: Boolean(layer.block),
       index,
       width: editorState.map.columns,
       height: editorState.map.rows,
@@ -2632,7 +2678,7 @@ function clearMap() {
 
 function buildEditorProject() {
   return {
-    version: 5,
+    version: PROJECT_DATA_VERSION,
     editor: "Pixel Tools Studio",
     project: {
       id: editorState.project.id,
@@ -2663,6 +2709,7 @@ function buildEditorProject() {
         id: layer.id,
         name: layer.name,
         hidden: Boolean(layer.hidden),
+        block: Boolean(layer.block),
         data: layer.data,
       })),
     },
