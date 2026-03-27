@@ -1741,9 +1741,17 @@ function renderEditor() {
 }
 
 function updateToolButtons() {
-  elements.brushToolBtn.classList.toggle("is-active", editorState.tool === "brush");
-  elements.eraseToolBtn.classList.toggle("is-active", editorState.tool === "erase");
-  elements.rectangleToolBtn.classList.toggle("is-active", editorState.tool === "rectangle");
+  const brushActive = editorState.tool === "brush";
+  const rectangleActive = editorState.tool === "rectangle";
+  const eraseActive = editorState.tool === "erase";
+
+  elements.brushToolBtn.classList.toggle("is-active", brushActive);
+  elements.rectangleToolBtn.classList.toggle("is-active", rectangleActive);
+  elements.eraseToolBtn.classList.toggle("is-active", eraseActive);
+
+  elements.brushToolBtn.setAttribute("aria-pressed", String(brushActive));
+  elements.rectangleToolBtn.setAttribute("aria-pressed", String(rectangleActive));
+  elements.eraseToolBtn.setAttribute("aria-pressed", String(eraseActive));
 }
 
 function setTool(tool, { silent = false } = {}) {
@@ -2052,6 +2060,10 @@ function panCamera(deltaX, deltaY) {
 }
 
 function renderTilesetPalette() {
+  const existingViewport = elements.tilePalette.querySelector(".tileset-viewport");
+  const previousScrollLeft = existingViewport?.scrollLeft ?? 0;
+  const previousScrollTop = existingViewport?.scrollTop ?? 0;
+
   elements.tilePalette.innerHTML = "";
   const hasTiles = editorState.tileset.tiles.length > 0;
   elements.paletteEmptyState.hidden = hasTiles;
@@ -2309,6 +2321,8 @@ function renderTilesetPalette() {
   stage.append(canvas, overlayCanvas);
   viewport.append(stage);
   elements.tilePalette.append(viewport);
+  viewport.scrollLeft = previousScrollLeft;
+  viewport.scrollTop = previousScrollTop;
   updateMetaText();
 }
 
