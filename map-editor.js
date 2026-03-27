@@ -2906,17 +2906,90 @@ async function loadTilesetsFromFiles(files) {
   const startSheetCount = editorState.tileset.sources.length;
   const failures = [];
 
-  for (const file of nextFiles) {
-    try {
-      await appendTilesetFromFile(file);
-    } catch (error) {
-      failures.push(`${file.name}: ${error?.message || "Could not load spritesheet."}`);
-    }
-  }
+  const loadedSheets = await Promise.all(
+    nextFiles.map(async (file) => {
+      try {
+        const src = await readFileAsDataUrl(file);
+        const image = await createImage(src);
+        return { file, image };
+      } catch (error) {
+        failures.push(`${file.name}: ${error?.message || "Could not load spritesheet."}`);
+        return null;
+      }
+    }),
+  );
 
-  if (editorState.tileset.count === startTileCount) {
+  const validSheets = loadedSheets.filter(Boolean);
+  if (validSheets.length === 0) {
     throw new Error(failures[0] || "Could not load any spritesheets.");
   }
+
+  const baseImage = editorState.tileset.image;
+  const baseSources = Array.isArray(editorState.tileset.sources) ? [...editorState.tileset.sources] : [];
+  const baseTiles = Array.isArray(editorState.tileset.tiles) ? [...editorState.tileset.tiles] : [];
+  const name = elements.tilesetNameInput.value.trim() || editorState.tileset.name || "tileset";
+  const reference = editorState.tileset.reference || "tileset.png";
+
+  let nextImage = baseImage;
+  let nextSources = baseSources;
+  let nextTiles = baseTiles;
+  let lastSource = null;
+
+  for (const { image } of validSheets) {
+    const offsetY = nextSources.reduce((sum, source) => sum + (Number(source.height) || 0), 0);
+    const source = createTilesetSource(image, {}, offsetY);
+    lastSource = source;
+    nextImage = composeTilesetAtlas(nextImage, image);
+    const startIndex = nextTiles.length;
+    nextTiles = nextTiles.concat(
+      source.tiles.map((tile, index) => ({
+        ...tile,
+        index: startIndex + index,
+      })),
+    );
+    nextSources = nextSources.concat({
+      id: `sheet_${nextSources.length + 1}`,
+      offsetY,
+      width: image.width,
+      height: image.height,
+      spacing: source.spacing,
+      margin: source.margin,
+      columns: source.columns,
+      rows: source.rows,
+      count: source.count,
+    });
+  }
+
+  editorState.tileset = {
+    ...editorState.tileset,
+    name,
+    reference,
+    tileWidth: lastSource?.tileWidth || editorState.tileset.tileWidth || DEFAULT_TILE_SIZE,
+    tileHeight: lastSource?.tileHeight || editorState.tileset.tileHeight || DEFAULT_TILE_SIZE,
+    spacing: lastSource?.spacing || 0,
+    margin: lastSource?.margin || 0,
+    columns: lastSource?.columns || 0,
+    rows: lastSource?.rows || 0,
+    count: nextTiles.length,
+    imageSrc: nextImage ? nextImage.toDataURL("image/png") : "",
+    image: nextImage,
+    sources: nextSources,
+    tiles: nextTiles,
+  };
+  editorState.selectedTileIndices = normalizeTileIndices(
+    editorState.selectedTileIndices,
+    nextTiles.length,
+  );
+  if (editorState.selectedTileIndices.length === 0 && editorState.selectedTileIndex >= 0) {
+    editorState.selectedTileIndices = [editorState.selectedTileIndex];
+  }
+  if (editorState.selectedTileIndices.length === 0 && nextTiles.length > 0) {
+    editorState.selectedTileIndices = [0];
+    editorState.selectedTileIndex = 0;
+  }
+  editorState.selectedTileIndex =
+    editorState.selectedTileIndices.at(-1) ?? editorState.selectedTileIndex;
+  editorState.selectedTilePaintCursor = 0;
 
   tilesetInteractionState.zoom = 1;
   rebuildMapSurface();
