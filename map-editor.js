@@ -1527,27 +1527,116 @@ function createTilesetSource(image, config = {}, offsetY = 0) {
   };
 }
 
+function getTilesetSourceImage(source, atlasImage) {
+  if (source?.image) {
+    return source.image;
+  }
+
+  const width = Math.max(1, Number(source?.width) || Number(atlasImage?.width) || DEFAULT_TILE_SIZE);
+  const height = Math.max(1, Number(source?.height) || DEFAULT_TILE_SIZE);
+  const offsetY = Math.max(0, Number(source?.offsetY) || 0);
+  const sourceCanvas = document.createElement("canvas");
+  sourceCanvas.width = width;
+  sourceCanvas.height = height;
+
+  const ctx = sourceCanvas.getContext("2d", { alpha: true });
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, sourceCanvas.width, sourceCanvas.height);
+
+  if (atlasImage) {
+    ctx.drawImage(
+      atlasImage,
+      0,
+      offsetY,
+      width,
+      height,
+      0,
+      0,
+      width,
+      height,
+    );
+  }
+
+  return sourceCanvas;
+}
+
+function padTilesetSourceImage(image, slotWidth, slotHeight) {
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, slotWidth);
+  canvas.height = Math.max(1, slotHeight);
+
+  const ctx = canvas.getContext("2d", { alpha: true });
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(image, 0, 0);
+  return canvas;
+}
+
 function rebuildTilesetFromSources(image, sources, config = {}) {
+  const sourceInputs = (Array.isArray(sources) ? sources : []).map((source, index) => ({
+    ...source,
+    id: source.id || `sheet_${index + 1}`,
+    image: getTilesetSourceImage(source, image),
+    spacing: Number(source.spacing ?? config.spacing) || 0,
+    margin: Number(source.margin ?? config.margin) || 0,
+  }));
+
+  if (sourceInputs.length === 0) {
+    return {
+      image,
+      tiles: [],
+      sources: [],
+      nextIndex: 0,
+      config,
+    };
+  }
+
+  const gridSources = sourceInputs.map((source) => {
+    const slice = createTilesetSource(source.image, source, 0);
+    return {
+      ...source,
+      tileWidth: slice.tileWidth,
+      tileHeight: slice.tileHeight,
+      columns: slice.columns,
+      rows: slice.rows,
+      count: slice.count,
+    };
+  });
+
+  const slotWidth = Math.max(
+    ...gridSources.map((source) =>
+      Math.max(
+        1,
+        Number(source.slotWidth) ||
+          Number(source.width) ||
+          source.image.width ||
+          DEFAULT_TILE_SIZE,
+      ),
+    ),
+  );
+  const slotHeight = Math.max(
+    ...gridSources.map((source) =>
+      Math.max(
+        1,
+        Number(source.slotHeight) ||
+          Number(source.height) ||
+          source.image.height ||
+          DEFAULT_TILE_SIZE,
+      ),
+    ),
+  );
+
+  const normalizedSources = [];
   const tiles = [];
   let nextIndex = 0;
-  const normalizedSources = sources.map((source, index) => {
-    const width = Number(source.width) || image.width;
-    const height = Number(source.height) || 0;
-    const offsetY = Number(source.offsetY) || 0;
-    const spacing = Number(source.spacing) || 0;
-    const margin = Number(source.margin) || 0;
-    const slice = createTilesetSource(
-      {
-        width,
-        height,
-      },
-      {
-        spacing,
-        margin,
-      },
-      offsetY,
-    );
+  let nextImage = null;
 
+  gridSources.forEach((source, index) => {
+    const offsetY = index * slotHeight;
+    const paddedImage = padTilesetSourceImage(source.image, slotWidth, slotHeight);
+    nextImage = composeTilesetAtlas(nextImage, paddedImage);
+
+    const slice = createTilesetSource(source.image, source, offsetY);
     for (const tile of slice.tiles) {
       tiles.push({
         ...tile,
@@ -1556,27 +1645,33 @@ function rebuildTilesetFromSources(image, sources, config = {}) {
       nextIndex += 1;
     }
 
-    return {
-      id: source.id || `sheet_${index}`,
+    normalizedSources.push({
+      id: source.id || `sheet_${index + 1}`,
       offsetY,
-      width,
-      height,
+      width: Number(source.width) || source.image.width || slotWidth,
+      height: Number(source.height) || source.image.height || slotHeight,
+      slotWidth,
+      slotHeight,
       tileWidth: slice.tileWidth,
       tileHeight: slice.tileHeight,
-      spacing,
-      margin,
+      spacing: Number(source.spacing) || 0,
+      margin: Number(source.margin) || 0,
       columns: slice.columns,
       rows: slice.rows,
       count: slice.count,
-    };
+    });
   });
 
   return {
-    image,
+    image: nextImage,
     tiles,
     sources: normalizedSources,
     nextIndex,
-    config,
+    config: {
+      ...config,
+      slotWidth,
+      slotHeight,
+    },
   };
 }
 
@@ -3226,63 +3321,54 @@ function sliceTilesetFromImage(image, config = {}) {
   const existingSources = Array.isArray(editorState.tileset.sources)
     ? editorState.tileset.sources
     : [];
-  const offsetY = existingSources.reduce((sum, source) => sum + (source.height || 0), 0);
-  const source = createTilesetSource(image, config, offsetY);
-  const atlas = composeTilesetAtlas(editorState.tileset.image, image);
-  const nextTiles = editorState.tileset.tiles.concat(
-    source.tiles.map((tile, index) => ({
-      ...tile,
-      index: editorState.tileset.tiles.length + index,
-    })),
-  );
+  const combinedSources = existingSources.concat({
+    id: `sheet_${existingSources.length + 1}`,
+    image,
+    width: image.width,
+    height: image.height,
+    spacing: Number(config.spacing ?? elements.tileSpacingInput.value) || 0,
+    margin: Number(config.margin ?? elements.tileMarginInput.value) || 0,
+  });
+  const rebuilt = rebuildTilesetFromSources(editorState.tileset.image, combinedSources, config);
+  const primarySource = rebuilt.sources[0] || rebuilt.sources.at(-1) || null;
 
   editorState.tileset = {
     name: (config.name ?? elements.tilesetNameInput.value.trim()) || "tileset",
     reference:
       (config.reference ?? editorState.tileset.reference ?? "tileset.png") || "tileset.png",
-    tileWidth: source.tileWidth,
-    tileHeight: source.tileHeight,
-    spacing: source.spacing,
-    margin: source.margin,
-    columns: source.columns,
-    rows: source.rows,
-    count: nextTiles.length,
-    imageSrc: atlas.toDataURL("image/png"),
-    image: atlas,
-    sources: existingSources.concat({
-      id: `sheet_${existingSources.length + 1}`,
-      offsetY,
-      width: image.width,
-      height: image.height,
-      spacing: source.spacing,
-      margin: source.margin,
-      columns: source.columns,
-      rows: source.rows,
-      count: source.count,
-    }),
-    tiles: nextTiles,
+    tileWidth: primarySource?.tileWidth || DEFAULT_TILE_SIZE,
+    tileHeight: primarySource?.tileHeight || DEFAULT_TILE_SIZE,
+    spacing: primarySource?.spacing || 0,
+    margin: primarySource?.margin || 0,
+    columns: primarySource?.columns || 0,
+    rows: primarySource?.rows || 0,
+    count: rebuilt.tiles.length,
+    imageSrc: rebuilt.image ? rebuilt.image.toDataURL("image/png") : "",
+    image: rebuilt.image,
+    sources: rebuilt.sources,
+    tiles: rebuilt.tiles,
   };
 
-  editorState.map.tileWidth = source.tileWidth;
-  editorState.map.tileHeight = source.tileHeight;
+  editorState.map.tileWidth = primarySource?.tileWidth || DEFAULT_TILE_SIZE;
+  editorState.map.tileHeight = primarySource?.tileHeight || DEFAULT_TILE_SIZE;
   syncMapInputs();
 
-  if (editorState.selectedTileIndex >= nextTiles.length) {
-    editorState.selectedTileIndex = nextTiles.length > 0 ? 0 : -1;
+  if (editorState.selectedTileIndex >= rebuilt.tiles.length) {
+    editorState.selectedTileIndex = rebuilt.tiles.length > 0 ? 0 : -1;
   }
 
-  if (editorState.selectedTileIndex < 0 && nextTiles.length > 0) {
+  if (editorState.selectedTileIndex < 0 && rebuilt.tiles.length > 0) {
     editorState.selectedTileIndex = 0;
   }
 
   editorState.selectedTileIndices = normalizeTileIndices(
     editorState.selectedTileIndices,
-    nextTiles.length,
+    rebuilt.tiles.length,
   );
   if (editorState.selectedTileIndices.length === 0 && editorState.selectedTileIndex >= 0) {
     editorState.selectedTileIndices = [editorState.selectedTileIndex];
   }
-  if (editorState.selectedTileIndices.length === 0 && nextTiles.length > 0) {
+  if (editorState.selectedTileIndices.length === 0 && rebuilt.tiles.length > 0) {
     editorState.selectedTileIndices = [0];
     editorState.selectedTileIndex = 0;
   }
@@ -3329,64 +3415,52 @@ async function loadTilesetsFromFiles(files) {
 
   const baseImage = editorState.tileset.image;
   const baseSources = Array.isArray(editorState.tileset.sources) ? [...editorState.tileset.sources] : [];
-  const baseTiles = Array.isArray(editorState.tileset.tiles) ? [...editorState.tileset.tiles] : [];
   const name = elements.tilesetNameInput.value.trim() || editorState.tileset.name || "tileset";
   const reference = editorState.tileset.reference || "tileset.png";
 
-  let nextImage = baseImage;
-  let nextSources = baseSources;
-  let nextTiles = baseTiles;
-  let lastSource = null;
-
-  for (const { image } of validSheets) {
-    const offsetY = nextSources.reduce((sum, source) => sum + (Number(source.height) || 0), 0);
-    const source = createTilesetSource(image, {}, offsetY);
-    lastSource = source;
-    nextImage = composeTilesetAtlas(nextImage, image);
-    const startIndex = nextTiles.length;
-    nextTiles = nextTiles.concat(
-      source.tiles.map((tile, index) => ({
-        ...tile,
-        index: startIndex + index,
-      })),
-    );
-    nextSources = nextSources.concat({
-      id: `sheet_${nextSources.length + 1}`,
-      offsetY,
+  const combinedSources = baseSources.concat(
+    validSheets.map(({ file, image }, index) => ({
+      id: `sheet_${baseSources.length + index + 1}`,
+      image,
       width: image.width,
       height: image.height,
-      spacing: source.spacing,
-      margin: source.margin,
-      columns: source.columns,
-      rows: source.rows,
-      count: source.count,
-    });
-  }
+      spacing: Number(elements.tileSpacingInput.value) || 0,
+      margin: Number(elements.tileMarginInput.value) || 0,
+      name: file.name,
+    })),
+  );
+  const rebuilt = rebuildTilesetFromSources(baseImage, combinedSources, {
+    name,
+    reference,
+    spacing: Number(elements.tileSpacingInput.value) || 0,
+    margin: Number(elements.tileMarginInput.value) || 0,
+  });
+  const primarySource = rebuilt.sources[0] || rebuilt.sources.at(-1) || null;
 
   editorState.tileset = {
     ...editorState.tileset,
     name,
     reference,
-    tileWidth: lastSource?.tileWidth || editorState.tileset.tileWidth || DEFAULT_TILE_SIZE,
-    tileHeight: lastSource?.tileHeight || editorState.tileset.tileHeight || DEFAULT_TILE_SIZE,
-    spacing: lastSource?.spacing || 0,
-    margin: lastSource?.margin || 0,
-    columns: lastSource?.columns || 0,
-    rows: lastSource?.rows || 0,
-    count: nextTiles.length,
-    imageSrc: nextImage ? nextImage.toDataURL("image/png") : "",
-    image: nextImage,
-    sources: nextSources,
-    tiles: nextTiles,
+    tileWidth: primarySource?.tileWidth || editorState.tileset.tileWidth || DEFAULT_TILE_SIZE,
+    tileHeight: primarySource?.tileHeight || editorState.tileset.tileHeight || DEFAULT_TILE_SIZE,
+    spacing: primarySource?.spacing || 0,
+    margin: primarySource?.margin || 0,
+    columns: primarySource?.columns || 0,
+    rows: primarySource?.rows || 0,
+    count: rebuilt.tiles.length,
+    imageSrc: rebuilt.image ? rebuilt.image.toDataURL("image/png") : "",
+    image: rebuilt.image,
+    sources: rebuilt.sources,
+    tiles: rebuilt.tiles,
   };
   editorState.selectedTileIndices = normalizeTileIndices(
     editorState.selectedTileIndices,
-    nextTiles.length,
+    rebuilt.tiles.length,
   );
   if (editorState.selectedTileIndices.length === 0 && editorState.selectedTileIndex >= 0) {
     editorState.selectedTileIndices = [editorState.selectedTileIndex];
   }
-  if (editorState.selectedTileIndices.length === 0 && nextTiles.length > 0) {
+  if (editorState.selectedTileIndices.length === 0 && rebuilt.tiles.length > 0) {
     editorState.selectedTileIndices = [0];
     editorState.selectedTileIndex = 0;
   }
