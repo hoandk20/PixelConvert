@@ -2906,20 +2906,17 @@ async function loadTilesetsFromFiles(files) {
   const startSheetCount = editorState.tileset.sources.length;
   const failures = [];
 
-  const loadedSheets = await Promise.all(
-    nextFiles.map(async (file) => {
-      try {
-        const src = await readFileAsDataUrl(file);
-        const image = await createImage(src);
-        return { file, image };
-      } catch (error) {
-        failures.push(`${file.name}: ${error?.message || "Could not load spritesheet."}`);
-        return null;
-      }
-    }),
-  );
+  const validSheets = [];
+  for (const file of nextFiles) {
+    try {
+      const src = await readFileAsDataUrl(file);
+      const image = await createImage(src);
+      validSheets.push({ file, image });
+    } catch (error) {
+      failures.push(`${file.name}: ${error?.message || "Could not load spritesheet."}`);
+    }
+  }
 
-  const validSheets = loadedSheets.filter(Boolean);
   if (validSheets.length === 0) {
     throw new Error(failures[0] || "Could not load any spritesheets.");
   }
