@@ -1616,7 +1616,7 @@ function buildTiledMapExport() {
     orientation: "orthogonal",
     renderorder: "right-down",
     tiledversion: "1.11.0",
-    tileheight: tileHeight,
+    tileheight: geometry.tileHeight,
     tilesets: [
       {
         firstgid: 1,
