@@ -89,6 +89,18 @@ function updateSheetStatus(message) {
   elements.sheet.statusText.textContent = message;
 }
 
+function updateBackgroundColorVisibility(backgroundModeSelect, backgroundColorInput) {
+  const field = backgroundColorInput?.closest(".field");
+  if (!field) return;
+
+  field.classList.toggle("is-hidden", backgroundModeSelect.value === "transparent");
+}
+
+function syncBackgroundFieldVisibility() {
+  updateBackgroundColorVisibility(elements.pixel.backgroundMode, elements.pixel.backgroundColor);
+  updateBackgroundColorVisibility(elements.sheet.backgroundMode, elements.sheet.backgroundColor);
+}
+
 function triggerDownload(url, filename) {
   const link = document.createElement("a");
   link.href = url;
@@ -172,6 +184,36 @@ function drawPixelImage(image, size, fit, backgroundMode, backgroundColor) {
 
   drawFittedImage(ctx, image, size, fit);
   return canvas;
+}
+
+function isPixelTabActive() {
+  return elements.tabPanels.pixel?.classList.contains("is-active");
+}
+
+function extractClipboardImageFiles(clipboardData) {
+  if (!clipboardData) return [];
+
+  const files = [];
+  const timestamp = Date.now();
+
+  for (const item of clipboardData.items ?? []) {
+    if (!item.type.startsWith("image/")) continue;
+
+    const file = item.getAsFile();
+    if (!file) continue;
+
+    const extension = (file.type.split("/")[1] || "png").replace(/[^\w-]+/g, "");
+    const namedFile =
+      file.name && file.name.trim()
+        ? file
+        : new File([file], `clipboard-image-${timestamp}.${extension}`, {
+            type: file.type || "image/png",
+          });
+
+    files.push(namedFile);
+  }
+
+  return files;
 }
 
 function switchTab(tabName) {
@@ -751,6 +793,29 @@ function applyAspectRatioPreset() {
   );
 }
 
+document.addEventListener("paste", async (event) => {
+  if (!isPixelTabActive()) return;
+
+  const target = event.target;
+  if (
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement ||
+    target?.isContentEditable
+  ) {
+    return;
+  }
+
+  const files = extractClipboardImageFiles(event.clipboardData);
+  if (files.length === 0) return;
+
+  event.preventDefault();
+  await addPixelFiles(files);
+  updatePixelStatus(
+    `${files.length} image(s) pasted from clipboard. Click convert to create pixel art.`,
+  );
+});
+
 elements.tabButtons.forEach((button) => {
   button.addEventListener("click", () => switchTab(button.dataset.tab));
 });
@@ -761,12 +826,14 @@ attachDropzone(elements.sheet.dropzone, elements.sheet.fileInput, addSheetFiles)
 elements.pixel.convertBtn.addEventListener("click", convertAllPixels);
 elements.pixel.downloadAllBtn.addEventListener("click", downloadAllPixels);
 elements.pixel.clearBtn.addEventListener("click", clearPixelItems);
+elements.pixel.backgroundMode.addEventListener("change", syncBackgroundFieldVisibility);
 
 elements.sheet.buildBtn.addEventListener("click", buildSpritesheet);
 elements.sheet.downloadBtn.addEventListener("click", downloadSpritesheet);
 elements.sheet.downloadJsonBtn.addEventListener("click", downloadSpritesheetJson);
 elements.sheet.clearBtn.addEventListener("click", clearSheetItems);
 elements.sheet.jsonFormat.value = "phaser-array";
+elements.sheet.backgroundMode.addEventListener("change", syncBackgroundFieldVisibility);
 elements.sheet.fitSelect.addEventListener("change", () => {
   if (elements.sheet.fitSelect.value === "contain") {
     updateSheetStatus(
@@ -787,6 +854,7 @@ elements.sheet.sizingMode.addEventListener("change", () => {
   }
 });
 applyAspectRatioPreset();
+syncBackgroundFieldVisibility();
 
 updatePixelCounters();
 updateSheetCounters();

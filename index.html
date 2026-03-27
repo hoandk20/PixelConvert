@@ -5,44 +5,45 @@
      crossorigin="anonymous"></script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Pixel Tools Studio | Batch Image to Pixel Art & Spritesheet Generator</title>
+    <title>Pixel Tools | Pixel Art Converter, Spritesheet & 2D Tile Map Editor</title>
     <meta
       name="description"
-      content="Convert images to pixel art in batches, resize to 32x32, and build downloadable PNG and JSON spritesheets online with Pixel Tools Studio."
+      content="Convert images to pixel art, build spritesheets, and launch a 2D tile map editor with tile import, map painting, JSON save/load, and PNG export."
     />
     <meta
       name="keywords"
-      content="pixel art converter, image to pixel art, 32x32 pixel art, spritesheet generator, spritesheet json, batch image converter, game asset tool"
+      content="pixel art converter, spritesheet generator, 2d tile map editor, tilemap maker, tilesheet slicer, pixel game tools, map editor online, game asset tool"
     />
     <meta name="robots" content="index, follow, max-image-preview:large" />
-    <meta name="author" content="Pixel Tools Studio" />
-    <meta name="theme-color" content="#efe4d4" />
-    <meta name="application-name" content="Pixel Tools Studio" />
+    <meta name="author" content="DK" />
+    <meta name="theme-color" content="#241748" />
+    <meta name="application-name" content="Pixel Tools" />
+    <link rel="canonical" href="./" />
     <meta property="og:type" content="website" />
     <meta
       property="og:title"
-      content="Pixel Tools Studio | Batch Pixel Art & Spritesheet Generator"
+      content="Pixel Tools | Pixel Art Converter, Spritesheet & 2D Tile Map Editor"
     />
     <meta
       property="og:description"
-      content="Turn regular images into pixel art, batch export PNG files, and generate spritesheets with matching JSON metadata."
+      content="Create pixel art, generate spritesheets, and build 2D tile maps in the browser with JSON and PNG export."
     />
-    <meta property="og:site_name" content="Pixel Tools Studio" />
+    <meta property="og:site_name" content="Pixel Tools" />
     <meta property="og:locale" content="en_US" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta
       name="twitter:title"
-      content="Pixel Tools Studio | Batch Pixel Art & Spritesheet Generator"
+      content="Pixel Tools | Pixel Art Converter, Spritesheet & 2D Tile Map Editor"
     />
     <meta
       name="twitter:description"
-      content="Batch convert images to pixel art and export spritesheets with PNG and JSON output."
+      content="Convert images to pixel art, export spritesheets, and build 2D tile maps with browser-based tools."
     />
     <link rel="manifest" href="./site.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
     <link rel="stylesheet" href="./styles.css" />
@@ -50,16 +51,28 @@
       {
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
-        "name": "Pixel Tools Studio",
+        "name": "Pixel Tools",
+        "creator": {
+          "@type": "Person",
+          "name": "DK"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Pixel Tools"
+        },
         "applicationCategory": "MultimediaApplication",
         "operatingSystem": "Web",
-        "description": "A web app for batch image to pixel art conversion and spritesheet generation with PNG and JSON export.",
+        "description": "A browser-based pixel game toolkit with image to pixel art conversion, spritesheet generation, and a 2D tile map editor.",
         "featureList": [
           "Batch image to pixel art conversion",
           "32x32, 16x16, and 64x64 export",
           "Spritesheet PNG export",
           "Spritesheet JSON metadata export",
-          "Transparent or solid background output"
+          "Transparent or solid background output",
+          "2D tile map editor",
+          "Tilesheet slicing and tile palette import",
+          "Tile map JSON save and load",
+          "Tile map PNG export"
         ]
       }
     </script>
@@ -70,10 +83,10 @@
         "mainEntity": [
           {
             "@type": "Question",
-            "name": "What does Pixel Tools Studio do?",
+            "name": "What does Pixel Tools do?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Pixel Tools Studio converts regular images into pixel art, supports batch downloads, and builds spritesheets with matching PNG and JSON output."
+              "text": "Pixel Tools converts images into pixel art, builds spritesheets with JSON export, and includes a browser-based 2D tile map editor for creating game maps."
             }
           },
           {
@@ -91,6 +104,14 @@
               "@type": "Answer",
               "text": "Yes. The spritesheet tool can export both a PNG spritesheet and a JSON file with frame positions, rows, columns, sizes, and layout settings."
             }
+          },
+          {
+            "@type": "Question",
+            "name": "Does Pixel Tools include a 2D tile map editor?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. The 2D tile map editor lets you import tile images, slice a tilesheet, paint a map on a grid canvas, save and load JSON, and export a PNG preview."
+            }
           }
         ]
       }
@@ -98,13 +119,44 @@
   </head>
   <body>
     <main class="app-shell">
-      <header class="hero">
-        <p class="eyebrow">Pixel Workflow</p>
-        <h1>Convert images to pixel art and build spritesheets in one place</h1>
-        <p class="hero-copy">
-          Turn regular images into 32x32 pixel art, or combine multiple frames
-          into a spritesheet for games, animation, and asset pipelines.
-        </p>
+      <header class="hero hero-grid">
+        <div class="hero-copy-panel">
+          <p class="eyebrow">Pixel Tools</p>
+          <h1>Build pixel assets, spritesheets, and playable-looking tile maps</h1>
+          <p class="hero-copy">
+            A browser-based workflow for pixel game makers: convert images,
+            generate spritesheets, and jump into the 2D tile map editor to lay
+            out levels with imported tiles.
+          </p>
+          <div class="hero-chip-row" aria-label="Key features">
+            <span class="hero-chip">Pixel Convert</span>
+            <span class="hero-chip">Spritesheet JSON</span>
+            <span class="hero-chip">2D Map Editor</span>
+          </div>
+          <div class="action-row hero-actions">
+            <a class="cta-link cta-link-primary" href="./map-editor.html">
+              Launch 2D map editor
+            </a>
+            <a class="cta-link" href="#pixelTab">Open pixel tools</a>
+          </div>
+        </div>
+
+        <aside class="hero-spotlight panel" aria-label="Map editor spotlight">
+          <p class="hero-spotlight-label">Featured Mode</p>
+          <h2>2D Tile Map Editor</h2>
+          <p>
+            Import tile images, slice a tilesheet, paint maps on a grid, and
+            export JSON or PNG for your pixel game pipeline.
+          </p>
+          <ul class="hero-list">
+            <li>Tile palette with click-to-paint workflow</li>
+            <li>Tilesheet slicing with width, height, spacing, and margin</li>
+            <li>JSON save/load plus PNG export</li>
+          </ul>
+          <a class="cta-link cta-link-primary hero-spotlight-link" href="./map-editor.html">
+            Enter editor
+          </a>
+        </aside>
       </header>
 
       <nav class="tab-bar panel" aria-label="Tool navigation">
@@ -132,14 +184,14 @@
         <div class="section-heading">
           <div>
             <p class="eyebrow">Overview</p>
-            <h2>Online pixel art converter and spritesheet maker</h2>
+            <h2>Online pixel art converter, spritesheet maker, and map editor</h2>
           </div>
         </div>
         <p class="seo-copy">
-          Pixel Tools Studio helps artists, indie game developers, and content
+          Pixel Tools helps artists, indie game developers, and content
           teams convert regular images into crisp pixel art, batch export PNG
-          files, and generate spritesheets with JSON metadata for engines and
-          animation workflows.
+          files, generate spritesheets with JSON metadata, and build 2D tile
+          maps directly in the browser.
         </p>
       </section>
 
@@ -164,6 +216,10 @@
               <span class="dropzone-badge">Batch Upload</span>
               <h2>Drop images here</h2>
               <p>or click to select multiple files at once</p>
+              <p class="dropzone-hint">
+                You can also paste an image from the clipboard with
+                <strong>Ctrl/Cmd + V</strong>
+              </p>
             </div>
           </div>
 
@@ -412,32 +468,50 @@
         <div class="section-heading">
           <div>
             <p class="eyebrow">Use Cases</p>
-            <h2>Who this image to pixel art tool is for</h2>
+            <h2>Who this pixel game toolset is for</h2>
           </div>
         </div>
         <div class="seo-grid">
           <article>
-            <h3>Game asset pipelines</h3>
+            <h3>Pixel game production</h3>
             <p>
               Convert icons, portraits, props, and frame-by-frame animation into
-              pixel-ready assets, then export a spritesheet with matching JSON.
+              pixel-ready assets, then move into the map editor to block out
+              levels with matching tiles.
             </p>
           </article>
           <article>
-            <h3>Batch content production</h3>
+            <h3>Fast tilemap prototyping</h3>
             <p>
-              Process multiple images at once, keep output sizing consistent,
-              and download PNG files in one workflow for fast asset iteration.
+              Slice tilesheets, test tile scale, and paint simple 2D maps
+              without switching to a heavy desktop editor.
             </p>
           </article>
           <article>
-            <h3>Rapid prototyping</h3>
+            <h3>Asset iteration</h3>
             <p>
               Test different fit modes, cell sizes, padding values, and
-              background settings directly in the browser without extra tools.
+              background settings directly in the browser before exporting game
+              assets and map previews.
             </p>
           </article>
         </div>
+      </section>
+
+      <section class="panel seo-content featured-editor-section">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Featured Tool</p>
+            <h2>Start with the 2D tile map editor</h2>
+          </div>
+          <a class="cta-link cta-link-primary" href="./map-editor.html">Launch editor</a>
+        </div>
+        <p class="seo-copy">
+          Build a 2D map from imported tile images or a sliced tilesheet, paint
+          directly on a grid canvas, and save or reload your work as JSON with
+          PNG export for previews. This layout is designed to make the editor
+          the main jump-off point for level design.
+        </p>
       </section>
 
       <section class="panel faq-section" aria-labelledby="faq-heading">
@@ -448,6 +522,14 @@
           </div>
         </div>
         <div class="faq-list">
+          <details>
+            <summary>What can the 2D tile map editor do?</summary>
+            <p>
+              The editor can import tile images, slice a tilesheet into
+              multiple tiles, let you paint or erase on a grid canvas, and
+              export your work as JSON or PNG.
+            </p>
+          </details>
           <details>
             <summary>What does fit mode mean?</summary>
             <p>
@@ -479,8 +561,14 @@
     </main>
     <footer class="site-footer">
       <p>
-        Pixel Tools Studio is a browser-based pixel art converter and
-        spritesheet generator for PNG and JSON export.
+        <span class="footer-brand">Pixel Tools</span>
+        is a browser-based pixel game toolkit with pixel art conversion,
+        spritesheet export, and a 2D tile map editor.
+      </p>
+      <p class="footer-contact">
+        Created by DK. Contact: <a href="https://www.facebook.com/hoandk20h" target="_blank" rel="noreferrer">Facebook</a>
+        <span aria-hidden="true">•</span>
+        <a href="mailto:dkhoankieu@gmail.com">dkhoankieu@gmail.com</a>
       </p>
     </footer>
 

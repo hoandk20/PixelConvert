@@ -1,6 +1,6 @@
 {
-  "name": "Pixel Tools Studio",
-  "short_name": "PixelTools",
+  "name": "Pixel Tools",
+  "short_name": "Pixel Tools",
   "description": "Batch image to pixel art converter and spritesheet generator with PNG and JSON export.",
   "start_url": "/",
   "display": "standalone",

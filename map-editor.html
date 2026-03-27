@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pixel Tools | 2D Tile Map Editor</title>
+    <meta
+      name="description"
+      content="Create browser-based 2D tilemaps with spritesheet import, brush and erase tools, zoom and pan, grid toggle, JSON import/export, and CSV export."
+    />
+    <meta
+      name="keywords"
+      content="2d tile map editor, tilemap maker, spritesheet import, tile palette, browser map editor, pixel tools"
+    />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="author" content="DK" />
+    <meta name="application-name" content="Pixel Tools" />
+    <meta name="theme-color" content="#241748" />
+    <link rel="canonical" href="./map-editor.html" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Pixel Tools | 2D Tile Map Editor" />
+    <meta
+      property="og:description"
+      content="Create browser-based 2D tilemaps with spritesheet import, brush and erase tools, zoom and pan, grid toggle, JSON import/export, and CSV export."
+    />
+    <meta property="og:site_name" content="Pixel Tools" />
+    <meta property="og:locale" content="en_US" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Pixel Tools | 2D Tile Map Editor" />
+    <meta
+      name="twitter:description"
+      content="Create browser-based 2D tilemaps with spritesheet import, brush and erase tools, zoom and pan, grid toggle, JSON import/export, and CSV export."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell map-editor-page">
+      <header class="hero hero-compact">
+        <a class="text-link" href="./index.html">Back to main tools</a>
+        <p class="eyebrow">Tile Map Editor</p>
+        <div class="action-row hero-editor-actions">
+          <button
+            id="openProjectsPopupBtn"
+            class="ghost"
+            type="button"
+            aria-haspopup="dialog"
+            aria-controls="projectsPopup"
+            aria-expanded="false"
+          >
+            Projects
+          </button>
+          <button
+            id="openShortcutsPopupBtn"
+            class="ghost"
+            type="button"
+            aria-haspopup="dialog"
+            aria-controls="shortcutsPopup"
+            aria-expanded="false"
+          >
+            Shortcuts
+          </button>
+          <button
+            id="openImportPopupBtn"
+            class="ghost"
+            type="button"
+            aria-haspopup="dialog"
+            aria-controls="importPopup"
+            aria-expanded="false"
+          >
+            Import
+          </button>
+          <button
+            id="openExportPopupBtn"
+            class="secondary"
+            type="button"
+            aria-haspopup="dialog"
+            aria-controls="exportPopup"
+            aria-expanded="false"
+          >
+            Export
+          </button>
+          <button id="deleteLocalProjectBtn" class="ghost" type="button">
+            Delete local
+          </button>
+        </div>
+      </header>
+
+      <section class="panel map-editor-shell">
+        <div class="map-toolbar" role="toolbar" aria-label="Map editor toolbar">
+        </div>
+
+        <div class="map-workspace">
+          <aside class="map-sidebar">
+            <section class="panel controls map-panel">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">Tileset</p>
+                </div>
+              </div>
+
+              <div class="palette-toolbar">
+                <span id="tilesetMetaText" class="palette-meta">
+                  No spritesheet loaded
+                </span>
+                <button id="clearTilesetBtn" class="ghost" type="button">
+                  Clear tileset
+                </button>
+              </div>
+              <p class="palette-meta tileset-hint">
+                Click, Ctrl/Cmd-click, or drag on the tileset to select multiple tiles.
+              </p>
+
+              <div id="paletteEmptyState" class="empty-state">
+                Import a spritesheet to build the selectable tileset.
+              </div>
+              <div id="tilePalette" class="tile-palette" aria-live="polite"></div>
+            </section>
+
+            <section class="panel controls map-panel map-layers-panel">
+              <div class="section-heading">
+                <div class="section-heading-title">
+                  <p class="eyebrow">Layouts</p>
+                  <button
+                    class="layer-help"
+                    type="button"
+                    aria-label="Layout order hint"
+                    data-tooltip="Lower layer draws first. Higher layer draws later."
+                  >
+                    <svg class="layer-help-icon" viewBox="0 0 24 24" aria-hidden="true">
+                      <circle cx="12" cy="7" r="1.7"></circle>
+                      <path d="M10.9 10.5h2.2V19h-2.2z"></path>
+                    </svg>
+                  </button>
+                </div>
+                <button id="addLayerBtn" class="ghost" type="button">
+                  Add layout
+                </button>
+              </div>
+
+              <p class="palette-meta">
+                Drag to reorder. Click a layout to edit it.
+              </p>
+              <div id="layerList" class="layer-list" aria-live="polite"></div>
+            </section>
+          </aside>
+
+          <section class="map-main-column">
+            <section class="panel results map-panel">
+              <div class="section-heading">
+                <div>
+                  <p class="eyebrow">Canvas</p>
+                </div>
+                <div class="map-inline-meta">
+                  <span id="selectedTileText">Selected tile: none</span>
+                  <span id="hoverTileText">Hover: -, -</span>
+                </div>
+              </div>
+
+              <div class="map-canvas-layout">
+                <div id="mapViewport" class="map-viewport">
+                  <canvas
+                    id="mapCanvas"
+                    class="map-canvas"
+                    width="1024"
+                    height="640"
+                  ></canvas>
+                </div>
+                <aside class="map-side-menu" aria-label="Editor side menus">
+                  <section class="tool-fab-menu panel" aria-label="Tool menu">
+                    <p class="eyebrow">Tools</p>
+                    <div class="tool-fab-actions">
+                      <button id="brushToolBtn" class="primary" type="button">Brush</button>
+                      <button id="rectangleToolBtn" class="ghost" type="button">Rectangle</button>
+                      <button id="eraseToolBtn" class="ghost" type="button">Erase</button>
+                    </div>
+                  </section>
+                  <section class="tool-fab-menu panel control-fab-menu" aria-label="Control menu">
+                    <p class="eyebrow">Controls</p>
+                    <div class="tool-fab-actions">
+                      <button id="zoomOutBtn" class="ghost" type="button">Zoom -</button>
+                      <button id="zoomInBtn" class="ghost" type="button">Zoom +</button>
+                      <button id="resetViewBtn" class="ghost" type="button">Reset View</button>
+                      <button id="toggleGridBtn" class="ghost" type="button">Grid On</button>
+                    </div>
+                  </section>
+                </aside>
+              </div>
+              <p class="map-instruction">
+                Drag to paint. Right click the map to pick a tile. Hold space and
+                drag to pan. Shortcuts: <strong>B</strong> brush,
+                <strong>R</strong> rectangle, <strong>E</strong> erase,
+                <strong>G</strong> grid.
+              </p>
+            </section>
+            <section class="panel controls map-panel map-setup-panel" aria-label="Grid and export settings">
+              <div class="map-bottom-dock-scroll">
+                <div class="map-bottom-dock-title">
+                  <p class="eyebrow">Map Setup</p>
+                </div>
+
+                <div class="map-bottom-dock-fields">
+                  <label class="field map-dock-field map-dock-field-sm">
+                    <span>Columns</span>
+                    <input id="mapColumnsInput" type="number" min="1" value="32" />
+                  </label>
+                  <label class="field map-dock-field map-dock-field-sm">
+                    <span>Rows</span>
+                    <input id="mapRowsInput" type="number" min="1" value="20" />
+                  </label>
+                  <label class="field map-dock-field map-dock-field-color">
+                    <span>Background</span>
+                    <input id="mapBackgroundColorInput" type="color" value="#141220" />
+                  </label>
+                  <label class="field map-dock-field map-dock-field-color">
+                    <span>Grid color</span>
+                    <input id="gridColorInput" type="color" value="#7f7895" />
+                  </label>
+                </div>
+
+                <div class="action-row map-bottom-dock-actions">
+                  <button id="applyMapSizeBtn" class="primary" type="button">
+                    Apply map size
+                  </button>
+                  <button id="resetSetupBtn" class="ghost" type="button">
+                    Reset setup
+                  </button>
+                  <button id="clearMapBtn" class="ghost" type="button">Clear map</button>
+                  <button id="saveLocalBtn" class="ghost" type="button">
+                    Save local
+                  </button>
+                </div>
+
+                <div class="sr-only" aria-hidden="true">
+                  <span id="mapMetaText">32 x 20 tiles</span>
+                  <span id="mapStatusText">
+                    Load a spritesheet, select a tile, and start painting.
+                  </span>
+                </div>
+              </div>
+            </section>
+          </section>
+        </div>
+      </section>
+
+      <div
+        id="projectsPopup"
+        class="export-popup"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="projectsPopupTitle"
+        hidden
+      >
+        <div id="projectsPopupBackdrop" class="export-popup-backdrop"></div>
+        <div class="export-popup-card panel">
+          <div class="section-heading export-popup-heading">
+            <div>
+              <p class="eyebrow">Projects</p>
+              <h2 id="projectsPopupTitle">Choose a project</h2>
+            </div>
+            <button id="closeProjectsPopupBtn" class="ghost" type="button">
+              Close
+            </button>
+          </div>
+
+          <div class="export-popup-grid">
+            <article class="export-option">
+              <h3>Create Project</h3>
+              <p>Start a new tilemap project and save it in this browser.</p>
+              <label class="field map-project-field">
+                <span>Project name</span>
+                <input
+                  id="projectNameInput"
+                  type="text"
+                  value="Untitled project"
+                  placeholder="Project name"
+                />
+              </label>
+              <button id="createProjectBtn" class="secondary" type="button">
+                Create project
+              </button>
+            </article>
+
+            <article class="export-option">
+              <h3>Open Saved Project</h3>
+              <p>Select one of the projects already stored in this browser.</p>
+              <label class="field map-project-field">
+                <span>Saved projects</span>
+                <select id="projectSelect" aria-label="Saved projects"></select>
+              </label>
+              <button id="loadProjectBtn" class="ghost" type="button">
+                Open project
+              </button>
+            </article>
+          </div>
+        </div>
+      </div>
+
+      <div
+        id="shortcutsPopup"
+        class="export-popup"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="shortcutsPopupTitle"
+        hidden
+      >
+        <div id="shortcutsPopupBackdrop" class="export-popup-backdrop"></div>
+        <div class="export-popup-card panel">
+          <div class="section-heading export-popup-heading">
+            <div>
+              <p class="eyebrow">Help</p>
+              <h2 id="shortcutsPopupTitle">Keyboard shortcuts</h2>
+            </div>
+            <button id="closeShortcutsPopupBtn" class="ghost" type="button">
+              Close
+            </button>
+          </div>
+
+          <div class="export-popup-grid">
+            <article class="export-option">
+              <h3>Tools</h3>
+              <p><strong>B</strong> switch to Brush</p>
+              <p><strong>R</strong> switch to Rectangle</p>
+              <p><strong>E</strong> switch to Erase</p>
+              <p><strong>G</strong> toggle Grid</p>
+              <p><strong>Ctrl/Cmd + Z</strong> undo</p>
+              <p><strong>Ctrl/Cmd + Shift + Z</strong> redo</p>
+              <p><strong>Ctrl + Y</strong> redo on Windows</p>
+            </article>
+
+            <article class="export-option">
+              <h3>Zoom</h3>
+              <p><strong>Q</strong> zoom out on the map</p>
+              <p><strong>W</strong> zoom in on the map</p>
+              <p><strong>0</strong> reset the view</p>
+            </article>
+
+            <article class="export-option">
+              <h3>Navigation</h3>
+              <p><strong>Arrow Left</strong> move camera left</p>
+              <p><strong>Arrow Right</strong> move camera right</p>
+              <p><strong>Arrow Up</strong> move camera up</p>
+              <p><strong>Arrow Down</strong> move camera down</p>
+              <p><strong>Space + Drag</strong> pan with the mouse</p>
+            </article>
+          </div>
+        </div>
+      </div>
+
+      <div
+        id="importPopup"
+        class="export-popup"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="importPopupTitle"
+        hidden
+      >
+        <div id="importPopupBackdrop" class="export-popup-backdrop"></div>
+        <div class="export-popup-card panel">
+          <div class="section-heading export-popup-heading">
+            <div>
+              <p class="eyebrow">Import</p>
+              <h2 id="importPopupTitle">Load tiles or project data</h2>
+            </div>
+            <button id="closeImportPopupBtn" class="ghost" type="button">
+              Close
+            </button>
+          </div>
+
+          <div class="export-popup-grid">
+            <article class="export-option">
+              <h3>Import Spritesheet</h3>
+              <p>
+                Load a PNG spritesheet and rebuild the tileset palette for this
+                map.
+              </p>
+              <label class="field">
+                <span>Spritesheet PNG</span>
+                <input id="tilesheetInput" type="file" accept="image/png,image/*" />
+              </label>
+              <label class="field">
+                <span>Tileset name</span>
+                <input id="tilesetNameInput" type="text" value="tileset" />
+              </label>
+              <label class="field">
+                <span>Spacing</span>
+                <input id="tileSpacingInput" type="number" min="0" value="0" />
+              </label>
+              <label class="field">
+                <span>Margin</span>
+                <input id="tileMarginInput" type="number" min="0" value="0" />
+              </label>
+              <div class="action-row popup-action-row">
+                <button id="sliceTilesheetBtn" class="primary" type="button">
+                  Load tileset
+                </button>
+              </div>
+            </article>
+
+            <article class="export-option">
+              <h3>Import Project JSON</h3>
+              <p>
+                Import a previously saved editor project and redraw the tilemap.
+              </p>
+              <button id="importJsonBtn" class="secondary" type="button">
+                Import Project JSON
+              </button>
+              <input
+                id="importJsonInput"
+                type="file"
+                accept="application/json"
+                hidden
+              />
+            </article>
+          </div>
+        </div>
+      </div>
+
+      <div
+        id="exportPopup"
+        class="export-popup"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="exportPopupTitle"
+        hidden
+      >
+        <div id="exportPopupBackdrop" class="export-popup-backdrop"></div>
+        <div class="export-popup-card panel">
+          <div class="section-heading export-popup-heading">
+            <div>
+              <p class="eyebrow">Export</p>
+              <h2 id="exportPopupTitle">Download your tilemap</h2>
+            </div>
+            <button id="closeExportPopupBtn" class="ghost" type="button">
+              Close
+            </button>
+          </div>
+
+          <div class="export-popup-grid">
+            <article class="export-option">
+              <h3>Save Project JSON</h3>
+              <p>
+                Keeps editor data so you can import the project back into this
+                tool later.
+              </p>
+              <button id="exportEditorJsonBtn" class="secondary" type="button">
+                Save Project JSON
+              </button>
+            </article>
+
+            <article class="export-option">
+              <h3>Export Engine Bundle</h3>
+              <p>
+                Outputs a game-ready tilemap JSON bundled with the spritesheet
+                PNG.
+              </p>
+              <label class="field">
+                <span>Engine format</span>
+                <select id="engineFormatSelect">
+                  <option value="phaser" selected>Phaser JSON</option>
+                  <option value="unity">Unity-style JSON</option>
+                </select>
+              </label>
+              <button id="exportGameJsonBtn" class="secondary" type="button">
+                Export Engine ZIP
+              </button>
+            </article>
+
+            <article class="export-option">
+              <h3>Export CSV Bundle</h3>
+              <p>
+                Downloads the active layer CSV bundled with the spritesheet
+                PNG.
+              </p>
+              <button id="exportCsvBtn" class="secondary" type="button">
+                Export CSV ZIP
+              </button>
+            </article>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script src="https://stuk.github.io/jszip/dist/jszip.min.js"></script>
+    <script src="./map-editor.js"></script>
+  </body>
+</html>
