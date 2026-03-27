@@ -669,10 +669,23 @@ function upsertStoredProject(projectData) {
 
 function applyProjectData(
   raw,
-  { persist = false, statusMessage = "", closeImport = false, resetHistory = true } = {},
+  {
+    persist = false,
+    statusMessage = "",
+    closeImport = false,
+    resetHistory = true,
+    preserveView = false,
+  } = {},
 ) {
   const projectId = raw.project?.id || createProjectId();
   const projectName = getProjectName(raw.project?.name);
+  const viewSnapshot = preserveView
+    ? {
+        zoom: editorState.camera.zoom,
+        offsetX: editorState.camera.offsetX,
+        offsetY: editorState.camera.offsetY,
+      }
+    : null;
 
   if (resetHistory) {
     editorState.history.undoStack = [];
@@ -713,9 +726,15 @@ function applyProjectData(
 
   editorState.showGrid = raw.showGrid ?? true;
   editorState.hoveredCell = null;
-  editorState.camera.zoom = 1;
-  editorState.camera.offsetX = 24;
-  editorState.camera.offsetY = 24;
+  if (viewSnapshot) {
+    editorState.camera.zoom = viewSnapshot.zoom;
+    editorState.camera.offsetX = viewSnapshot.offsetX;
+    editorState.camera.offsetY = viewSnapshot.offsetY;
+  } else {
+    editorState.camera.zoom = 1;
+    editorState.camera.offsetX = 24;
+    editorState.camera.offsetY = 24;
+  }
 
   if (raw.tileset.imageSrc) {
     return createImage(raw.tileset.imageSrc).then((image) => {
@@ -1329,6 +1348,7 @@ async function undoLastAction() {
   await applyProjectData(snapshot, {
     persist: false,
     resetHistory: false,
+    preserveView: true,
     statusMessage: "Undo applied.",
   });
   persistProject();
@@ -1349,6 +1369,7 @@ async function redoLastAction() {
   await applyProjectData(snapshot, {
     persist: false,
     resetHistory: false,
+    preserveView: true,
     statusMessage: "Redo applied.",
   });
   persistProject();
@@ -1522,6 +1543,81 @@ async function downloadZipBundle({
   const blob = await zip.generateAsync({ type: "blob" });
   triggerDownload(blob, zipFilename);
   return true;
+}
+
+function flattenLayerDataForTiled(layerData) {
+  const flattened = [];
+
+  for (const row of layerData) {
+    for (const tileIndex of row) {
+      flattened.push(tileIndex < 0 ? 0 : tileIndex + 1);
+    }
+  }
+
+  return flattened;
+}
+
+function buildTiledMapExport() {
+  const tilesetImage = editorState.tileset.image;
+  const tileWidth = editorState.map.tileWidth;
+  const tileHeight = editorState.map.tileHeight;
+  const tilesetWidth =
+    tilesetImage?.width || editorState.tileset.columns * tileWidth || tileWidth;
+  const tilesetHeight =
+    tilesetImage?.height ||
+    editorState.tileset.rows * tileHeight ||
+    tileHeight;
+  const layerIds = editorState.map.layers.map((_, index) => index + 1);
+
+  return {
+    compressionlevel: -1,
+    height: editorState.map.rows,
+    infinite: false,
+    layers: editorState.map.layers.map((layer, index) => ({
+      id: layerIds[index],
+      name: layer.name,
+      opacity: 1.0,
+      type: "tilelayer",
+      visible: !layer.hidden,
+      x: 0,
+      y: 0,
+      width: editorState.map.columns,
+      height: editorState.map.rows,
+      data: flattenLayerDataForTiled(layer.data),
+      properties: [
+        {
+          name: "collider",
+          type: "bool",
+          value: false,
+        },
+      ],
+    })),
+    nextlayerid: editorState.map.layers.length + 1,
+    nextobjectid: 1,
+    orientation: "orthogonal",
+    renderorder: "right-down",
+    tiledversion: "1.11.0",
+    tileheight: tileHeight,
+    tilesets: [
+      {
+        firstgid: 1,
+        name: editorState.tileset.name || "tileset",
+        tilewidth: tileWidth,
+        tileheight: tileHeight,
+        margin: editorState.tileset.margin,
+        spacing: editorState.tileset.spacing,
+        columns: editorState.tileset.columns,
+        tilecount: editorState.tileset.count,
+        image: editorState.tileset.reference || "tileset.png",
+        imagewidth: tilesetWidth,
+        imageheight: tilesetHeight,
+      },
+    ],
+    tilewidth: tileWidth,
+    type: "map",
+    version: 1.1,
+    width: editorState.map.columns,
+  };
 }
 
 function readFileAsDataUrl(file) {
@@ -2542,11 +2638,7 @@ function buildGameExport(format) {
   };
 
   if (format === "phaser") {
-    return {
-      ...common,
-      orientation: "orthogonal",
-      renderOrder: "right-down",
-    };
+    return buildTiledMapExport();
   }
 
   return {
@@ -2577,7 +2669,9 @@ async function exportGameJson() {
     downloadCurrentTilesetPng(imageFilename);
   }
 
-  updateStatus(`${format === "phaser" ? "Phaser" : "Unity"} ZIP exported.`);
+  updateStatus(
+    `${format === "phaser" ? "Phaser/Tiled" : "Unity"} ZIP exported.`,
+  );
   closeExportPopup();
 }
 
