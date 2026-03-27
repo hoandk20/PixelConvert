@@ -217,6 +217,19 @@ function isPixelTabActive() {
   return elements.tabPanels.pixel?.classList.contains("is-active");
 }
 
+function isSpritesheetTabActive() {
+  return elements.tabPanels.spritesheet?.classList.contains("is-active");
+}
+
+function isEditablePasteTarget(target) {
+  return (
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement ||
+    target?.isContentEditable
+  );
+}
+
 function extractClipboardImageFiles(clipboardData) {
   if (!clipboardData) return [];
 
@@ -834,25 +847,29 @@ function applyAspectRatioPreset() {
 }
 
 document.addEventListener("paste", async (event) => {
-  if (!isPixelTabActive()) return;
-
   const target = event.target;
-  if (
-    target instanceof HTMLInputElement ||
-    target instanceof HTMLTextAreaElement ||
-    target instanceof HTMLSelectElement ||
-    target?.isContentEditable
-  ) {
+  if (isEditablePasteTarget(target)) {
     return;
   }
 
   const files = extractClipboardImageFiles(event.clipboardData);
   if (files.length === 0) return;
 
+  if (isPixelTabActive()) {
+    event.preventDefault();
+    await addPixelFiles(files);
+    updatePixelStatus(
+      `${files.length} image(s) pasted from clipboard. Click convert to create pixel art.`,
+    );
+    return;
+  }
+
+  if (!isSpritesheetTabActive()) return;
+
   event.preventDefault();
-  await addPixelFiles(files);
-  updatePixelStatus(
-    `${files.length} image(s) pasted from clipboard. Click convert to create pixel art.`,
+  await addSheetFiles(files);
+  updateSheetStatus(
+    `${files.length} frame(s) pasted from clipboard. Click build spritesheet to continue.`,
   );
 });
 
