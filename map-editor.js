@@ -72,6 +72,7 @@ const editorState = {
   project: {
     id: "",
     name: DEFAULT_PROJECT_NAME,
+    isOpen: false,
   },
 };
 
@@ -383,6 +384,7 @@ function refreshProjectSelect() {
 function setActiveProjectMeta({ id, name }) {
   editorState.project.id = id;
   editorState.project.name = getProjectName(name);
+  editorState.project.isOpen = true;
   elements.projectNameInput.value = editorState.project.name;
   window.localStorage.setItem(ACTIVE_PROJECT_STORAGE_KEY, editorState.project.id);
   refreshProjectSelect();
@@ -809,6 +811,7 @@ async function createProject(name = DEFAULT_PROJECT_NAME) {
       persist: true,
       statusMessage: `Created project "${projectData.project.name}" with the default tileset.`,
     });
+    editorState.project.isOpen = true;
     closeProjectsPopup();
   } catch (error) {
     const projectData = createDefaultProjectData(name);
@@ -816,6 +819,7 @@ async function createProject(name = DEFAULT_PROJECT_NAME) {
       persist: true,
       statusMessage: error?.message || `Created project "${projectData.project.name}".`,
     });
+    editorState.project.isOpen = true;
     closeProjectsPopup();
   }
 }
@@ -831,6 +835,7 @@ async function loadStoredProject(projectId, statusMessage = "Project loaded.") {
     persist: false,
     statusMessage,
   });
+  editorState.project.isOpen = true;
   window.localStorage.setItem(ACTIVE_PROJECT_STORAGE_KEY, projectId);
   closeProjectsPopup();
 }
@@ -869,6 +874,7 @@ async function deleteCurrentProjectFromLocal() {
     persist: false,
     statusMessage: `Deleted "${currentProject.name}" from this browser.`,
   });
+  editorState.project.isOpen = false;
   syncProjectControls();
   openProjectsPopup();
 }
@@ -1370,6 +1376,7 @@ function closeImportPopup() {
 
 function openProjectsPopup() {
   syncProjectControls();
+  elements.closeProjectsPopupBtn.hidden = !editorState.project.isOpen;
   elements.projectsPopup.hidden = false;
   elements.openProjectsPopupBtn.setAttribute("aria-expanded", "true");
 }
@@ -2613,6 +2620,7 @@ async function importProject(file) {
       closeImport: true,
     },
   );
+  editorState.project.isOpen = true;
 }
 
 function persistProject() {
@@ -2647,12 +2655,14 @@ async function restoreStartupProject() {
           ? "Choose a saved project or create a new one."
           : "Create your first project to begin.",
     });
+    editorState.project.isOpen = projects.length > 0;
     openProjectsPopup();
   } catch {
     await applyProjectData(createDefaultProjectData(DEFAULT_PROJECT_NAME), {
       persist: false,
       statusMessage: "Choose a saved project or create a new one.",
     });
+    editorState.project.isOpen = false;
     openProjectsPopup();
   }
 }
