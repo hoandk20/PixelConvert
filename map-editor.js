@@ -1639,6 +1639,64 @@ function buildTiledMapExport() {
   };
 }
 
+function buildPhaserMapExport() {
+  return {
+    type: "tilemap",
+    engine: "phaser",
+    width: editorState.map.columns,
+    height: editorState.map.rows,
+    tileWidth: editorState.map.tileWidth,
+    tileHeight: editorState.map.tileHeight,
+    tileset: {
+      name: editorState.tileset.name,
+      reference: getExportTilesetReference(),
+      columns: editorState.tileset.columns,
+      tileWidth: editorState.tileset.tileWidth,
+      tileHeight: editorState.tileset.tileHeight,
+      count: editorState.tileset.count,
+    },
+    layers: editorState.map.layers.map((layer, index) => ({
+      id: layer.id,
+      name: layer.name,
+      hidden: Boolean(layer.hidden),
+      index,
+      width: editorState.map.columns,
+      height: editorState.map.rows,
+      data: layer.data.flat(),
+    })),
+    note: "Tile indices are zero-based. Empty cells use -1.",
+  };
+}
+
+function buildUnityMapExport() {
+  return {
+    type: "tilemap",
+    engine: "unity",
+    width: editorState.map.columns,
+    height: editorState.map.rows,
+    tileWidth: editorState.map.tileWidth,
+    tileHeight: editorState.map.tileHeight,
+    tileset: {
+      name: editorState.tileset.name,
+      reference: getExportTilesetReference(),
+      columns: editorState.tileset.columns,
+      tileWidth: editorState.tileset.tileWidth,
+      tileHeight: editorState.tileset.tileHeight,
+      count: editorState.tileset.count,
+    },
+    layers: editorState.map.layers.map((layer, index) => ({
+      id: layer.id,
+      name: layer.name,
+      hidden: Boolean(layer.hidden),
+      index,
+      width: editorState.map.columns,
+      height: editorState.map.rows,
+      data: layer.data.flat(),
+    })),
+    note: "Tile indices are zero-based. Empty cells use -1.",
+  };
+}
+
 function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -2630,41 +2688,19 @@ function exportEditorJson() {
 }
 
 function buildGameExport(format) {
-  const common = {
-    type: "tilemap",
-    format,
-    width: editorState.map.columns,
-    height: editorState.map.rows,
-    tileWidth: editorState.map.tileWidth,
-    tileHeight: editorState.map.tileHeight,
-    tileset: {
-      name: editorState.tileset.name,
-      reference: getExportTilesetReference(),
-      columns: editorState.tileset.columns,
-      tileWidth: editorState.tileset.tileWidth,
-      tileHeight: editorState.tileset.tileHeight,
-      count: editorState.tileset.count,
-    },
-    layers: editorState.map.layers.map((layer, index) => ({
-      id: layer.id,
-      name: layer.name,
-      hidden: Boolean(layer.hidden),
-      index,
-      width: editorState.map.columns,
-      height: editorState.map.rows,
-      data: layer.data.flat(),
-    })),
-  };
-
   if (format === "phaser") {
     return buildTiledMapExport();
   }
 
-  return {
-    ...common,
-    engine: "unity",
-    note: "Indices are zero-based. Empty cells use -1.",
-  };
+  if (format === "tiled") {
+    return buildTiledMapExport();
+  }
+
+  if (format === "unity") {
+    return buildUnityMapExport();
+  }
+
+  return buildTiledMapExport();
 }
 
 async function exportGameJson() {
@@ -2688,8 +2724,14 @@ async function exportGameJson() {
     downloadCurrentTilesetPng(imageFilename);
   }
 
+  const formatLabel =
+    format === "phaser"
+      ? "Phaser standard"
+      : format === "tiled"
+        ? "Tiled JSON"
+        : "Unity";
   updateStatus(
-    `${format === "phaser" ? "Phaser/Tiled" : "Unity"} ZIP exported.`,
+    `${formatLabel} ZIP exported.`,
   );
   closeExportPopup();
 }

@@ -75,6 +75,33 @@ function getSpritesheetJsonFilename(format) {
   return "spritesheet.json";
 }
 
+function splitFileName(name) {
+  const lastDot = name.lastIndexOf(".");
+
+  if (lastDot <= 0) {
+    return { base: name, extension: "" };
+  }
+
+  return {
+    base: name.slice(0, lastDot),
+    extension: name.slice(lastDot),
+  };
+}
+
+function getUniqueFrameExportName(name, usedNames) {
+  const { base, extension } = splitFileName(name);
+  let candidate = name;
+  let suffix = 2;
+
+  while (usedNames.has(candidate)) {
+    candidate = `${base}_${suffix}${extension}`;
+    suffix += 1;
+  }
+
+  usedNames.add(candidate);
+  return candidate;
+}
+
 function revokeIfExists(url) {
   if (url) {
     URL.revokeObjectURL(url);
@@ -285,10 +312,13 @@ function buildCustomSpritesheetMetadata({
     frames: frameData.map((frame) => ({
       index: frame.index,
       name: frame.name,
+      exportName: frame.exportName,
       file: frame.file,
       baseName: frame.baseName,
       frame: frame.frame,
       sourceSize: frame.sourceSize,
+      originalSourceSize: frame.sourceSize,
+      renderSize: frame.renderSize,
       grid: frame.grid,
     })),
   };
@@ -302,7 +332,7 @@ function buildPhaserArrayMetadata({
 }) {
   return {
     frames: frameData.map((frame) => ({
-      filename: frame.name,
+      filename: frame.exportName,
       frame: {
         x: frame.frame.x,
         y: frame.frame.y,
@@ -347,7 +377,7 @@ function buildPhaserHashMetadata({
   const frames = {};
 
   frameData.forEach((frame) => {
-    frames[frame.name] = {
+    frames[frame.exportName] = {
       frame: {
         x: frame.frame.x,
         y: frame.frame.y,
@@ -602,6 +632,7 @@ function buildSpritesheet() {
   const backgroundColor = elements.sheet.backgroundColor.value;
   const rows = Math.ceil(state.sheetItems.length / columns);
   const frameData = [];
+  const usedFrameNames = new Set();
 
   const framesPerRow = [];
   for (let start = 0; start < state.sheetItems.length; start += columns) {
@@ -667,6 +698,7 @@ function buildSpritesheet() {
       frameData.push({
         index,
         name: item.file.name,
+        exportName: getUniqueFrameExportName(item.file.name, usedFrameNames),
         file: item.file.name,
         baseName: sanitizeFileBase(item.file.name),
         frame: {
@@ -678,6 +710,10 @@ function buildSpritesheet() {
         sourceSize: {
           w: item.image.width,
           h: item.image.height,
+        },
+        renderSize: {
+          w: frameWidth,
+          h: frameHeight,
         },
         grid: {
           row,

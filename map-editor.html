@@ -458,14 +458,15 @@
             <article class="export-option">
               <h3>Export Engine Bundle</h3>
               <p>
-                Outputs a Tiled-compatible tilemap JSON bundled with the
-                spritesheet PNG.
+                Exports a tilemap JSON and bundles it with the spritesheet
+                PNG.
               </p>
               <label class="field">
                 <span>Engine format</span>
                 <select id="engineFormatSelect">
-                  <option value="phaser" selected>Phaser / Tiled JSON</option>
-                  <option value="unity">Unity-style JSON</option>
+                  <option value="phaser" selected>Phaser standard</option>
+                  <option value="tiled">Tiled JSON</option>
+                  <option value="unity">Unity JSON</option>
                 </select>
               </label>
               <button id="exportGameJsonBtn" class="secondary" type="button">
