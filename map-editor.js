@@ -29,7 +29,7 @@ const editorState = {
   selectedTileIndices: [],
   selectedTilePaintCursor: 0,
   camera: {
-    zoom: 1,
+    zoom: 1.25,
     offsetX: 24,
     offsetY: 24,
   },
@@ -91,6 +91,8 @@ const elements = {
   zoomInBtn: document.querySelector("#zoomInBtn"),
   resetViewBtn: document.querySelector("#resetViewBtn"),
   toggleGridBtn: document.querySelector("#toggleGridBtn"),
+  fullscreenBtn: document.querySelector("#fullscreenBtn"),
+  appShell: document.querySelector(".map-editor-page"),
   openProjectsPopupBtn: document.querySelector("#openProjectsPopupBtn"),
   closeProjectsPopupBtn: document.querySelector("#closeProjectsPopupBtn"),
   projectsPopup: document.querySelector("#projectsPopup"),
@@ -274,6 +276,8 @@ const UI_TRANSLATIONS = {
     resetView: "Reset View",
     gridOn: "Grid On",
     gridOff: "Grid Off",
+    fullscreenEnter: "Fullscreen",
+    fullscreenExit: "Exit Fullscreen",
     mapInstruction:
       "Drag to paint. Right click the map to pick a tile. Hold space and drag to pan. Shortcuts: B brush, R rectangle, E erase, G grid.",
     mapSetupSection: "Map Setup",
@@ -385,6 +389,8 @@ const UI_TRANSLATIONS = {
     resetView: "Đặt lại khung nhìn",
     gridOn: "Lưới bật",
     gridOff: "Lưới tắt",
+    fullscreenEnter: "Toàn màn hình",
+    fullscreenExit: "Thoát toàn màn hình",
     mapInstruction:
       "Kéo để vẽ. Nhấp chuột phải lên bản đồ để lấy tile. Giữ phím cách và kéo để di chuyển. Phím tắt: B cọ vẽ, R hình chữ nhật, E xóa, G lưới.",
     mapSetupSection: "Thiết lập bản đồ",
@@ -516,6 +522,7 @@ function applyLanguage(language = DEFAULT_UI_LANGUAGE) {
   setUiText("#zoomInBtn", copy.zoomIn);
   setUiText("#resetViewBtn", copy.resetView);
   setUiText("#toggleGridBtn", copy.gridOn);
+  setUiText("#fullscreenBtn", copy.fullscreenEnter);
 
   setUiText(".map-instruction", copy.mapInstruction);
   setUiText(".map-setup-panel .eyebrow", copy.mapSetupSection);
@@ -2583,9 +2590,38 @@ function setTool(tool, { silent = false } = {}) {
 function syncToolbarState() {
   const copy = getUiCopy();
   elements.toggleGridBtn.textContent = editorState.showGrid ? copy.gridOn : copy.gridOff;
+  const isFullscreen = document.fullscreenElement === elements.appShell;
+  elements.fullscreenBtn.textContent = isFullscreen ? copy.fullscreenExit : copy.fullscreenEnter;
+  elements.fullscreenBtn.setAttribute("aria-pressed", String(isFullscreen));
   elements.undoBtn.disabled = editorState.history.undoStack.length === 0;
   elements.redoBtn.disabled = editorState.history.redoStack.length === 0;
   updateToolButtons();
+}
+
+async function toggleFullscreenMode() {
+  const target = elements.appShell;
+  if (!target) {
+    return;
+  }
+
+  try {
+    if (document.fullscreenElement === target) {
+      if (document.exitFullscreen) {
+        await document.exitFullscreen();
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      }
+    } else if (target.requestFullscreen) {
+      await target.requestFullscreen();
+    } else if (target.webkitRequestFullscreen) {
+      target.webkitRequestFullscreen();
+    } else {
+      updateStatus("Fullscreen is not supported in this browser.");
+      return;
+    }
+  } catch {
+    updateStatus("Fullscreen could not be changed.");
+  }
 }
 
 function resizeMapPreservingData({ skipHistory = false } = {}) {
@@ -2860,7 +2896,7 @@ function zoomAt(factor, clientX, clientY) {
 }
 
 function resetCamera() {
-  editorState.camera.zoom = 1;
+  editorState.camera.zoom = 1.25;
   editorState.camera.offsetX = 24;
   editorState.camera.offsetY = 24;
   markDirty();
@@ -3906,6 +3942,13 @@ function bindEvents() {
     editorState.showGrid = !editorState.showGrid;
     syncToolbarState();
     persistProject();
+    markDirty();
+  });
+  elements.fullscreenBtn.addEventListener("click", () => {
+    void toggleFullscreenMode();
+  });
+  document.addEventListener("fullscreenchange", () => {
+    syncToolbarState();
     markDirty();
   });
 

@@ -1417,6 +1417,51 @@ button:disabled {
   backdrop-filter: blur(18px);
 }
 
+.map-editor-page:fullscreen {
+  padding: 16px;
+}
+
+.map-editor-page:fullscreen .hero {
+  padding-bottom: 10px;
+}
+
+.map-editor-page:fullscreen .hero .text-link,
+.map-editor-page:fullscreen .hero .eyebrow {
+  display: none;
+}
+
+.map-editor-page:fullscreen .map-editor-shell {
+  min-height: calc(100vh - 120px);
+}
+
+.map-editor-page:fullscreen .map-workspace {
+  min-height: calc(100vh - 230px);
+}
+
+.map-editor-page:fullscreen .map-main-column {
+  min-height: 0;
+}
+
+.map-editor-page:fullscreen .map-panel.results {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.map-editor-page:fullscreen .map-canvas-layout {
+  flex: 1;
+  min-height: 0;
+  align-items: stretch;
+}
+
+.map-editor-page:fullscreen .map-viewport {
+  min-height: calc(100vh - 300px);
+}
+
+.map-editor-page:fullscreen .map-instruction {
+  margin-top: 10px;
+}
+
 .map-bottom-dock-scroll {
   display: grid;
   grid-template-columns: auto minmax(0, 1.15fr) auto;
