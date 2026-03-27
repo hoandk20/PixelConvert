@@ -32,6 +32,10 @@ body {
     auto;
 }
 
+body.no-scroll {
+  overflow: hidden;
+}
+
 button,
 input,
 select {
@@ -1492,6 +1496,91 @@ button:disabled {
 }
 
 .map-editor-page:fullscreen .map-instruction {
+  margin-top: 10px;
+}
+
+.map-editor-page.is-editor-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  width: 100vw;
+  height: 100dvh;
+  margin: 0;
+  padding: 16px;
+  overflow: auto;
+}
+
+.map-editor-page.is-editor-fullscreen .hero {
+  padding-bottom: 10px;
+}
+
+.map-editor-page.is-editor-fullscreen .hero .text-link,
+.map-editor-page.is-editor-fullscreen .hero .eyebrow {
+  display: none;
+}
+
+.map-editor-page.is-editor-fullscreen .hero-editor-actions {
+  display: none;
+}
+
+.map-editor-page.is-editor-fullscreen .map-sidebar .eyebrow,
+.map-editor-page.is-editor-fullscreen .map-main-column .results .eyebrow,
+.map-editor-page.is-editor-fullscreen #selectedTileText,
+.map-editor-page.is-editor-fullscreen #hoverTileText {
+  display: none;
+}
+
+.map-editor-page.is-editor-fullscreen .map-main-column .results .section-heading {
+  margin-bottom: 0;
+}
+
+.map-editor-page.is-editor-fullscreen .map-main-column .results .section-heading > :first-child {
+  display: none;
+}
+
+.map-editor-page.is-editor-fullscreen .tileset-hint,
+.map-editor-page.is-editor-fullscreen .map-layers-panel .palette-meta {
+  display: none;
+}
+
+.map-editor-page.is-editor-fullscreen #tilesetMetaText,
+.map-editor-page.is-editor-fullscreen #clearTilesetBtn,
+.map-editor-page.is-editor-fullscreen #addLayerBtn,
+.map-editor-page.is-editor-fullscreen .map-layers-panel .ghost,
+.map-editor-page.is-editor-fullscreen .layer-item .ghost,
+.map-editor-page.is-editor-fullscreen .layer-item .layer-help {
+  display: none;
+}
+
+.map-editor-page.is-editor-fullscreen .map-editor-shell {
+  min-height: calc(100dvh - 120px);
+}
+
+.map-editor-page.is-editor-fullscreen .map-workspace {
+  min-height: calc(100dvh - 230px);
+}
+
+.map-editor-page.is-editor-fullscreen .map-main-column {
+  min-height: 0;
+}
+
+.map-editor-page.is-editor-fullscreen .map-panel.results {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.map-editor-page.is-editor-fullscreen .map-canvas-layout {
+  flex: 1;
+  min-height: 0;
+  align-items: stretch;
+}
+
+.map-editor-page.is-editor-fullscreen .map-viewport {
+  min-height: calc(100dvh - 300px);
+}
+
+.map-editor-page.is-editor-fullscreen .map-instruction {
   margin-top: 10px;
 }
 
