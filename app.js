@@ -315,9 +315,8 @@ function buildCustomSpritesheetMetadata({
       exportName: frame.exportName,
       file: frame.file,
       baseName: frame.baseName,
-      frame: frame.frame,
-      sourceSize: frame.sourceSize,
-      originalSourceSize: frame.sourceSize,
+      atlasFrame: frame.frame,
+      inputSize: frame.inputSize,
       renderSize: frame.renderSize,
       grid: frame.grid,
     })),
@@ -351,6 +350,8 @@ function buildPhaserArrayMetadata({
         w: frame.frame.w,
         h: frame.frame.h,
       },
+      inputSize: frame.inputSize,
+      renderSize: frame.renderSize,
       pivot: {
         x: 0.5,
         y: 0.5,
@@ -396,6 +397,8 @@ function buildPhaserHashMetadata({
         w: frame.frame.w,
         h: frame.frame.h,
       },
+      inputSize: frame.inputSize,
+      renderSize: frame.renderSize,
       pivot: {
         x: 0.5,
         y: 0.5,
@@ -707,7 +710,7 @@ function buildSpritesheet() {
           w: frameWidth,
           h: frameHeight,
         },
-        sourceSize: {
+        inputSize: {
           w: item.image.width,
           h: item.image.height,
         },
