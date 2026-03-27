@@ -1430,6 +1430,39 @@ button:disabled {
   display: none;
 }
 
+.map-editor-page:fullscreen .hero-editor-actions {
+  display: none;
+}
+
+.map-editor-page:fullscreen .map-sidebar .eyebrow,
+.map-editor-page:fullscreen .map-main-column .results .eyebrow,
+.map-editor-page:fullscreen #selectedTileText,
+.map-editor-page:fullscreen #hoverTileText {
+  display: none;
+}
+
+.map-editor-page:fullscreen .map-main-column .results .section-heading {
+  margin-bottom: 0;
+}
+
+.map-editor-page:fullscreen .map-main-column .results .section-heading > :first-child {
+  display: none;
+}
+
+.map-editor-page:fullscreen .tileset-hint,
+.map-editor-page:fullscreen .map-layers-panel .palette-meta {
+  display: none;
+}
+
+.map-editor-page:fullscreen #tilesetMetaText,
+.map-editor-page:fullscreen #clearTilesetBtn,
+.map-editor-page:fullscreen #addLayerBtn,
+.map-editor-page:fullscreen .map-layers-panel .ghost,
+.map-editor-page:fullscreen .layer-item .ghost,
+.map-editor-page:fullscreen .layer-item .layer-help {
+  display: none;
+}
+
 .map-editor-page:fullscreen .map-editor-shell {
   min-height: calc(100vh - 120px);
 }
