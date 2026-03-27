@@ -1557,16 +1557,35 @@ function flattenLayerDataForTiled(layerData) {
   return flattened;
 }
 
-function buildTiledMapExport() {
+function getExportTilesetGeometry() {
   const tilesetImage = editorState.tileset.image;
-  const tileWidth = editorState.map.tileWidth;
-  const tileHeight = editorState.map.tileHeight;
-  const tilesetWidth =
-    tilesetImage?.width || editorState.tileset.columns * tileWidth || tileWidth;
-  const tilesetHeight =
-    tilesetImage?.height ||
-    editorState.tileset.rows * tileHeight ||
-    tileHeight;
+  const tileWidth = Math.max(1, Number(editorState.tileset.tileWidth) || DEFAULT_TILE_SIZE);
+  const tileHeight = Math.max(1, Number(editorState.tileset.tileHeight) || DEFAULT_TILE_SIZE);
+  const imageWidth = Math.max(
+    tileWidth,
+    Number(tilesetImage?.width) || editorState.tileset.columns * tileWidth || tileWidth,
+  );
+  const imageHeight = Math.max(
+    tileHeight,
+    Number(tilesetImage?.height) || editorState.tileset.rows * tileHeight || tileHeight,
+  );
+
+  const columns = Math.max(1, Math.floor(imageWidth / tileWidth));
+  const rows = Math.max(1, Math.floor(imageHeight / tileHeight));
+
+  return {
+    tileWidth,
+    tileHeight,
+    imageWidth,
+    imageHeight,
+    columns,
+    rows,
+    tilecount: columns * rows,
+  };
+}
+
+function buildTiledMapExport() {
+  const geometry = getExportTilesetGeometry();
   const layerIds = editorState.map.layers.map((_, index) => index + 1);
 
   return {
@@ -1602,18 +1621,18 @@ function buildTiledMapExport() {
       {
         firstgid: 1,
         name: editorState.tileset.name || "tileset",
-        tilewidth: tileWidth,
-        tileheight: tileHeight,
+        tilewidth: geometry.tileWidth,
+        tileheight: geometry.tileHeight,
         margin: editorState.tileset.margin,
         spacing: editorState.tileset.spacing,
-        columns: editorState.tileset.columns,
-        tilecount: editorState.tileset.count,
+        columns: geometry.columns,
+        tilecount: geometry.tilecount,
         image: getExportTilesetReference(),
-        imagewidth: tilesetWidth,
-        imageheight: tilesetHeight,
+        imagewidth: geometry.imageWidth,
+        imageheight: geometry.imageHeight,
       },
     ],
-    tilewidth: tileWidth,
+    tilewidth: geometry.tileWidth,
     type: "map",
     version: 1.1,
     width: editorState.map.columns,
