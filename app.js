@@ -315,6 +315,7 @@ function buildCustomSpritesheetMetadata({
       exportName: frame.exportName,
       file: frame.file,
       baseName: frame.baseName,
+      frame: frame.frame,
       atlasFrame: frame.frame,
       inputSize: frame.inputSize,
       renderSize: frame.renderSize,
