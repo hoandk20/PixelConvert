@@ -391,12 +391,19 @@
             <article class="export-option">
               <h3>Import Spritesheet</h3>
               <p>
-                Load a PNG spritesheet and rebuild the tileset palette for this
-                map.
+                Load one or more PNG spritesheets and rebuild the tileset palette for this map.
+              </p>
+              <p class="palette-meta tileset-hint">
+                Hold Cmd/Ctrl to select multiple files at once.
               </p>
               <label class="field">
                 <span>Spritesheet PNG</span>
-                <input id="tilesheetInput" type="file" accept="image/png,image/*" />
+                <input
+                  id="tilesheetInput"
+                  type="file"
+                  accept="image/png,image/*"
+                  multiple
+                />
               </label>
               <label class="field">
                 <span>Tileset name</span>
@@ -412,7 +419,7 @@
               </label>
               <div class="action-row popup-action-row">
                 <button id="sliceTilesheetBtn" class="primary" type="button">
-                  Load tileset
+                  Load tilesets
                 </button>
               </div>
             </article>

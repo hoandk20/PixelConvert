@@ -2885,16 +2885,56 @@ function sliceTilesetFromImage(image, config = {}) {
   editorState.selectedTilePaintCursor = 0;
 }
 
-async function loadTilesetFromFile(file) {
+async function appendTilesetFromFile(file) {
   const src = await readFileAsDataUrl(file);
   const image = await createImage(src);
   sliceTilesetFromImage(image);
+}
+
+async function loadTilesetFromFile(file) {
+  return loadTilesetsFromFiles([file]);
+}
+
+async function loadTilesetsFromFiles(files) {
+  const nextFiles = Array.from(files || []).filter(Boolean);
+  if (nextFiles.length === 0) {
+    updateStatus("Choose one or more spritesheets first.");
+    return;
+  }
+
+  const startTileCount = editorState.tileset.count;
+  const startSheetCount = editorState.tileset.sources.length;
+  const failures = [];
+
+  for (const file of nextFiles) {
+    try {
+      await appendTilesetFromFile(file);
+    } catch (error) {
+      failures.push(`${file.name}: ${error?.message || "Could not load spritesheet."}`);
+    }
+  }
+
+  if (editorState.tileset.count === startTileCount) {
+    throw new Error(failures[0] || "Could not load any spritesheets.");
+  }
+
   tilesetInteractionState.zoom = 1;
   rebuildMapSurface();
   renderTilesetPalette();
   persistProject();
-  updateStatus(`Appended ${editorState.tileset.count} tile(s) from spritesheet.`);
+
+  const addedSheets = editorState.tileset.sources.length - startSheetCount;
+  const addedTiles = editorState.tileset.count - startTileCount;
+  const sheetLabel = addedSheets === 1 ? "spritesheet" : "spritesheets";
+  const tileLabel = addedTiles === 1 ? "tile" : "tiles";
+  const summary = `Appended ${addedSheets} ${sheetLabel} (${addedTiles} ${tileLabel}).`;
+  updateStatus(
+    failures.length > 0
+      ? `${summary} Skipped ${failures.length} file${failures.length === 1 ? "" : "s"}.`
+      : summary,
+  );
   closeImportPopup();
+  elements.tilesheetInput.value = "";
   markDirty();
 }
 
@@ -3241,14 +3281,8 @@ function bindEvents() {
   });
 
   elements.sliceTilesheetBtn.addEventListener("click", async () => {
-    const [file] = elements.tilesheetInput.files;
-    if (!file) {
-      updateStatus("Choose a spritesheet PNG first.");
-      return;
-    }
-
     try {
-      await loadTilesetFromFile(file);
+      await loadTilesetsFromFiles(elements.tilesheetInput.files);
     } catch (error) {
       updateStatus(error.message);
     }
