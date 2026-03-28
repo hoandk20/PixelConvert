@@ -1,6 +1,7 @@
 const state = {
   pixelItems: [],
   sheetItems: [],
+  resizeItems: [],
   sheetOutputUrl: "",
   sheetJsonUrl: "",
 };
@@ -10,6 +11,7 @@ const elements = {
   tabPanels: {
     pixel: document.querySelector("#pixelTab"),
     spritesheet: document.querySelector("#spritesheetTab"),
+    resize: document.querySelector("#resizeTab"),
   },
   pixel: {
     dropzone: document.querySelector("#dropzone"),
@@ -48,6 +50,19 @@ const elements = {
     previewCanvas: document.querySelector("#sheetPreviewCanvas"),
     framesGrid: document.querySelector("#sheetFramesGrid"),
     framesEmpty: document.querySelector("#sheetFramesEmpty"),
+  },
+  resize: {
+    dropzone: document.querySelector("#resizeDropzone"),
+    fileInput: document.querySelector("#resizeFileInput"),
+    width: document.querySelector("#resizeWidth"),
+    height: document.querySelector("#resizeHeight"),
+    resizeBtn: document.querySelector("#resizeBtn"),
+    downloadAllBtn: document.querySelector("#downloadResizeAllBtn"),
+    clearBtn: document.querySelector("#clearResizeBtn"),
+    count: document.querySelector("#resizeCount"),
+    statusText: document.querySelector("#resizeStatusText"),
+    emptyState: document.querySelector("#resizeEmptyState"),
+    resultsGrid: document.querySelector("#resizeResultsGrid"),
   },
   cardTemplate: document.querySelector("#cardTemplate"),
   frameTemplate: document.querySelector("#frameTemplate"),
@@ -114,6 +129,10 @@ function updatePixelStatus(message) {
 
 function updateSheetStatus(message) {
   elements.sheet.statusText.textContent = message;
+}
+
+function updateResizeStatus(message) {
+  elements.resize.statusText.textContent = message;
 }
 
 function updateBackgroundColorVisibility(backgroundModeSelect, backgroundColorInput) {
@@ -221,6 +240,10 @@ function isSpritesheetTabActive() {
   return elements.tabPanels.spritesheet?.classList.contains("is-active");
 }
 
+function isResizeTabActive() {
+  return elements.tabPanels.resize?.classList.contains("is-active");
+}
+
 function isEditablePasteTarget(target) {
   return (
     target instanceof HTMLInputElement ||
@@ -291,6 +314,19 @@ function updateSheetCounters() {
   elements.sheet.previewWrap.hidden = !state.sheetOutputUrl;
   elements.sheet.downloadBtn.disabled = !state.sheetOutputUrl;
   elements.sheet.downloadJsonBtn.disabled = !state.sheetJsonUrl;
+}
+
+function updateResizeCounters() {
+  const total = state.resizeItems.length;
+  const resized = state.resizeItems.filter((item) => item.outputUrl).length;
+
+  elements.resize.count.textContent =
+    total === 0
+      ? "No images added yet"
+      : `${total} images added, ${resized} resized`;
+
+  elements.resize.emptyState.hidden = total > 0;
+  elements.resize.downloadAllBtn.disabled = resized === 0;
 }
 
 function buildCustomSpritesheetMetadata({
@@ -490,6 +526,39 @@ function bindSheetCard(item) {
   elements.sheet.framesGrid.append(fragment);
 }
 
+function bindResizeCard(item) {
+  const fragment = elements.cardTemplate.content.cloneNode(true);
+  const sourcePreview = fragment.querySelector(".source-preview");
+  const resizedPreview = fragment.querySelector(".pixel-preview");
+  const fileName = fragment.querySelector(".file-name");
+  const fileInfo = fragment.querySelector(".file-info");
+  const downloadBtn = fragment.querySelector(".download-btn");
+  const labels = fragment.querySelectorAll(".canvas-pair p");
+
+  if (labels[1]) {
+    labels[1].textContent = "Resized";
+  }
+
+  resizedPreview.classList.add("resize-preview");
+
+  sourcePreview.src = item.sourceUrl;
+  sourcePreview.alt = item.file.name;
+  fileName.textContent = item.file.name;
+  fileInfo.textContent = `${formatBytes(item.file.size)} • ${
+    item.file.type || "image"
+  }`;
+
+  item.previewCanvas = resizedPreview;
+  item.downloadBtn = downloadBtn;
+
+  downloadBtn.addEventListener("click", () => {
+    if (!item.outputUrl) return;
+    triggerDownload(item.outputUrl, sanitizeName(item.file.name));
+  });
+
+  elements.resize.resultsGrid.append(fragment);
+}
+
 async function addPixelFiles(fileList) {
   const files = [...fileList].filter((file) => file.type.startsWith("image/"));
 
@@ -563,6 +632,45 @@ async function addSheetFiles(fileList) {
   updateSheetStatus("Frames are ready. Click build spritesheet.");
 }
 
+async function addResizeFiles(fileList) {
+  const files = [...fileList].filter((file) => file.type.startsWith("image/"));
+
+  if (files.length === 0) {
+    updateResizeStatus("No valid image files found.");
+    return;
+  }
+
+  updateResizeStatus(`Loading ${files.length} image(s)...`);
+
+  for (const file of files) {
+    const duplicate = state.resizeItems.some(
+      (item) => item.file.name === file.name && item.file.size === file.size,
+    );
+
+    if (duplicate) continue;
+
+    try {
+      const { image, objectUrl } = await loadImage(file);
+      const item = {
+        file,
+        image,
+        sourceUrl: objectUrl,
+        outputUrl: "",
+        previewCanvas: null,
+        downloadBtn: null,
+      };
+
+      state.resizeItems.push(item);
+      bindResizeCard(item);
+    } catch (error) {
+      updateResizeStatus(error.message);
+    }
+  }
+
+  updateResizeCounters();
+  updateResizeStatus("Images are ready. Click resize to create new outputs.");
+}
+
 function convertPixelItem(item) {
   const size = Number(elements.pixel.sizeSelect.value);
   const fit = elements.pixel.fitSelect.value;
@@ -589,6 +697,42 @@ function convertPixelItem(item) {
   item.downloadBtn.disabled = false;
 }
 
+function resizeItemToTarget(item) {
+  const width = Math.max(1, Number(elements.resize.width.value) || 1);
+  const height = Math.max(1, Number(elements.resize.height.value) || 1);
+
+  const outputCanvas = document.createElement("canvas");
+  outputCanvas.width = width;
+  outputCanvas.height = height;
+
+  const outputCtx = outputCanvas.getContext("2d", { alpha: true });
+  outputCtx.imageSmoothingEnabled = false;
+  outputCtx.clearRect(0, 0, width, height);
+  outputCtx.drawImage(item.image, 0, 0, width, height);
+
+  item.previewCanvas.width = width;
+  item.previewCanvas.height = height;
+
+  const previewCtx = item.previewCanvas.getContext("2d", { alpha: true });
+  previewCtx.clearRect(0, 0, width, height);
+  previewCtx.imageSmoothingEnabled = false;
+  previewCtx.drawImage(outputCanvas, 0, 0);
+
+  item.outputUrl = outputCanvas.toDataURL("image/png");
+  item.downloadBtn.disabled = false;
+}
+
+function invalidateResizeOutputs(message) {
+  state.resizeItems.forEach((item) => {
+    if (!item.outputUrl) return;
+    item.outputUrl = "";
+    item.downloadBtn.disabled = true;
+  });
+
+  updateResizeCounters();
+  updateResizeStatus(message);
+}
+
 function convertAllPixels() {
   if (state.pixelItems.length === 0) {
     updatePixelStatus("Add images before converting.");
@@ -605,6 +749,25 @@ function convertAllPixels() {
   updatePixelStatus(
     "Conversion complete. You can download each image or download all.",
   );
+}
+
+function resizeAllImages() {
+  if (state.resizeItems.length === 0) {
+    updateResizeStatus("Add images before resizing.");
+    return;
+  }
+
+  const width = Math.max(1, Number(elements.resize.width.value) || 1);
+  const height = Math.max(1, Number(elements.resize.height.value) || 1);
+
+  updateResizeStatus(`Resizing ${state.resizeItems.length} image(s) to ${width}x${height}...`);
+
+  for (const item of state.resizeItems) {
+    resizeItemToTarget(item);
+  }
+
+  updateResizeCounters();
+  updateResizeStatus(`Resize complete. Outputs are now ${width}x${height}.`);
 }
 
 async function downloadAllPixels() {
@@ -625,12 +788,38 @@ async function downloadAllPixels() {
   updatePixelStatus("Batch download request sent.");
 }
 
+async function downloadAllResized() {
+  const resizedItems = state.resizeItems.filter((item) => item.outputUrl);
+
+  if (resizedItems.length === 0) {
+    updateResizeStatus("No resized images available yet.");
+    return;
+  }
+
+  updateResizeStatus(`Downloading ${resizedItems.length} image(s)...`);
+
+  for (const [index, item] of resizedItems.entries()) {
+    triggerDownload(item.outputUrl, sanitizeName(item.file.name));
+    await new Promise((resolve) => window.setTimeout(resolve, index === 0 ? 0 : 180));
+  }
+
+  updateResizeStatus("Batch download request sent.");
+}
+
 function clearPixelItems() {
   state.pixelItems.forEach((item) => URL.revokeObjectURL(item.sourceUrl));
   state.pixelItems = [];
   elements.pixel.resultsGrid.innerHTML = "";
   updatePixelCounters();
   updatePixelStatus("Image list cleared.");
+}
+
+function clearResizeItems() {
+  state.resizeItems.forEach((item) => URL.revokeObjectURL(item.sourceUrl));
+  state.resizeItems = [];
+  elements.resize.resultsGrid.innerHTML = "";
+  updateResizeCounters();
+  updateResizeStatus("Image list cleared.");
 }
 
 function buildSpritesheet() {
@@ -864,6 +1053,15 @@ document.addEventListener("paste", async (event) => {
     return;
   }
 
+  if (isResizeTabActive()) {
+    event.preventDefault();
+    await addResizeFiles(files);
+    updateResizeStatus(
+      `${files.length} image(s) pasted from clipboard. Click resize to continue.`,
+    );
+    return;
+  }
+
   if (!isSpritesheetTabActive()) return;
 
   event.preventDefault();
@@ -879,6 +1077,7 @@ elements.tabButtons.forEach((button) => {
 
 attachDropzone(elements.pixel.dropzone, elements.pixel.fileInput, addPixelFiles);
 attachDropzone(elements.sheet.dropzone, elements.sheet.fileInput, addSheetFiles);
+attachDropzone(elements.resize.dropzone, elements.resize.fileInput, addResizeFiles);
 
 elements.pixel.convertBtn.addEventListener("click", convertAllPixels);
 elements.pixel.downloadAllBtn.addEventListener("click", downloadAllPixels);
@@ -910,8 +1109,22 @@ elements.sheet.sizingMode.addEventListener("change", () => {
     applyAspectRatioPreset();
   }
 });
+elements.resize.resizeBtn.addEventListener("click", resizeAllImages);
+elements.resize.downloadAllBtn.addEventListener("click", downloadAllResized);
+elements.resize.clearBtn.addEventListener("click", clearResizeItems);
+elements.resize.width.addEventListener("change", () => {
+  if (state.resizeItems.some((item) => item.outputUrl)) {
+    invalidateResizeOutputs("Width changed. Click resize again to regenerate outputs.");
+  }
+});
+elements.resize.height.addEventListener("change", () => {
+  if (state.resizeItems.some((item) => item.outputUrl)) {
+    invalidateResizeOutputs("Height changed. Click resize again to regenerate outputs.");
+  }
+});
 applyAspectRatioPreset();
 syncBackgroundFieldVisibility();
 
 updatePixelCounters();
 updateSheetCounters();
+updateResizeCounters();

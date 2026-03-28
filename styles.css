@@ -307,6 +307,10 @@ body[data-ui-language="vi"] .language-switcher::before {
   grid-template-columns: repeat(6, minmax(0, 1fr));
 }
 
+.resize-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .field {
   display: grid;
   gap: 8px;
@@ -775,6 +779,11 @@ button:disabled {
 .sheet-preview-canvas,
 .frame-preview {
   image-rendering: pixelated;
+}
+
+.resize-preview {
+  aspect-ratio: auto;
+  image-rendering: auto;
 }
 
 .card-meta {
@@ -1758,7 +1767,8 @@ button:disabled {
   }
 
   .settings-grid,
-  .sprite-grid {
+  .sprite-grid,
+  .resize-grid {
     grid-template-columns: 1fr;
   }
 

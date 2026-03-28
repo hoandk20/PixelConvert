@@ -180,6 +180,15 @@
         >
           Spritesheet
         </button>
+        <button
+          class="tab-button"
+          data-tab="resize"
+          type="button"
+          aria-controls="resizeTab"
+          aria-selected="false"
+        >
+          Resize
+        </button>
       </nav>
 
       <section class="panel seo-intro">
@@ -467,6 +476,91 @@
 
             <div id="sheetFramesGrid" class="frame-grid"></div>
           </section>
+        </section>
+      </section>
+
+      <section
+        id="resizeTab"
+        class="tab-panel"
+        aria-labelledby="resize-tool-heading"
+      >
+        <section class="panel controls">
+          <div class="sr-only">
+            <h2 id="resize-tool-heading">Image resize tool</h2>
+          </div>
+          <div
+            id="resizeDropzone"
+            class="dropzone"
+            role="button"
+            tabindex="0"
+            aria-label="Choose or drag and drop images to resize"
+          >
+            <input
+              id="resizeFileInput"
+              type="file"
+              accept="image/*"
+              multiple
+              hidden
+            />
+            <div class="dropzone-content">
+              <span class="dropzone-badge">Resize</span>
+              <h2>Drop images here</h2>
+              <p>or click to select multiple files at once</p>
+              <p class="dropzone-hint">
+                You can also paste an image from the clipboard with
+                <strong>Ctrl/Cmd + V</strong>
+              </p>
+            </div>
+          </div>
+
+          <div class="settings-grid resize-grid">
+            <label class="field">
+              <span>Output width</span>
+              <input id="resizeWidth" type="number" min="1" value="448" />
+            </label>
+
+            <label class="field">
+              <span>Output height</span>
+              <input id="resizeHeight" type="number" min="1" value="600" />
+            </label>
+          </div>
+
+          <div class="action-row">
+            <button id="resizeBtn" class="primary" type="button">
+              Resize all
+            </button>
+            <button
+              id="downloadResizeAllBtn"
+              class="secondary"
+              type="button"
+              disabled
+            >
+              Download all
+            </button>
+            <button id="clearResizeBtn" class="ghost" type="button">
+              Clear list
+            </button>
+          </div>
+
+          <div class="status-bar">
+            <span id="resizeCount">No images added yet</span>
+            <span id="resizeStatusText">Ready to resize images</span>
+          </div>
+        </section>
+
+        <section class="panel results">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Results</p>
+              <h2>Resized images</h2>
+            </div>
+          </div>
+
+          <div id="resizeEmptyState" class="empty-state">
+            Add images to preview your resized outputs here.
+          </div>
+
+          <div id="resizeResultsGrid" class="results-grid" aria-live="polite"></div>
         </section>
       </section>
 
