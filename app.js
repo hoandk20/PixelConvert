@@ -316,6 +316,12 @@ function updateSheetCounters() {
   elements.sheet.downloadJsonBtn.disabled = !state.sheetJsonUrl;
 }
 
+function clearSheetOutputs() {
+  revokeIfExists(state.sheetJsonUrl);
+  state.sheetOutputUrl = "";
+  state.sheetJsonUrl = "";
+}
+
 function updateResizeCounters() {
   const total = state.resizeItems.length;
   const resized = state.resizeItems.filter((item) => item.outputUrl).length;
@@ -512,6 +518,8 @@ function bindPixelCard(item) {
 
 function bindSheetCard(item) {
   const fragment = elements.frameTemplate.content.cloneNode(true);
+  const card = fragment.querySelector(".frame-card");
+  const removeBtn = fragment.querySelector(".frame-remove-btn");
   const preview = fragment.querySelector(".frame-preview");
   const name = fragment.querySelector(".frame-name");
   const info = fragment.querySelector(".frame-info");
@@ -522,6 +530,13 @@ function bindSheetCard(item) {
   info.textContent = `${item.image.width}x${item.image.height} • ${formatBytes(
     item.file.size,
   )}`;
+
+  item.card = card;
+  item.removeBtn = removeBtn;
+
+  removeBtn.addEventListener("click", () => {
+    removeSheetItem(item);
+  });
 
   elements.sheet.framesGrid.append(fragment);
 }
@@ -617,7 +632,13 @@ async function addSheetFiles(fileList) {
 
     try {
       const { image, objectUrl } = await loadImage(file);
-      const item = { file, image, sourceUrl: objectUrl };
+      const item = {
+        file,
+        image,
+        sourceUrl: objectUrl,
+        card: null,
+        removeBtn: null,
+      };
       state.sheetItems.push(item);
       bindSheetCard(item);
     } catch (error) {
@@ -625,9 +646,7 @@ async function addSheetFiles(fileList) {
     }
   }
 
-  revokeIfExists(state.sheetJsonUrl);
-  state.sheetOutputUrl = "";
-  state.sheetJsonUrl = "";
+  clearSheetOutputs();
   updateSheetCounters();
   updateSheetStatus("Frames are ready. Click build spritesheet.");
 }
@@ -985,13 +1004,29 @@ function downloadSpritesheetJson() {
 
 function clearSheetItems() {
   state.sheetItems.forEach((item) => URL.revokeObjectURL(item.sourceUrl));
-  revokeIfExists(state.sheetJsonUrl);
   state.sheetItems = [];
-  state.sheetOutputUrl = "";
-  state.sheetJsonUrl = "";
+  clearSheetOutputs();
   elements.sheet.framesGrid.innerHTML = "";
   updateSheetCounters();
   updateSheetStatus("Frame list cleared.");
+}
+
+function removeSheetItem(item) {
+  const index = state.sheetItems.indexOf(item);
+  if (index === -1) return;
+
+  state.sheetItems.splice(index, 1);
+  URL.revokeObjectURL(item.sourceUrl);
+  item.card?.remove();
+  clearSheetOutputs();
+  updateSheetCounters();
+
+  if (state.sheetItems.length === 0) {
+    updateSheetStatus("Frame removed. Add more frames to build a spritesheet.");
+    return;
+  }
+
+  updateSheetStatus("Frame removed. Rebuild the spritesheet to refresh the preview.");
 }
 
 function attachDropzone(dropzone, fileInput, onFiles) {
