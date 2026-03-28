@@ -21,6 +21,7 @@ const DEFAULT_PROJECT_TILESET_URL = "./zombie_woman.png";
 const editorState = {
   tool: "brush",
   showGrid: true,
+  showTilesetGrid: true,
   isPointerDown: false,
   isPanning: false,
   spacePressed: false,
@@ -121,6 +122,7 @@ const elements = {
   tileMarginInput: document.querySelector("#tileMarginInput"),
   sliceTilesheetBtn: document.querySelector("#sliceTilesheetBtn"),
   clearTilesetBtn: document.querySelector("#clearTilesetBtn"),
+  toggleTilesetGridBtn: document.querySelector("#toggleTilesetGridBtn"),
   tilePalette: document.querySelector("#tilePalette"),
   paletteEmptyState: document.querySelector("#paletteEmptyState"),
   tilesetMetaText: document.querySelector("#tilesetMetaText"),
@@ -256,6 +258,8 @@ const UI_TRANSLATIONS = {
     deleteLocal: "Delete local",
     tilesetSection: "Tileset",
     clearTileset: "Clear tileset",
+    tilesetGridOn: "Tileset Grid On",
+    tilesetGridOff: "Tileset Grid Off",
     tilesetHint: "Click, Ctrl/Cmd-click, or drag on the tileset to select multiple tiles.",
     tilesetEmptyState: "Import a spritesheet to build the selectable tileset.",
     noSpritesheetLoaded: "No spritesheet loaded",
@@ -369,6 +373,8 @@ const UI_TRANSLATIONS = {
     deleteLocal: "Xóa local",
     tilesetSection: "Tileset",
     clearTileset: "Xóa tileset",
+    tilesetGridOn: "Lưới tileset bật",
+    tilesetGridOff: "Lưới tileset tắt",
     tilesetHint: "Nhấn, Ctrl/Cmd-click hoặc kéo trên tileset để chọn nhiều tile.",
     tilesetEmptyState: "Nhập spritesheet để tạo tileset có thể chọn.",
     noSpritesheetLoaded: "Chưa có spritesheet",
@@ -728,6 +734,7 @@ function createDefaultProjectData(name = DEFAULT_PROJECT_NAME, id = createProjec
     selectedTileIndex: -1,
     selectedTileIndices: [],
     showGrid: true,
+    showTilesetGrid: true,
   };
 }
 
@@ -787,6 +794,7 @@ async function createProjectDataWithDefaultTileset(name = DEFAULT_PROJECT_NAME, 
     selectedTileIndex: source.count > 0 ? 0 : -1,
     selectedTileIndices: source.count > 0 ? [0] : [],
     showGrid: true,
+    showTilesetGrid: true,
   };
 }
 
@@ -1204,6 +1212,7 @@ function applyProjectData(
   editorState.selectedTilePaintCursor = 0;
 
   editorState.showGrid = raw.showGrid ?? true;
+  editorState.showTilesetGrid = raw.showTilesetGrid ?? true;
   editorState.hoveredCell = null;
   if (viewSnapshot) {
     editorState.camera.zoom = viewSnapshot.zoom;
@@ -1743,11 +1752,15 @@ function getSelectedTileStamp() {
 }
 
 function drawTilesetGridOverlay(ctx, overlayCanvas, selectionState) {
+  if (!editorState.showTilesetGrid) {
+    return;
+  }
+
   const gridStepX = Math.max(1, Number(selectionState.gridStepX) || DEFAULT_TILE_SIZE);
   const gridStepY = Math.max(1, Number(selectionState.gridStepY) || DEFAULT_TILE_SIZE);
   const gridOffsetX = Math.max(0, Number(selectionState.gridOffsetX) || 0);
   const gridOffsetY = Math.max(0, Number(selectionState.gridOffsetY) || 0);
-  const gridColor = selectionState.gridColor || "rgba(255, 255, 255, 0.12)";
+  const gridColor = selectionState.gridColor || "rgba(255, 255, 255, 0.08)";
 
   ctx.save();
   ctx.strokeStyle = gridColor;
@@ -2594,6 +2607,10 @@ function setTool(tool, { silent = false } = {}) {
 function syncToolbarState() {
   const copy = getUiCopy();
   elements.toggleGridBtn.textContent = editorState.showGrid ? copy.gridOn : copy.gridOff;
+  elements.toggleTilesetGridBtn.textContent = editorState.showTilesetGrid
+    ? copy.tilesetGridOn
+    : copy.tilesetGridOff;
+  elements.toggleTilesetGridBtn.setAttribute("aria-pressed", String(editorState.showTilesetGrid));
   const isFullscreen = isEditorFullscreenActive();
   elements.fullscreenBtn.textContent = isFullscreen ? copy.fullscreenExit : copy.fullscreenEnter;
   elements.fullscreenBtn.setAttribute("aria-pressed", String(isFullscreen));
@@ -3168,7 +3185,7 @@ function renderTilesetPalette() {
   );
   tilesetInteractionState.gridOffsetX = Math.max(0, Number(editorState.tileset.margin) || 0);
   tilesetInteractionState.gridOffsetY = Math.max(0, Number(editorState.tileset.margin) || 0);
-  tilesetInteractionState.gridColor = "rgba(255, 255, 255, 0.12)";
+  tilesetInteractionState.gridColor = "rgba(255, 255, 255, 0.08)";
   tilesetInteractionState.viewport = viewport;
   tilesetInteractionState.stage = stage;
   tilesetInteractionState.canvas = canvas;
@@ -3719,6 +3736,7 @@ function buildEditorProject() {
     selectedTileIndex: editorState.selectedTileIndex,
     selectedTileIndices: editorState.selectedTileIndices,
     showGrid: editorState.showGrid,
+    showTilesetGrid: editorState.showTilesetGrid,
   };
 }
 
@@ -3984,6 +4002,12 @@ function bindEvents() {
     syncToolbarState();
     persistProject();
     markDirty();
+  });
+  elements.toggleTilesetGridBtn.addEventListener("click", () => {
+    editorState.showTilesetGrid = !editorState.showTilesetGrid;
+    syncToolbarState();
+    renderTilesetPalette();
+    persistProject();
   });
   elements.fullscreenBtn.addEventListener("click", () => {
     void toggleFullscreenMode();

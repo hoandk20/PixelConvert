@@ -1009,6 +1009,14 @@ button:disabled {
   margin-bottom: 16px;
 }
 
+.palette-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .palette-meta {
   color: var(--muted);
   font-size: 0.95rem;
