@@ -1,1229 +1,852 @@
-const state = {
-  pixelItems: [],
-  sheetItems: [],
-  resizeItems: [],
-  sheetOutputUrl: "",
-  sheetJsonUrl: "",
-};
+/* eslint-disable no-console */
 
-const ATLAS_EXTRUDE_PADDING = 2;
+// Vanilla SPA (hash-based) that loads `data/outsystems-techlead/exams.json` and runs exam/practice sessions.
+// Data model is intentionally separated: content in JSON, UI in HTML/CSS, logic here.
 
-const elements = {
-  tabButtons: [...document.querySelectorAll(".tab-button")],
-  tabPanels: {
-    pixel: document.querySelector("#pixelTab"),
-    spritesheet: document.querySelector("#spritesheetTab"),
-    resize: document.querySelector("#resizeTab"),
-  },
-  pixel: {
-    dropzone: document.querySelector("#dropzone"),
-    fileInput: document.querySelector("#fileInput"),
-    sizeSelect: document.querySelector("#sizeSelect"),
-    fitSelect: document.querySelector("#fitSelect"),
-    backgroundMode: document.querySelector("#backgroundMode"),
-    backgroundColor: document.querySelector("#backgroundColor"),
-    convertBtn: document.querySelector("#convertBtn"),
-    downloadAllBtn: document.querySelector("#downloadAllBtn"),
-    clearBtn: document.querySelector("#clearBtn"),
-    fileCount: document.querySelector("#fileCount"),
-    statusText: document.querySelector("#statusText"),
-    emptyState: document.querySelector("#emptyState"),
-    resultsGrid: document.querySelector("#resultsGrid"),
-  },
-  sheet: {
-    dropzone: document.querySelector("#sheetDropzone"),
-    fileInput: document.querySelector("#sheetFileInput"),
-    columns: document.querySelector("#sheetColumns"),
-    cellSize: document.querySelector("#sheetCellSize"),
-    sizingMode: document.querySelector("#sheetSizingMode"),
-    padding: document.querySelector("#sheetPadding"),
-    jsonFormat: document.querySelector("#sheetJsonFormat"),
-    fitSelect: document.querySelector("#sheetFitSelect"),
-    backgroundMode: document.querySelector("#sheetBackgroundMode"),
-    backgroundColor: document.querySelector("#sheetBackgroundColor"),
-    buildBtn: document.querySelector("#buildSheetBtn"),
-    downloadBtn: document.querySelector("#downloadSheetBtn"),
-    downloadJsonBtn: document.querySelector("#downloadSheetJsonBtn"),
-    clearBtn: document.querySelector("#clearSheetBtn"),
-    count: document.querySelector("#sheetCount"),
-    statusText: document.querySelector("#sheetStatusText"),
-    emptyState: document.querySelector("#sheetEmptyState"),
-    previewWrap: document.querySelector("#sheetPreviewWrap"),
-    previewCanvas: document.querySelector("#sheetPreviewCanvas"),
-    framesGrid: document.querySelector("#sheetFramesGrid"),
-    framesEmpty: document.querySelector("#sheetFramesEmpty"),
-  },
-  resize: {
-    dropzone: document.querySelector("#resizeDropzone"),
-    fileInput: document.querySelector("#resizeFileInput"),
-    width: document.querySelector("#resizeWidth"),
-    height: document.querySelector("#resizeHeight"),
-    resizeBtn: document.querySelector("#resizeBtn"),
-    downloadAllBtn: document.querySelector("#downloadResizeAllBtn"),
-    clearBtn: document.querySelector("#clearResizeBtn"),
-    count: document.querySelector("#resizeCount"),
-    statusText: document.querySelector("#resizeStatusText"),
-    emptyState: document.querySelector("#resizeEmptyState"),
-    resultsGrid: document.querySelector("#resizeResultsGrid"),
-  },
-  cardTemplate: document.querySelector("#cardTemplate"),
-  frameTemplate: document.querySelector("#frameTemplate"),
-};
+const DATA_URL = "data/outsystems-techlead/exams.json";
+const STORAGE_KEY = "examPractice:lastSession:v1";
 
-function formatBytes(bytes) {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+const appEl = document.getElementById("app");
+const dataStatusEl = document.getElementById("dataStatus");
+const resumeBtn = document.getElementById("resumeBtn");
+
+/** @type {{dataset: any|null, session: any|null}} */
+const state = { dataset: null, session: null };
+
+function qs(sel, root = document) {
+  return root.querySelector(sel);
 }
 
-function sanitizeFileBase(name) {
-  const lastDot = name.lastIndexOf(".");
-  const base = lastDot > 0 ? name.slice(0, lastDot) : name;
-  return base.replace(/[^\w-]+/g, "_");
+function clamp(n, min, max) {
+  return Math.max(min, Math.min(max, n));
 }
 
-function sanitizeName(name) {
-  return `${sanitizeFileBase(name)}_pixel.png`;
+function formatPercent(n) {
+  return `${Math.round(n)}%`;
 }
 
-function getSpritesheetJsonFilename(format) {
-  if (format === "phaser-array") return "spritesheet.json";
-  if (format === "phaser-hash") return "spritesheet-hash.json";
-  return "spritesheet.json";
+function nowIso() {
+  return new Date().toISOString();
 }
 
-function splitFileName(name) {
-  const lastDot = name.lastIndexOf(".");
+function parseHash() {
+  const raw = window.location.hash || "#/";
+  const cleaned = raw.replace(/^#/, "");
+  const [path, query] = cleaned.split("?");
+  const parts = path.split("/").filter(Boolean);
+  const params = new URLSearchParams(query || "");
+  return { raw, parts, params };
+}
 
-  if (lastDot <= 0) {
-    return { base: name, extension: "" };
-  }
+function setHash(path) {
+  window.location.hash = path.startsWith("#") ? path : `#${path}`;
+}
 
-  return {
-    base: name.slice(0, lastDot),
-    extension: name.slice(lastDot),
+function focusFirstHeading() {
+  const h = qs("h1, h2, [data-autofocus]");
+  if (h) h.focus?.();
+}
+
+function htmlToText(html) {
+  const tmp = document.createElement("div");
+  tmp.innerHTML = html;
+  return (tmp.textContent || "").replace(/\s+/g, " ").trim();
+}
+
+function mulberry32(seed) {
+  // Deterministic small PRNG for reproducible shuffle orders per session.
+  // https://stackoverflow.com/a/47593316
+  let t = seed >>> 0;
+  return function () {
+    t += 0x6d2b79f5;
+    let r = Math.imul(t ^ (t >>> 15), 1 | t);
+    r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
   };
 }
 
-function getUniqueFrameExportName(name, usedNames) {
-  const { base, extension } = splitFileName(name);
-  let candidate = name;
-  let suffix = 2;
-
-  while (usedNames.has(candidate)) {
-    candidate = `${base}_${suffix}${extension}`;
-    suffix += 1;
+function shuffle(arr, rng) {
+  const out = arr.slice();
+  for (let i = out.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [out[i], out[j]] = [out[j], out[i]];
   }
-
-  usedNames.add(candidate);
-  return candidate;
+  return out;
 }
 
-function revokeIfExists(url) {
-  if (url) {
-    URL.revokeObjectURL(url);
+function safeJsonParse(s) {
+  try {
+    return JSON.parse(s);
+  } catch {
+    return null;
   }
 }
 
-function updatePixelStatus(message) {
-  elements.pixel.statusText.textContent = message;
+function loadSession() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  return raw ? safeJsonParse(raw) : null;
 }
 
-function updateSheetStatus(message) {
-  elements.sheet.statusText.textContent = message;
+function saveSession(session) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
+  syncResumeButton();
 }
 
-function updateResizeStatus(message) {
-  elements.resize.statusText.textContent = message;
+function clearSession() {
+  localStorage.removeItem(STORAGE_KEY);
+  state.session = null;
+  syncResumeButton();
 }
 
-function updateBackgroundColorVisibility(backgroundModeSelect, backgroundColorInput) {
-  const field = backgroundColorInput?.closest(".field");
-  if (!field) return;
-
-  field.classList.toggle("is-hidden", backgroundModeSelect.value === "transparent");
-}
-
-function syncBackgroundFieldVisibility() {
-  updateBackgroundColorVisibility(elements.pixel.backgroundMode, elements.pixel.backgroundColor);
-  updateBackgroundColorVisibility(elements.sheet.backgroundMode, elements.sheet.backgroundColor);
-}
-
-function triggerDownload(url, filename) {
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename;
-  document.body.append(link);
-  link.click();
-  link.remove();
-}
-
-function loadImage(file) {
-  return new Promise((resolve, reject) => {
-    const objectUrl = URL.createObjectURL(file);
-    const image = new Image();
-
-    image.onload = () => resolve({ image, objectUrl });
-    image.onerror = () => {
-      URL.revokeObjectURL(objectUrl);
-      reject(new Error(`Unable to read image ${file.name}`));
+function syncResumeButton() {
+  const s = loadSession();
+  const show = !!(s && s.examId && !s.submitted);
+  resumeBtn.hidden = !show;
+  if (show) {
+    resumeBtn.onclick = () => {
+      state.session = s;
+      setHash(`/take/${encodeURIComponent(s.examId)}`);
     };
-
-    image.src = objectUrl;
-  });
-}
-
-function drawFittedImage(ctx, image, size, fit) {
-  if (fit === "stretch") {
-    ctx.drawImage(image, 0, 0, size, size);
-    return;
-  }
-
-  const sourceRatio = image.width / image.height;
-  const targetRatio = 1;
-
-  if (fit === "contain") {
-    let drawWidth = size;
-    let drawHeight = size;
-    let offsetX = 0;
-    let offsetY = 0;
-
-    if (sourceRatio > targetRatio) {
-      drawHeight = Math.round(size / sourceRatio);
-      offsetY = Math.floor((size - drawHeight) / 2);
-    } else {
-      drawWidth = Math.round(size * sourceRatio);
-      offsetX = Math.floor((size - drawWidth) / 2);
-    }
-
-    ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
-    return;
-  }
-
-  let srcX = 0;
-  let srcY = 0;
-  let srcWidth = image.width;
-  let srcHeight = image.height;
-
-  if (sourceRatio > targetRatio) {
-    srcWidth = image.height * targetRatio;
-    srcX = Math.floor((image.width - srcWidth) / 2);
   } else {
-    srcHeight = image.width / targetRatio;
-    srcY = Math.floor((image.height - srcHeight) / 2);
+    resumeBtn.onclick = null;
+  }
+}
+
+function getExamById(examId) {
+  return state.dataset?.exams?.find((e) => e.id === examId) || null;
+}
+
+function getQuestionById(exam, qid) {
+  return exam.questions.find((q) => q.id === qid) || null;
+}
+
+function gradeSession(session, exam) {
+  const detailsByQ = {};
+  let correct = 0;
+  let incorrect = 0;
+  let unanswered = 0;
+
+  for (const qid of session.questionOrder) {
+    const q = getQuestionById(exam, qid);
+    const chosen = session.answersByQuestion?.[qid] ?? null;
+    const correctIds = q?.correctOptionIds || [];
+    const isAnswered = chosen !== null && chosen !== undefined && chosen !== "";
+    const isCorrect = isAnswered && correctIds.includes(chosen);
+
+    if (!isAnswered) unanswered++;
+    else if (isCorrect) correct++;
+    else incorrect++;
+
+    detailsByQ[qid] = { chosen, correctIds, isAnswered, isCorrect };
   }
 
-  ctx.drawImage(image, srcX, srcY, srcWidth, srcHeight, 0, 0, size, size);
+  const total = session.questionOrder.length;
+  const percent = total ? (correct / total) * 100 : 0;
+  return { correct, incorrect, unanswered, total, percent, detailsByQ };
 }
 
-function drawPixelImage(image, size, fit, backgroundMode, backgroundColor) {
-  const canvas = document.createElement("canvas");
-  canvas.width = size;
-  canvas.height = size;
+function render(htmlString) {
+  appEl.innerHTML = htmlString;
+  focusFirstHeading();
+}
 
-  const ctx = canvas.getContext("2d", { alpha: true });
-  ctx.imageSmoothingEnabled = false;
-  ctx.clearRect(0, 0, size, size);
+function renderError(title, message, extraHtml = "") {
+  render(`
+    <section class="hero">
+      <h1 tabindex="-1">${title}</h1>
+      <p class="muted">${message}</p>
+    </section>
+    <div class="card">
+      <div class="card__body">
+        ${extraHtml}
+        <div class="btnrow" style="margin-top:12px">
+          <button class="btn" type="button" id="goHomeBtn">Go home</button>
+        </div>
+      </div>
+    </div>
+  `);
+  qs("#goHomeBtn")?.addEventListener("click", () => setHash("/"));
+}
 
-  if (backgroundMode === "solid") {
-    ctx.fillStyle = backgroundColor;
-    ctx.fillRect(0, 0, size, size);
+function renderHome() {
+  const exams = state.dataset?.exams || [];
+
+  const groups = groupExamsByCourse(exams);
+
+  render(`
+    <section class="hero">
+      <h1 tabindex="-1">Practice exams</h1>
+      <p>Pick an exam set, choose your mode, and start practicing.</p>
+    </section>
+
+    <div class="grid">
+      <div class="col-12 col-8">
+        <div class="card">
+          <div class="card__body">
+            <div class="split">
+              <div class="pill"><strong>${exams.length}</strong> exam sets</div>
+              <div class="pill"><strong>${countQuestions(exams)}</strong> questions</div>
+            </div>
+
+            <div class="list" style="margin-top:14px">
+              ${groups
+                .map((g) => {
+                  const groupTitle = htmlEscape(g.title);
+                  const groupMeta = `${g.exams.length} sets • ${g.totalQuestions} questions`;
+                  return `
+                    <div class="card exam-card" style="padding:16px">
+                      <div class="split">
+                        <div>
+                          <div class="exam-card__title">${groupTitle}</div>
+                          <div class="exam-card__meta">${groupMeta}</div>
+                        </div>
+                      </div>
+                      <div class="list" style="margin-top:12px">
+                        ${g.exams
+                          .map((e) => {
+                            const qCount = e.questions?.length || 0;
+                            const short = getSetLabelFromTitle(e.title) || e.title;
+                            return `
+                              <div class="card exam-card" style="box-shadow:none">
+                                <div class="exam-card__title">${htmlEscape(short)}</div>
+                                <div class="exam-card__meta">${qCount} questions</div>
+                                <div class="exam-card__actions">
+                                  <a class="btn btn--primary" href="#/exam/${encodeURIComponent(e.id)}">Start</a>
+                                </div>
+                              </div>
+                            `;
+                          })
+                          .join("")}
+                      </div>
+                    </div>
+                  `;
+                })
+                .join("")}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `);
+}
+
+function groupExamsByCourse(exams) {
+  /** @type {Map<string, {title: string, exams: any[], totalQuestions: number}>} */
+  const map = new Map();
+
+  for (const e of exams) {
+    const raw = (e.tags && e.tags[0]) || "Ungrouped";
+    let title = String(raw).replaceAll("Outsystems", "OutSystems").trim();
+    // Make the group title cleaner for the UI (keeps the group stable and English-only).
+    title = title.replace(/\s*\(O11\)\s*/gi, "").trim();
+    const key = title.toLowerCase();
+    const entry = map.get(key) || { title, exams: [], totalQuestions: 0 };
+    entry.exams.push(e);
+    entry.totalQuestions += e.questions?.length || 0;
+    map.set(key, entry);
   }
 
-  drawFittedImage(ctx, image, size, fit);
-  return canvas;
-}
-
-function renderSpritesheetFrame(image, frameWidth, frameHeight, sizingMode, cellSize, fit) {
-  const canvas = document.createElement("canvas");
-  canvas.width = frameWidth;
-  canvas.height = frameHeight;
-
-  const ctx = canvas.getContext("2d", { alpha: true });
-  ctx.imageSmoothingEnabled = false;
-  ctx.clearRect(0, 0, frameWidth, frameHeight);
-
-  if (sizingMode === "original") {
-    ctx.drawImage(image, 0, 0, frameWidth, frameHeight);
-    return canvas;
+  const groups = Array.from(map.values());
+  groups.sort((a, b) => a.title.localeCompare(b.title));
+  for (const g of groups) {
+    g.exams.sort((a, b) => a.title.localeCompare(b.title));
   }
-
-  drawFittedImage(ctx, image, cellSize, fit);
-  return canvas;
+  return groups;
 }
 
-function drawExtrudedFrame(ctx, frameCanvas, x, y, extrudePadding) {
-  const width = frameCanvas.width;
-  const height = frameCanvas.height;
-
-  ctx.drawImage(frameCanvas, x, y);
-
-  if (!extrudePadding || width <= 0 || height <= 0) {
-    return;
-  }
-
-  const p = extrudePadding;
-
-  ctx.drawImage(frameCanvas, 0, 0, width, 1, x, y - p, width, p);
-  ctx.drawImage(frameCanvas, 0, height - 1, width, 1, x, y + height, width, p);
-  ctx.drawImage(frameCanvas, 0, 0, 1, height, x - p, y, p, height);
-  ctx.drawImage(frameCanvas, width - 1, 0, 1, height, x + width, y, p, height);
-
-  ctx.drawImage(frameCanvas, 0, 0, 1, 1, x - p, y - p, p, p);
-  ctx.drawImage(frameCanvas, width - 1, 0, 1, 1, x + width, y - p, p, p);
-  ctx.drawImage(frameCanvas, 0, height - 1, 1, 1, x - p, y + height, p, p);
-  ctx.drawImage(
-    frameCanvas,
-    width - 1,
-    height - 1,
-    1,
-    1,
-    x + width,
-    y + height,
-    p,
-    p,
-  );
+function getSetLabelFromTitle(title) {
+  const m = String(title).match(/Set\\s+(\\d+)/i);
+  if (!m) return null;
+  const n = Number(m[1]);
+  if (!Number.isFinite(n)) return null;
+  return `Set ${String(n).padStart(2, "0")}`;
 }
 
-function isPixelTabActive() {
-  return elements.tabPanels.pixel?.classList.contains("is-active");
-}
+function renderExamSetup(examId) {
+  const exam = getExamById(examId);
+  if (!exam) return renderError("Not found", "That exam set does not exist.");
 
-function isSpritesheetTabActive() {
-  return elements.tabPanels.spritesheet?.classList.contains("is-active");
-}
+  const qCount = exam.questions.length;
+  render(`
+    <section class="hero">
+      <h1 tabindex="-1">${htmlEscape(exam.title)}</h1>
+      <p>${qCount} questions • Choose your settings, then start.</p>
+    </section>
 
-function isResizeTabActive() {
-  return elements.tabPanels.resize?.classList.contains("is-active");
-}
+    <div class="grid">
+      <div class="col-12 col-8">
+        <div class="card">
+          <div class="card__body">
+            <div class="field">
+              <label for="modeSelect">Mode</label>
+              <select id="modeSelect">
+                <option value="exam">Exam mode (submit at the end)</option>
+                <option value="practice">Practice mode (one question at a time)</option>
+              </select>
+            </div>
 
-function isEditablePasteTarget(target) {
-  return (
-    target instanceof HTMLInputElement ||
-    target instanceof HTMLTextAreaElement ||
-    target instanceof HTMLSelectElement ||
-    target?.isContentEditable
-  );
-}
+            <div style="height:12px"></div>
 
-function extractClipboardImageFiles(clipboardData) {
-  if (!clipboardData) return [];
+            <div class="checks" role="group" aria-label="Options">
+              <label class="check">
+                <input type="checkbox" id="shuffleQuestions" checked />
+                <span><strong>Randomize</strong> question order</span>
+              </label>
+              <label class="check">
+                <input type="checkbox" id="shuffleOptions" checked />
+                <span><strong>Randomize</strong> answer choices</span>
+              </label>
+              <label class="check">
+                <input type="checkbox" id="practiceInstant" />
+                <span><strong>Instant feedback</strong> in practice mode</span>
+              </label>
+              <label class="check">
+                <input type="checkbox" id="persistProgress" checked />
+                <span><strong>Save progress</strong> to localStorage</span>
+              </label>
+            </div>
 
-  const files = [];
-  const timestamp = Date.now();
+            <div style="height:14px"></div>
 
-  for (const item of clipboardData.items ?? []) {
-    if (!item.type.startsWith("image/")) continue;
+            <div class="btnrow">
+              <button class="btn btn--primary" id="startBtn" type="button">Start</button>
+              <a class="btn" href="#/">Back</a>
+            </div>
+          </div>
+        </div>
+      </div>
 
-    const file = item.getAsFile();
-    if (!file) continue;
+      <div class="col-12 col-4">
+        <div class="card">
+          <div class="card__body">
+            <h2 style="margin:0 0 6px; font-size:1.05rem">Tip</h2>
+            <p class="muted" style="margin:0">
+              Use <span class="kbd">J</span>/<span class="kbd">K</span> to move next/previous question during a session.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  `);
 
-    const extension = (file.type.split("/")[1] || "png").replace(/[^\w-]+/g, "");
-    const namedFile =
-      file.name && file.name.trim()
-        ? file
-        : new File([file], `clipboard-image-${timestamp}.${extension}`, {
-            type: file.type || "image/png",
-          });
+  qs("#startBtn")?.addEventListener("click", () => {
+    const mode = qs("#modeSelect")?.value || "exam";
+    const shuffleQ = qs("#shuffleQuestions")?.checked ?? true;
+    const shuffleO = qs("#shuffleOptions")?.checked ?? true;
+    const instant = qs("#practiceInstant")?.checked ?? false;
+    const persist = qs("#persistProgress")?.checked ?? true;
 
-    files.push(namedFile);
-  }
+    const session = createSession(exam, {
+      mode,
+      shuffleQuestions: shuffleQ,
+      shuffleOptions: shuffleO,
+      practiceInstantFeedback: instant,
+      persistProgress: persist,
+    });
 
-  return files;
-}
-
-function switchTab(tabName) {
-  elements.tabButtons.forEach((button) => {
-    const isActive = button.dataset.tab === tabName;
-    button.classList.toggle("is-active", isActive);
-    button.setAttribute("aria-selected", String(isActive));
+    state.session = session;
+    if (persist) saveSession(session);
+    setHash(`/take/${encodeURIComponent(exam.id)}`);
   });
-
-  Object.entries(elements.tabPanels).forEach(([name, panel]) => {
-    panel.classList.toggle("is-active", name === tabName);
-  });
 }
 
-function updatePixelCounters() {
-  const total = state.pixelItems.length;
-  const converted = state.pixelItems.filter((item) => item.outputUrl).length;
+function createSession(exam, settings) {
+  const seed = Date.now() >>> 0;
+  const rng = mulberry32(seed);
 
-  elements.pixel.fileCount.textContent =
-    total === 0
-      ? "No images added yet"
-      : `${total} images added, ${converted} converted`;
+  const originalQuestionIds = exam.questions.map((q) => q.id);
+  const questionOrder = settings.shuffleQuestions ? shuffle(originalQuestionIds, rng) : originalQuestionIds;
 
-  elements.pixel.emptyState.hidden = total > 0;
-  elements.pixel.downloadAllBtn.disabled = converted === 0;
-}
+  const optionOrderByQuestion = {};
+  for (const q of exam.questions) {
+    const ids = q.options.map((o) => o.id);
+    optionOrderByQuestion[q.id] = settings.shuffleOptions ? shuffle(ids, rng) : ids;
+  }
 
-function updateSheetCounters() {
-  const total = state.sheetItems.length;
-
-  elements.sheet.count.textContent =
-    total === 0 ? "No frames added yet" : `${total} frames added`;
-  elements.sheet.framesEmpty.hidden = total > 0;
-  elements.sheet.emptyState.hidden = Boolean(state.sheetOutputUrl);
-  elements.sheet.previewWrap.hidden = !state.sheetOutputUrl;
-  elements.sheet.downloadBtn.disabled = !state.sheetOutputUrl;
-  elements.sheet.downloadJsonBtn.disabled = !state.sheetJsonUrl;
-}
-
-function clearSheetOutputs() {
-  revokeIfExists(state.sheetJsonUrl);
-  state.sheetOutputUrl = "";
-  state.sheetJsonUrl = "";
-}
-
-function updateResizeCounters() {
-  const total = state.resizeItems.length;
-  const resized = state.resizeItems.filter((item) => item.outputUrl).length;
-
-  elements.resize.count.textContent =
-    total === 0
-      ? "No images added yet"
-      : `${total} images added, ${resized} resized`;
-
-  elements.resize.emptyState.hidden = total > 0;
-  elements.resize.downloadAllBtn.disabled = resized === 0;
-}
-
-function buildCustomSpritesheetMetadata({
-  width,
-  height,
-  columns,
-  rows,
-  cellSize,
-  padding,
-  atlasPadding,
-  fit,
-  backgroundMode,
-  backgroundColor,
-  frameData,
-}) {
   return {
-    meta: {
-      app: "Pixel Tools Studio",
-      image: "spritesheet.png",
-      format: "RGBA8888",
-      size: { w: width, h: height },
-      scale: 1,
-      columns,
-      rows,
-      cellSize,
-      padding,
-      atlasPadding,
-      fitMode: fit,
-      backgroundMode,
-      backgroundColor: backgroundMode === "solid" ? backgroundColor : null,
-      frameCount: frameData.length,
-      jsonFormat: "custom",
+    schemaVersion: 1,
+    seed,
+    examId: exam.id,
+    mode: settings.mode,
+    settings: {
+      shuffleQuestions: !!settings.shuffleQuestions,
+      shuffleOptions: !!settings.shuffleOptions,
+      practiceInstantFeedback: !!settings.practiceInstantFeedback,
+      persistProgress: !!settings.persistProgress,
     },
-    frames: frameData.map((frame) => ({
-      index: frame.index,
-      name: frame.name,
-      exportName: frame.exportName,
-      file: frame.file,
-      baseName: frame.baseName,
-      frame: frame.frame,
-      atlasFrame: frame.frame,
-      inputSize: frame.inputSize,
-      renderSize: frame.renderSize,
-      grid: frame.grid,
-    })),
+    startedAt: nowIso(),
+    completedAt: null,
+    submitted: false,
+    currentIndex: 0,
+    questionOrder,
+    optionOrderByQuestion,
+    answersByQuestion: {},
+    checkedByQuestion: {}, // used in practice mode to reveal correctness per question
+    lastViewedAt: nowIso(),
   };
 }
 
-function buildPhaserArrayMetadata({
-  width,
-  height,
-  backgroundColor,
-  atlasPadding,
-  frameData,
-}) {
-  return {
-    frames: frameData.map((frame) => ({
-      filename: frame.exportName,
-      frame: {
-        x: frame.frame.x,
-        y: frame.frame.y,
-        w: frame.frame.w,
-        h: frame.frame.h,
-      },
-      rotated: false,
-      trimmed: false,
-      spriteSourceSize: {
-        x: 0,
-        y: 0,
-        w: frame.frame.w,
-        h: frame.frame.h,
-      },
-      sourceSize: {
-        w: frame.frame.w,
-        h: frame.frame.h,
-      },
-      inputSize: frame.inputSize,
-      renderSize: frame.renderSize,
-      pivot: {
-        x: 0.5,
-        y: 0.5,
-      },
-    })),
-    meta: {
-      app: "Pixel Tools Studio",
-      version: "1.0.0",
-      image: "spritesheet.png",
-      format: "RGBA8888",
-      size: { w: width, h: height },
-      scale: 1,
-      atlasPadding,
-      smartupdate: backgroundColor ?? "",
+function renderTake(examId) {
+  const exam = getExamById(examId);
+  if (!exam) return renderError("Not found", "That exam set does not exist.");
+
+  const session = state.session || loadSession();
+  if (!session || session.examId !== examId) {
+    return renderError("No active session", "Start an exam set first.", `<a class="btn btn--primary" href="#/exam/${encodeURIComponent(examId)}">Go to setup</a>`);
+  }
+
+  state.session = session;
+  const total = session.questionOrder.length;
+  const idx = clamp(session.currentIndex || 0, 0, total - 1);
+  session.currentIndex = idx;
+
+  const qid = session.questionOrder[idx];
+  const question = getQuestionById(exam, qid);
+  if (!question) return renderError("Data error", "Question not found in dataset.");
+
+  const optionOrder = session.optionOrderByQuestion?.[qid] || question.options.map((o) => o.id);
+  const chosen = session.answersByQuestion?.[qid] ?? "";
+
+  const practice = session.mode === "practice";
+  const checked = !!session.checkedByQuestion?.[qid];
+  const showInstant = practice && session.settings?.practiceInstantFeedback;
+
+  const showReveal = practice && (checked || showInstant);
+  const correctIds = question.correctOptionIds || [];
+
+  const answeredCount = session.questionOrder.reduce((acc, id) => acc + (session.answersByQuestion?.[id] ? 1 : 0), 0);
+  const progressPct = total ? (answeredCount / total) * 100 : 0;
+
+  render(`
+    <section class="hero">
+      <div class="split">
+        <div>
+          <h1 tabindex="-1" style="margin:0 0 6px">${htmlEscape(exam.title)}</h1>
+          <p class="muted" style="margin:0">
+            ${practice ? "Practice mode" : "Exam mode"} • Question <strong>${idx + 1}</strong> / ${total}
+          </p>
+        </div>
+        <div class="btnrow right">
+          <a class="btn" href="#/">Exit</a>
+          <button class="btn btn--danger" id="resetBtn" type="button">Reset</button>
+          <button class="btn btn--primary" id="submitBtn" type="button">${practice ? "Finish" : "Submit exam"}</button>
+        </div>
+      </div>
+
+      <div style="height:10px"></div>
+      <div class="progress" aria-label="Progress">
+        <div style="width:${progressPct.toFixed(2)}%"></div>
+      </div>
+      <div style="height:10px"></div>
+      <div class="split">
+        <div class="pill"><strong>${answeredCount}</strong> answered</div>
+        <div class="pill"><strong>${total - answeredCount}</strong> unanswered</div>
+        ${question.category ? `<div class="pill">Category: <strong>${htmlEscape(question.category)}</strong></div>` : ""}
+      </div>
+    </section>
+
+    <div class="card">
+      <div class="card__body">
+        <div class="q">
+          <div class="q__prompt" id="prompt" data-autofocus tabindex="-1"></div>
+          <div class="options" role="radiogroup" aria-label="Answer choices">
+            ${optionOrder
+              .map((oid) => {
+                const opt = question.options.find((o) => o.id === oid);
+                if (!opt) return "";
+
+                const isChosen = chosen === oid;
+                const isCorrect = correctIds.includes(oid);
+                const classes = [
+                  "option",
+                  showReveal && isCorrect ? "option--correct" : "",
+                  showReveal && isChosen && !isCorrect ? "option--wrong" : "",
+                ]
+                  .filter(Boolean)
+                  .join(" ");
+
+                return `
+                  <label class="${classes}">
+                    <input type="radio" name="answer" value="${oid}" ${isChosen ? "checked" : ""} />
+                    <div class="option__body" data-opt="${oid}"></div>
+                  </label>
+                `;
+              })
+              .join("")}
+          </div>
+
+          <div style="height:14px"></div>
+
+          <div class="split">
+            <div class="btnrow">
+              <button class="btn" type="button" id="prevBtn" ${idx === 0 ? "disabled" : ""}>Prev</button>
+              <button class="btn" type="button" id="nextBtn" ${idx === total - 1 ? "disabled" : ""}>Next</button>
+              <button class="btn" type="button" id="jumpBtn">Jump…</button>
+            </div>
+            <div class="btnrow right">
+              ${
+                practice
+                  ? `
+                    <button class="btn btn--primary" type="button" id="checkBtn" ${chosen ? "" : "disabled"}>
+                      ${showReveal ? "Hide answer" : "Check answer"}
+                    </button>
+                  `
+                  : ""
+              }
+            </div>
+          </div>
+
+          <div id="jumpPanel" class="review" hidden></div>
+        </div>
+      </div>
+    </div>
+  `);
+
+  // Render prompt/options as HTML from dataset (keeps rich text/images if present).
+  qs("#prompt").innerHTML = question.promptHtml;
+  for (const optId of optionOrder) {
+    const opt = question.options.find((o) => o.id === optId);
+    const el = qs(`[data-opt="${cssEscape(optId)}"]`);
+    if (el && opt) el.innerHTML = opt.html;
+  }
+
+  // Option selection.
+  appEl.addEventListener(
+    "change",
+    (e) => {
+      const target = e.target;
+      if (!(target instanceof HTMLInputElement)) return;
+      if (target.name !== "answer") return;
+      const value = target.value;
+      session.answersByQuestion[qid] = value;
+      session.lastViewedAt = nowIso();
+
+      if (practice && showInstant) {
+        session.checkedByQuestion[qid] = true;
+      }
+      if (session.settings?.persistProgress) saveSession(session);
+
+      // Rerender to reflect correctness styles (practice) or enable buttons.
+      renderTake(examId);
     },
-  };
-}
-
-function buildPhaserHashMetadata({
-  width,
-  height,
-  backgroundColor,
-  atlasPadding,
-  frameData,
-}) {
-  const frames = {};
-
-  frameData.forEach((frame) => {
-    frames[frame.exportName] = {
-      frame: {
-        x: frame.frame.x,
-        y: frame.frame.y,
-        w: frame.frame.w,
-        h: frame.frame.h,
-      },
-      rotated: false,
-      trimmed: false,
-      spriteSourceSize: {
-        x: 0,
-        y: 0,
-        w: frame.frame.w,
-        h: frame.frame.h,
-      },
-      sourceSize: {
-        w: frame.frame.w,
-        h: frame.frame.h,
-      },
-      inputSize: frame.inputSize,
-      renderSize: frame.renderSize,
-      pivot: {
-        x: 0.5,
-        y: 0.5,
-      },
-    };
-  });
-
-  return {
-    frames,
-    meta: {
-      app: "Pixel Tools Studio",
-      version: "1.0.0",
-      image: "spritesheet.png",
-      format: "RGBA8888",
-      size: { w: width, h: height },
-      scale: 1,
-      atlasPadding,
-      smartupdate: backgroundColor ?? "",
-    },
-  };
-}
-
-function buildSpritesheetMetadata(options) {
-  const format = options.jsonFormat;
-
-  if (format === "phaser-array") {
-    return buildPhaserArrayMetadata(options);
-  }
-
-  if (format === "phaser-hash") {
-    return buildPhaserHashMetadata(options);
-  }
-
-  return buildCustomSpritesheetMetadata(options);
-}
-
-function bindPixelCard(item) {
-  const fragment = elements.cardTemplate.content.cloneNode(true);
-  const sourcePreview = fragment.querySelector(".source-preview");
-  const pixelPreview = fragment.querySelector(".pixel-preview");
-  const fileName = fragment.querySelector(".file-name");
-  const fileInfo = fragment.querySelector(".file-info");
-  const downloadBtn = fragment.querySelector(".download-btn");
-
-  sourcePreview.src = item.sourceUrl;
-  sourcePreview.alt = item.file.name;
-  fileName.textContent = item.file.name;
-  fileInfo.textContent = `${formatBytes(item.file.size)} • ${
-    item.file.type || "image"
-  }`;
-
-  item.previewCanvas = pixelPreview;
-  item.downloadBtn = downloadBtn;
-
-  downloadBtn.addEventListener("click", () => {
-    if (!item.outputUrl) return;
-    triggerDownload(item.outputUrl, sanitizeName(item.file.name));
-  });
-
-  elements.pixel.resultsGrid.append(fragment);
-}
-
-function bindSheetCard(item) {
-  const fragment = elements.frameTemplate.content.cloneNode(true);
-  const card = fragment.querySelector(".frame-card");
-  const removeBtn = fragment.querySelector(".frame-remove-btn");
-  const preview = fragment.querySelector(".frame-preview");
-  const name = fragment.querySelector(".frame-name");
-  const info = fragment.querySelector(".frame-info");
-
-  preview.src = item.sourceUrl;
-  preview.alt = item.file.name;
-  name.textContent = item.file.name;
-  info.textContent = `${item.image.width}x${item.image.height} • ${formatBytes(
-    item.file.size,
-  )}`;
-
-  item.card = card;
-  item.removeBtn = removeBtn;
-
-  removeBtn.addEventListener("click", () => {
-    removeSheetItem(item);
-  });
-
-  elements.sheet.framesGrid.append(fragment);
-}
-
-function bindResizeCard(item) {
-  const fragment = elements.cardTemplate.content.cloneNode(true);
-  const sourcePreview = fragment.querySelector(".source-preview");
-  const resizedPreview = fragment.querySelector(".pixel-preview");
-  const fileName = fragment.querySelector(".file-name");
-  const fileInfo = fragment.querySelector(".file-info");
-  const downloadBtn = fragment.querySelector(".download-btn");
-  const labels = fragment.querySelectorAll(".canvas-pair p");
-
-  if (labels[1]) {
-    labels[1].textContent = "Resized";
-  }
-
-  resizedPreview.classList.add("resize-preview");
-
-  sourcePreview.src = item.sourceUrl;
-  sourcePreview.alt = item.file.name;
-  fileName.textContent = item.file.name;
-  fileInfo.textContent = `${formatBytes(item.file.size)} • ${
-    item.file.type || "image"
-  }`;
-
-  item.previewCanvas = resizedPreview;
-  item.downloadBtn = downloadBtn;
-
-  downloadBtn.addEventListener("click", () => {
-    if (!item.outputUrl) return;
-    triggerDownload(item.outputUrl, sanitizeName(item.file.name));
-  });
-
-  elements.resize.resultsGrid.append(fragment);
-}
-
-async function addPixelFiles(fileList) {
-  const files = [...fileList].filter((file) => file.type.startsWith("image/"));
-
-  if (files.length === 0) {
-    updatePixelStatus("No valid image files found.");
-    return;
-  }
-
-  updatePixelStatus(`Loading ${files.length} image(s)...`);
-
-  for (const file of files) {
-    const duplicate = state.pixelItems.some(
-      (item) => item.file.name === file.name && item.file.size === file.size,
-    );
-
-    if (duplicate) continue;
-
-    try {
-      const { image, objectUrl } = await loadImage(file);
-      const item = {
-        file,
-        image,
-        sourceUrl: objectUrl,
-        outputUrl: "",
-        previewCanvas: null,
-        downloadBtn: null,
-      };
-
-      state.pixelItems.push(item);
-      bindPixelCard(item);
-    } catch (error) {
-      updatePixelStatus(error.message);
-    }
-  }
-
-  updatePixelCounters();
-  updatePixelStatus("Images are ready. Click convert to create pixel art.");
-}
-
-async function addSheetFiles(fileList) {
-  const files = [...fileList].filter((file) => file.type.startsWith("image/"));
-
-  if (files.length === 0) {
-    updateSheetStatus("No valid image files found.");
-    return;
-  }
-
-  updateSheetStatus(`Loading ${files.length} frame(s)...`);
-
-  for (const file of files) {
-    const duplicate = state.sheetItems.some(
-      (item) => item.file.name === file.name && item.file.size === file.size,
-    );
-
-    if (duplicate) continue;
-
-    try {
-      const { image, objectUrl } = await loadImage(file);
-      const item = {
-        file,
-        image,
-        sourceUrl: objectUrl,
-        card: null,
-        removeBtn: null,
-      };
-      state.sheetItems.push(item);
-      bindSheetCard(item);
-    } catch (error) {
-      updateSheetStatus(error.message);
-    }
-  }
-
-  clearSheetOutputs();
-  updateSheetCounters();
-  updateSheetStatus("Frames are ready. Click build spritesheet.");
-}
-
-async function addResizeFiles(fileList) {
-  const files = [...fileList].filter((file) => file.type.startsWith("image/"));
-
-  if (files.length === 0) {
-    updateResizeStatus("No valid image files found.");
-    return;
-  }
-
-  updateResizeStatus(`Loading ${files.length} image(s)...`);
-
-  for (const file of files) {
-    const duplicate = state.resizeItems.some(
-      (item) => item.file.name === file.name && item.file.size === file.size,
-    );
-
-    if (duplicate) continue;
-
-    try {
-      const { image, objectUrl } = await loadImage(file);
-      const item = {
-        file,
-        image,
-        sourceUrl: objectUrl,
-        outputUrl: "",
-        previewCanvas: null,
-        downloadBtn: null,
-      };
-
-      state.resizeItems.push(item);
-      bindResizeCard(item);
-    } catch (error) {
-      updateResizeStatus(error.message);
-    }
-  }
-
-  updateResizeCounters();
-  updateResizeStatus("Images are ready. Click resize to create new outputs.");
-}
-
-function convertPixelItem(item) {
-  const size = Number(elements.pixel.sizeSelect.value);
-  const fit = elements.pixel.fitSelect.value;
-  const backgroundMode = elements.pixel.backgroundMode.value;
-  const backgroundColor = elements.pixel.backgroundColor.value;
-
-  const outputCanvas = drawPixelImage(
-    item.image,
-    size,
-    fit,
-    backgroundMode,
-    backgroundColor,
+    { once: true }
   );
 
-  item.previewCanvas.width = size;
-  item.previewCanvas.height = size;
-
-  const previewCtx = item.previewCanvas.getContext("2d", { alpha: true });
-  previewCtx.clearRect(0, 0, size, size);
-  previewCtx.imageSmoothingEnabled = false;
-  previewCtx.drawImage(outputCanvas, 0, 0);
-
-  item.outputUrl = outputCanvas.toDataURL("image/png");
-  item.downloadBtn.disabled = false;
-}
-
-function resizeItemToTarget(item) {
-  const width = Math.max(1, Number(elements.resize.width.value) || 1);
-  const height = Math.max(1, Number(elements.resize.height.value) || 1);
-
-  const outputCanvas = document.createElement("canvas");
-  outputCanvas.width = width;
-  outputCanvas.height = height;
-
-  const outputCtx = outputCanvas.getContext("2d", { alpha: true });
-  outputCtx.imageSmoothingEnabled = false;
-  outputCtx.clearRect(0, 0, width, height);
-  outputCtx.drawImage(item.image, 0, 0, width, height);
-
-  item.previewCanvas.width = width;
-  item.previewCanvas.height = height;
-
-  const previewCtx = item.previewCanvas.getContext("2d", { alpha: true });
-  previewCtx.clearRect(0, 0, width, height);
-  previewCtx.imageSmoothingEnabled = false;
-  previewCtx.drawImage(outputCanvas, 0, 0);
-
-  item.outputUrl = outputCanvas.toDataURL("image/png");
-  item.downloadBtn.disabled = false;
-}
-
-function invalidateResizeOutputs(message) {
-  state.resizeItems.forEach((item) => {
-    if (!item.outputUrl) return;
-    item.outputUrl = "";
-    item.downloadBtn.disabled = true;
+  // Navigation.
+  qs("#prevBtn")?.addEventListener("click", () => {
+    session.currentIndex = clamp(session.currentIndex - 1, 0, total - 1);
+    session.lastViewedAt = nowIso();
+    if (session.settings?.persistProgress) saveSession(session);
+    renderTake(examId);
   });
 
-  updateResizeCounters();
-  updateResizeStatus(message);
-}
-
-function convertAllPixels() {
-  if (state.pixelItems.length === 0) {
-    updatePixelStatus("Add images before converting.");
-    return;
-  }
-
-  updatePixelStatus(`Converting ${state.pixelItems.length} image(s)...`);
-
-  for (const item of state.pixelItems) {
-    convertPixelItem(item);
-  }
-
-  updatePixelCounters();
-  updatePixelStatus(
-    "Conversion complete. You can download each image or download all.",
-  );
-}
-
-function resizeAllImages() {
-  if (state.resizeItems.length === 0) {
-    updateResizeStatus("Add images before resizing.");
-    return;
-  }
-
-  const width = Math.max(1, Number(elements.resize.width.value) || 1);
-  const height = Math.max(1, Number(elements.resize.height.value) || 1);
-
-  updateResizeStatus(`Resizing ${state.resizeItems.length} image(s) to ${width}x${height}...`);
-
-  for (const item of state.resizeItems) {
-    resizeItemToTarget(item);
-  }
-
-  updateResizeCounters();
-  updateResizeStatus(`Resize complete. Outputs are now ${width}x${height}.`);
-}
-
-async function downloadAllPixels() {
-  const convertedItems = state.pixelItems.filter((item) => item.outputUrl);
-
-  if (convertedItems.length === 0) {
-    updatePixelStatus("No converted images available yet.");
-    return;
-  }
-
-  updatePixelStatus(`Downloading ${convertedItems.length} image(s)...`);
-
-  for (const [index, item] of convertedItems.entries()) {
-    triggerDownload(item.outputUrl, sanitizeName(item.file.name));
-    await new Promise((resolve) => window.setTimeout(resolve, index === 0 ? 0 : 180));
-  }
-
-  updatePixelStatus("Batch download request sent.");
-}
-
-async function downloadAllResized() {
-  const resizedItems = state.resizeItems.filter((item) => item.outputUrl);
-
-  if (resizedItems.length === 0) {
-    updateResizeStatus("No resized images available yet.");
-    return;
-  }
-
-  updateResizeStatus(`Downloading ${resizedItems.length} image(s)...`);
-
-  for (const [index, item] of resizedItems.entries()) {
-    triggerDownload(item.outputUrl, sanitizeName(item.file.name));
-    await new Promise((resolve) => window.setTimeout(resolve, index === 0 ? 0 : 180));
-  }
-
-  updateResizeStatus("Batch download request sent.");
-}
-
-function clearPixelItems() {
-  state.pixelItems.forEach((item) => URL.revokeObjectURL(item.sourceUrl));
-  state.pixelItems = [];
-  elements.pixel.resultsGrid.innerHTML = "";
-  updatePixelCounters();
-  updatePixelStatus("Image list cleared.");
-}
-
-function clearResizeItems() {
-  state.resizeItems.forEach((item) => URL.revokeObjectURL(item.sourceUrl));
-  state.resizeItems = [];
-  elements.resize.resultsGrid.innerHTML = "";
-  updateResizeCounters();
-  updateResizeStatus("Image list cleared.");
-}
-
-function buildSpritesheet() {
-  if (state.sheetItems.length === 0) {
-    updateSheetStatus("Add frames before building a spritesheet.");
-    return;
-  }
-
-  const columns = Math.max(1, Number(elements.sheet.columns.value) || 1);
-  const cellSize = Math.max(1, Number(elements.sheet.cellSize.value) || 32);
-  const sizingMode = elements.sheet.sizingMode.value;
-  const padding = Math.max(0, Number(elements.sheet.padding.value) || 0);
-  const jsonFormat = elements.sheet.jsonFormat.value;
-  const fit = elements.sheet.fitSelect.value;
-  const backgroundMode = elements.sheet.backgroundMode.value;
-  const backgroundColor = elements.sheet.backgroundColor.value;
-  const atlasPadding = ATLAS_EXTRUDE_PADDING;
-  const rows = Math.ceil(state.sheetItems.length / columns);
-  const frameData = [];
-  const usedFrameNames = new Set();
-
-  const framesPerRow = [];
-  for (let start = 0; start < state.sheetItems.length; start += columns) {
-    framesPerRow.push(state.sheetItems.slice(start, start + columns));
-  }
-
-  const rowHeights = framesPerRow.map((rowItems) =>
-    Math.max(
-      ...rowItems.map((item) =>
-        (sizingMode === "original" ? item.image.height : cellSize) + atlasPadding * 2,
-      ),
-    ),
-  );
-
-  const rowWidths = framesPerRow.map((rowItems) => {
-    const contentWidth = rowItems.reduce(
-      (total, item) =>
-        total +
-        (sizingMode === "original" ? item.image.width : cellSize) +
-        atlasPadding * 2,
-      0,
-    );
-    return contentWidth + Math.max(0, rowItems.length - 1) * padding;
+  qs("#nextBtn")?.addEventListener("click", () => {
+    session.currentIndex = clamp(session.currentIndex + 1, 0, total - 1);
+    session.lastViewedAt = nowIso();
+    if (session.settings?.persistProgress) saveSession(session);
+    renderTake(examId);
   });
 
-  const width = rowWidths.length > 0 ? Math.max(...rowWidths) : 0;
-  const height =
-    rowHeights.reduce((total, rowHeight) => total + rowHeight, 0) +
-    Math.max(0, rowHeights.length - 1) * padding;
-
-  const canvas = elements.sheet.previewCanvas;
-  canvas.width = width;
-  canvas.height = height;
-
-  const ctx = canvas.getContext("2d", { alpha: true });
-  ctx.imageSmoothingEnabled = false;
-  ctx.clearRect(0, 0, width, height);
-
-  if (backgroundMode === "solid") {
-    ctx.fillStyle = backgroundColor;
-    ctx.fillRect(0, 0, width, height);
-  }
-
-  let yCursor = 0;
-
-  framesPerRow.forEach((rowItems, row) => {
-    let xCursor = 0;
-
-    rowItems.forEach((item, column) => {
-      const index = row * columns + column;
-      const frameWidth = sizingMode === "original" ? item.image.width : cellSize;
-      const frameHeight = sizingMode === "original" ? item.image.height : cellSize;
-      const x = xCursor + atlasPadding;
-      const y = yCursor + atlasPadding;
-      const frameCanvas = renderSpritesheetFrame(
-        item.image,
-        frameWidth,
-        frameHeight,
-        sizingMode,
-        cellSize,
-        fit,
-      );
-
-      drawExtrudedFrame(ctx, frameCanvas, x, y, atlasPadding);
-
-      frameData.push({
-        index,
-        name: item.file.name,
-        exportName: getUniqueFrameExportName(item.file.name, usedFrameNames),
-        file: item.file.name,
-        baseName: sanitizeFileBase(item.file.name),
-        frame: {
-          x,
-          y,
-          w: frameWidth,
-          h: frameHeight,
-        },
-        inputSize: {
-          w: item.image.width,
-          h: item.image.height,
-        },
-        renderSize: {
-          w: frameWidth,
-          h: frameHeight,
-        },
-        grid: {
-          row,
-          column,
-        },
+  // Jump panel (question list).
+  qs("#jumpBtn")?.addEventListener("click", () => {
+    const panel = qs("#jumpPanel");
+    const isHidden = panel.hasAttribute("hidden");
+    if (!isHidden) {
+      panel.setAttribute("hidden", "");
+      panel.innerHTML = "";
+      return;
+    }
+    panel.removeAttribute("hidden");
+    panel.innerHTML = renderJumpList(session, idx);
+    panel.querySelectorAll("[data-jump]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const i = Number(btn.getAttribute("data-jump"));
+        session.currentIndex = clamp(i, 0, total - 1);
+        session.lastViewedAt = nowIso();
+        if (session.settings?.persistProgress) saveSession(session);
+        renderTake(examId);
       });
-
-      xCursor += frameWidth + atlasPadding * 2 + padding;
     });
-
-    yCursor += rowHeights[row] + padding;
   });
 
-  state.sheetOutputUrl = canvas.toDataURL("image/png");
-  revokeIfExists(state.sheetJsonUrl);
-
-  const metadata = buildSpritesheetMetadata({
-    width,
-    height,
-    columns,
-    rows,
-    cellSize,
-    padding,
-    atlasPadding,
-    sizingMode,
-    fit,
-    backgroundMode,
-    backgroundColor,
-    frameData,
-    jsonFormat,
+  // Practice: reveal/hide answer.
+  qs("#checkBtn")?.addEventListener("click", () => {
+    if (showReveal) delete session.checkedByQuestion[qid];
+    else session.checkedByQuestion[qid] = true;
+    session.lastViewedAt = nowIso();
+    if (session.settings?.persistProgress) saveSession(session);
+    renderTake(examId);
   });
 
-  state.sheetJsonUrl = URL.createObjectURL(
-    new Blob([JSON.stringify(metadata, null, 2)], {
-      type: "application/json",
-    }),
-  );
-  updateSheetCounters();
-  updateSheetStatus(
-    `Spritesheet ${width}x${height} built with ${state.sheetItems.length} frame(s) using ${sizingMode} sizing. Auto atlas padding ${atlasPadding}px is included in the PNG and JSON.`,
-  );
-}
+  // Submit / finish.
+  qs("#submitBtn")?.addEventListener("click", () => {
+    session.submitted = true;
+    session.completedAt = nowIso();
+    session.lastViewedAt = nowIso();
+    if (session.settings?.persistProgress) saveSession(session);
+    setHash(`/result/${encodeURIComponent(examId)}`);
+  });
 
-function downloadSpritesheet() {
-  if (!state.sheetOutputUrl) {
-    updateSheetStatus("No spritesheet available to download.");
-    return;
-  }
+  qs("#resetBtn")?.addEventListener("click", () => {
+    // This is intentionally destructive; keep it scoped to this app’s localStorage key.
+    clearSession();
+    setHash(`/exam/${encodeURIComponent(examId)}`);
+  });
 
-  triggerDownload(state.sheetOutputUrl, "spritesheet.png");
-}
-
-function downloadSpritesheetJson() {
-  if (!state.sheetJsonUrl) {
-    updateSheetStatus("No spritesheet JSON available to download.");
-    return;
-  }
-
-  triggerDownload(
-    state.sheetJsonUrl,
-    getSpritesheetJsonFilename(elements.sheet.jsonFormat.value),
-  );
-}
-
-function clearSheetItems() {
-  state.sheetItems.forEach((item) => URL.revokeObjectURL(item.sourceUrl));
-  state.sheetItems = [];
-  clearSheetOutputs();
-  elements.sheet.framesGrid.innerHTML = "";
-  updateSheetCounters();
-  updateSheetStatus("Frame list cleared.");
-}
-
-function removeSheetItem(item) {
-  const index = state.sheetItems.indexOf(item);
-  if (index === -1) return;
-
-  state.sheetItems.splice(index, 1);
-  URL.revokeObjectURL(item.sourceUrl);
-  item.card?.remove();
-  clearSheetOutputs();
-  updateSheetCounters();
-
-  if (state.sheetItems.length === 0) {
-    updateSheetStatus("Frame removed. Add more frames to build a spritesheet.");
-    return;
-  }
-
-  updateSheetStatus("Frame removed. Rebuild the spritesheet to refresh the preview.");
-}
-
-function attachDropzone(dropzone, fileInput, onFiles) {
-  dropzone.addEventListener("click", () => fileInput.click());
-  dropzone.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      fileInput.click();
+  // Keyboard shortcuts: J/K for next/prev.
+  window.onkeydown = (e) => {
+    if (e.key.toLowerCase() === "j") {
+      if (idx < total - 1) qs("#nextBtn")?.click();
+    } else if (e.key.toLowerCase() === "k") {
+      if (idx > 0) qs("#prevBtn")?.click();
     }
-  });
+  };
+}
 
-  fileInput.addEventListener("change", (event) => {
-    onFiles(event.target.files);
-    event.target.value = "";
-  });
+function renderJumpList(session, currentIndex) {
+  const buttons = session.questionOrder
+    .map((qid, i) => {
+      const answered = session.answersByQuestion?.[qid] ? "✓" : "•";
+      const isCurrent = i === currentIndex;
+      return `<button class="btn" type="button" data-jump="${i}" ${isCurrent ? "disabled" : ""}>${i + 1} ${answered}</button>`;
+    })
+    .join(" ");
 
-  ["dragenter", "dragover"].forEach((eventName) => {
-    dropzone.addEventListener(eventName, (event) => {
-      event.preventDefault();
-      dropzone.classList.add("dragover");
-    });
-  });
+  return `
+    <div class="card__body" style="padding:0">
+      <div class="muted" style="margin-bottom:10px">Jump to question (✓ answered, • unanswered)</div>
+      <div class="btnrow">${buttons}</div>
+    </div>
+  `;
+}
 
-  ["dragleave", "drop"].forEach((eventName) => {
-    dropzone.addEventListener(eventName, (event) => {
-      event.preventDefault();
-      dropzone.classList.remove("dragover");
-    });
-  });
+function renderResult(examId) {
+  const exam = getExamById(examId);
+  if (!exam) return renderError("Not found", "That exam set does not exist.");
 
-  dropzone.addEventListener("drop", (event) => {
-    onFiles(event.dataTransfer.files);
+  const session = state.session || loadSession();
+  if (!session || session.examId !== examId || !session.submitted) {
+    return renderError("No results", "Submit an exam session first.", `<a class="btn btn--primary" href="#/exam/${encodeURIComponent(examId)}">Start</a>`);
+  }
+
+  state.session = session;
+  const grade = gradeSession(session, exam);
+
+  render(`
+    <section class="hero">
+      <h1 tabindex="-1">Results</h1>
+      <p>${htmlEscape(exam.title)} • ${session.mode === "practice" ? "Practice" : "Exam"} mode</p>
+    </section>
+
+    <div class="grid">
+      <div class="col-12 col-8">
+        <div class="card">
+          <div class="card__body">
+            <div class="split">
+              <div class="pill">Score: <strong>${grade.correct} / ${grade.total}</strong></div>
+              <div class="pill">Accuracy: <strong>${formatPercent(grade.percent)}</strong></div>
+            </div>
+            <div style="height:12px"></div>
+            <div class="split">
+              <div class="pill">Correct: <strong style="color:var(--ok)">${grade.correct}</strong></div>
+              <div class="pill">Incorrect: <strong style="color:var(--danger)">${grade.incorrect}</strong></div>
+              <div class="pill">Unanswered: <strong style="color:var(--warn)">${grade.unanswered}</strong></div>
+            </div>
+
+            <div style="height:14px"></div>
+            <div class="btnrow">
+              <a class="btn btn--primary" href="#/review/${encodeURIComponent(examId)}">Review answers</a>
+              <button class="btn" type="button" id="retryBtn">Retry</button>
+              <a class="btn" href="#/">Home</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-12 col-4">
+        <div class="card">
+          <div class="card__body">
+            <h2 style="margin:0 0 6px; font-size:1.05rem">Saved</h2>
+            <p class="muted" style="margin:0">
+              Results are stored locally in your browser (localStorage) when “Save progress” is enabled.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  `);
+
+  qs("#retryBtn")?.addEventListener("click", () => {
+    clearSession();
+    setHash(`/exam/${encodeURIComponent(examId)}`);
   });
 }
 
-function applyAspectRatioPreset() {
-  elements.sheet.sizingMode.value = "fixed";
-  elements.sheet.fitSelect.value = "contain";
-  updateSheetStatus(
-    "Aspect ratio preset applied: Fixed cell size + Contain.",
-  );
+function renderReview(examId) {
+  const exam = getExamById(examId);
+  if (!exam) return renderError("Not found", "That exam set does not exist.");
+
+  const session = state.session || loadSession();
+  if (!session || session.examId !== examId || !session.submitted) {
+    return renderError("No review", "Submit an exam session first.", `<a class="btn btn--primary" href="#/exam/${encodeURIComponent(examId)}">Start</a>`);
+  }
+
+  const grade = gradeSession(session, exam);
+  const incorrectOnly = (parseHash().params.get("filter") || "") === "incorrect";
+
+  const items = session.questionOrder.filter((qid) => {
+    if (!incorrectOnly) return true;
+    const d = grade.detailsByQ[qid];
+    return d.isAnswered && !d.isCorrect;
+  });
+
+  render(`
+    <section class="hero">
+      <div class="split">
+        <div>
+          <h1 tabindex="-1">Review</h1>
+          <p class="muted" style="margin:0">${htmlEscape(exam.title)} • ${items.length} questions shown</p>
+        </div>
+        <div class="btnrow right">
+          <a class="btn" href="#/result/${encodeURIComponent(examId)}">Back to results</a>
+          <a class="btn" href="#/">Home</a>
+        </div>
+      </div>
+      <div style="height:10px"></div>
+      <div class="btnrow">
+        <a class="btn ${!incorrectOnly ? "btn--primary" : ""}" href="#/review/${encodeURIComponent(examId)}">All</a>
+        <a class="btn ${incorrectOnly ? "btn--primary" : ""}" href="#/review/${encodeURIComponent(examId)}?filter=incorrect">Incorrect only</a>
+      </div>
+    </section>
+
+    <div class="card">
+      <div class="card__body">
+        <div class="review">
+          ${items
+            .map((qid, i) => {
+              const q = getQuestionById(exam, qid);
+              const d = grade.detailsByQ[qid];
+              const chosen = d.chosen;
+              const correctId = d.correctIds[0];
+              const chosenText = chosen ? (q.options.find((o) => o.id === chosen)?.text || chosen) : "—";
+              const correctText = correctId ? (q.options.find((o) => o.id === correctId)?.text || correctId) : "—";
+              const status = !d.isAnswered ? "Unanswered" : d.isCorrect ? "Correct" : "Incorrect";
+              const statusColor = !d.isAnswered ? "var(--warn)" : d.isCorrect ? "var(--ok)" : "var(--danger)";
+              const snippetSource = q.promptText || htmlToText(q.promptHtml);
+              const snippet =
+                snippetSource.length > 90 ? `${snippetSource.slice(0, 90)}…` : snippetSource;
+
+              return `
+                <details class="review-item">
+                  <summary>
+                    <span class="muted">#${i + 1}</span>
+                    <span style="color:${statusColor}; margin-left:10px; font-weight:800">${status}</span>
+                    <span class="muted" style="margin-left:10px">${htmlEscape(snippet)}</span>
+                  </summary>
+                  <div style="height:10px"></div>
+                  <div class="muted">Your answer: <strong style="color:var(--text)">${htmlEscape(chosenText)}</strong></div>
+                  <div class="muted">Correct answer: <strong style="color:var(--text)">${htmlEscape(correctText)}</strong></div>
+                  <div style="height:10px"></div>
+                  <div class="q__prompt"></div>
+                </details>
+              `;
+            })
+            .join("")}
+        </div>
+      </div>
+    </div>
+  `);
+
+  // Inject full prompt HTML after render to keep the template concise.
+  const detailEls = Array.from(appEl.querySelectorAll(".review-item"));
+  for (let i = 0; i < items.length; i++) {
+    const qid = items[i];
+    const q = getQuestionById(exam, qid);
+    const promptEl = detailEls[i]?.querySelector(".q__prompt");
+    if (promptEl) promptEl.innerHTML = q.promptHtml;
+  }
 }
 
-document.addEventListener("paste", async (event) => {
-  const target = event.target;
-  if (isEditablePasteTarget(target)) {
+function htmlEscape(s) {
+  return String(s)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function cssEscape(s) {
+  // Basic CSS.escape substitute for IDs like "A", "B", ...
+  return String(s).replaceAll('"', '\\"');
+}
+
+function countQuestions(exams) {
+  return exams.reduce((acc, e) => acc + (e.questions?.length || 0), 0);
+}
+
+async function loadDataset() {
+  dataStatusEl.textContent = "Loading data…";
+  try {
+    const res = await fetch(DATA_URL, { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    dataStatusEl.textContent = `Loaded ${data.exams?.length || 0} exams`;
+    return data;
+  } catch (err) {
+    console.error(err);
+    dataStatusEl.textContent = "Failed to load data";
+
+    const help = `
+      <div class="callout">
+        <strong>Data load failed.</strong> Your browser likely blocked <code>fetch()</code> from a <code>file://</code> page.
+        <div style="height:10px"></div>
+        Run a local server: <span class="kbd">python3 -m http.server</span> then open
+        <span class="kbd">http://localhost:8000</span>.
+      </div>
+    `;
+    renderError("Cannot load dataset", "This app needs to fetch JSON.", help);
+    return null;
+  }
+}
+
+function route() {
+  const { parts } = parseHash();
+  const [root, id] = parts;
+
+  if (!state.dataset) {
+    render(`
+      <section class="hero">
+        <h1 tabindex="-1">Loading…</h1>
+        <p class="muted">Fetching dataset from <code>${DATA_URL}</code></p>
+      </section>
+    `);
     return;
   }
 
-  const files = extractClipboardImageFiles(event.clipboardData);
-  if (files.length === 0) return;
+  if (!root) return renderHome();
 
-  if (isPixelTabActive()) {
-    event.preventDefault();
-    await addPixelFiles(files);
-    updatePixelStatus(
-      `${files.length} image(s) pasted from clipboard. Click convert to create pixel art.`,
-    );
-    return;
-  }
+  if (root === "exam" && id) return renderExamSetup(decodeURIComponent(id));
+  if (root === "take" && id) return renderTake(decodeURIComponent(id));
+  if (root === "result" && id) return renderResult(decodeURIComponent(id));
+  if (root === "review" && id) return renderReview(decodeURIComponent(id));
 
-  if (isResizeTabActive()) {
-    event.preventDefault();
-    await addResizeFiles(files);
-    updateResizeStatus(
-      `${files.length} image(s) pasted from clipboard. Click resize to continue.`,
-    );
-    return;
-  }
+  return renderError("Not found", "That page does not exist.");
+}
 
-  if (!isSpritesheetTabActive()) return;
+async function init() {
+  syncResumeButton();
+  state.dataset = await loadDataset();
+  // If dataset failed to load, loadDataset() already rendered an error.
+  if (!state.dataset) return;
 
-  event.preventDefault();
-  await addSheetFiles(files);
-  updateSheetStatus(
-    `${files.length} frame(s) pasted from clipboard. Click build spritesheet to continue.`,
-  );
-});
+  // Restore session (if any).
+  const s = loadSession();
+  if (s && s.examId && !s.submitted) state.session = s;
+  syncResumeButton();
 
-elements.tabButtons.forEach((button) => {
-  button.addEventListener("click", () => switchTab(button.dataset.tab));
-});
+  window.addEventListener("hashchange", route);
+  route();
+}
 
-attachDropzone(elements.pixel.dropzone, elements.pixel.fileInput, addPixelFiles);
-attachDropzone(elements.sheet.dropzone, elements.sheet.fileInput, addSheetFiles);
-attachDropzone(elements.resize.dropzone, elements.resize.fileInput, addResizeFiles);
-
-elements.pixel.convertBtn.addEventListener("click", convertAllPixels);
-elements.pixel.downloadAllBtn.addEventListener("click", downloadAllPixels);
-elements.pixel.clearBtn.addEventListener("click", clearPixelItems);
-elements.pixel.backgroundMode.addEventListener("change", syncBackgroundFieldVisibility);
-
-elements.sheet.buildBtn.addEventListener("click", buildSpritesheet);
-elements.sheet.downloadBtn.addEventListener("click", downloadSpritesheet);
-elements.sheet.downloadJsonBtn.addEventListener("click", downloadSpritesheetJson);
-elements.sheet.clearBtn.addEventListener("click", clearSheetItems);
-elements.sheet.jsonFormat.value = "phaser-array";
-elements.sheet.backgroundMode.addEventListener("change", syncBackgroundFieldVisibility);
-elements.sheet.fitSelect.addEventListener("change", () => {
-  if (elements.sheet.fitSelect.value === "contain") {
-    updateSheetStatus(
-      "Contain keeps the original aspect ratio while reducing images into pixel art.",
-    );
-  }
-});
-elements.sheet.sizingMode.addEventListener("change", () => {
-  if (elements.sheet.sizingMode.value === "original") {
-    updateSheetStatus(
-      "Original size mode keeps each frame's native dimensions. Switch back to Fixed cell size if you want uniform sprite cells.",
-    );
-    return;
-  }
-
-  if (elements.sheet.fitSelect.value !== "contain") {
-    applyAspectRatioPreset();
-  }
-});
-elements.resize.resizeBtn.addEventListener("click", resizeAllImages);
-elements.resize.downloadAllBtn.addEventListener("click", downloadAllResized);
-elements.resize.clearBtn.addEventListener("click", clearResizeItems);
-elements.resize.width.addEventListener("change", () => {
-  if (state.resizeItems.some((item) => item.outputUrl)) {
-    invalidateResizeOutputs("Width changed. Click resize again to regenerate outputs.");
-  }
-});
-elements.resize.height.addEventListener("change", () => {
-  if (state.resizeItems.some((item) => item.outputUrl)) {
-    invalidateResizeOutputs("Height changed. Click resize again to regenerate outputs.");
-  }
-});
-applyAspectRatioPreset();
-syncBackgroundFieldVisibility();
-
-updatePixelCounters();
-updateSheetCounters();
-updateResizeCounters();
+init();

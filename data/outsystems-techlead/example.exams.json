@@ -1,0 +1,105 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-04-07T04:13:21.657926+00:00",
+  "source": {
+    "type": "udemy-quiz-result-html",
+    "files": [
+      "document/Dump01.html",
+      "document/Dump02.html",
+      "document/Dump03.html",
+      "document/Dump04.html",
+      "document/Dump05.html",
+      "document/Dump06.html"
+    ]
+  },
+  "exams": [
+    {
+      "id": "dump01",
+      "title": "OutSystems Tech Lead (O11) - Set 01",
+      "description": "OutSystems Tech Lead practice set imported from document/Dump01.html",
+      "tags": [
+        "Outsystems Tech Lead (O11)"
+      ],
+      "questions": [
+        {
+          "id": "Q1",
+          "promptHtml": "<p>When integrating with an ERP with hundreds of APIs, across several business areas, you should:</p>",
+          "promptText": "When integrating with an ERP with hundreds of APIs, across several business areas, you should:",
+          "type": "single",
+          "options": [
+            {
+              "id": "A",
+              "html": "<p>Create a Driver module per functional area and an Integration Service on top to have a single endpoint to communicate with the ERP</p>",
+              "text": "Create a Driver module per functional area and an Integration Service on top to have a single endpoint to communicate with the ERP"
+            },
+            {
+              "id": "B",
+              "html": "<p>Use the REST/SOAP API exposed by the ERP directly in your business rules</p>",
+              "text": "Use the REST/SOAP API exposed by the ERP directly in your business rules"
+            },
+            {
+              "id": "C",
+              "html": "<p>Create an Integration Service, per functional Area, with the correct granularity to fulfill different lifecycles and consumption needs</p>",
+              "text": "Create an Integration Service, per functional Area, with the correct granularity to fulfill different lifecycles and consumption needs"
+            },
+            {
+              "id": "D",
+              "html": "<p>Create a single Integration Service to map concepts and hide integration complexity</p>",
+              "text": "Create a single Integration Service to map concepts and hide integration complexity"
+            }
+          ],
+          "correctOptionIds": [
+            "C"
+          ],
+          "explanationHtml": null,
+          "explanationText": null,
+          "category": "Outsystems",
+          "difficulty": null,
+          "meta": {
+            "sourceFile": "document/Dump01.html",
+            "courseTitle": "Outsystems Tech Lead (O11)"
+          }
+        },
+        {
+          "id": "Q2",
+          "promptHtml": "<p>What is the consequence of having upward references?</p>",
+          "promptText": "What is the consequence of having upward references?",
+          "type": "single",
+          "options": [
+            {
+              "id": "A",
+              "html": "<p>Allows the correct reuse of screen destinations in a menu</p>",
+              "text": "Allows the correct reuse of screen destinations in a menu"
+            },
+            {
+              "id": "B",
+              "html": "<p>Reduces the number of indirect references, by shortcutting to an upper layer module</p>",
+              "text": "Reduces the number of indirect references, by shortcutting to an upper layer module"
+            },
+            {
+              "id": "C",
+              "html": "<p>The footprint of the modules reduce drastically</p>",
+              "text": "The footprint of the modules reduce drastically"
+            },
+            {
+              "id": "D",
+              "html": "<p>Generates a lot of direct or indirect cyclic references</p>",
+              "text": "Generates a lot of direct or indirect cyclic references"
+            }
+          ],
+          "correctOptionIds": [
+            "D"
+          ],
+          "explanationHtml": null,
+          "explanationText": null,
+          "category": "Outsystems",
+          "difficulty": null,
+          "meta": {
+            "sourceFile": "document/Dump01.html",
+            "courseTitle": "Outsystems Tech Lead (O11)"
+          }
+        }
+      ]
+    }
+  ]
+}
