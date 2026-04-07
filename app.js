@@ -6,8 +6,6 @@ const state = {
   sheetJsonUrl: "",
 };
 
-const ATLAS_EXTRUDE_PADDING = 2;
-
 const elements = {
   tabButtons: [...document.querySelectorAll(".tab-button")],
   tabPanels: {
@@ -234,57 +232,6 @@ function drawPixelImage(image, size, fit, backgroundMode, backgroundColor) {
   return canvas;
 }
 
-function renderSpritesheetFrame(image, frameWidth, frameHeight, sizingMode, cellSize, fit) {
-  const canvas = document.createElement("canvas");
-  canvas.width = frameWidth;
-  canvas.height = frameHeight;
-
-  const ctx = canvas.getContext("2d", { alpha: true });
-  ctx.imageSmoothingEnabled = false;
-  ctx.clearRect(0, 0, frameWidth, frameHeight);
-
-  if (sizingMode === "original") {
-    ctx.drawImage(image, 0, 0, frameWidth, frameHeight);
-    return canvas;
-  }
-
-  drawFittedImage(ctx, image, cellSize, fit);
-  return canvas;
-}
-
-function drawExtrudedFrame(ctx, frameCanvas, x, y, extrudePadding) {
-  const width = frameCanvas.width;
-  const height = frameCanvas.height;
-
-  ctx.drawImage(frameCanvas, x, y);
-
-  if (!extrudePadding || width <= 0 || height <= 0) {
-    return;
-  }
-
-  const p = extrudePadding;
-
-  ctx.drawImage(frameCanvas, 0, 0, width, 1, x, y - p, width, p);
-  ctx.drawImage(frameCanvas, 0, height - 1, width, 1, x, y + height, width, p);
-  ctx.drawImage(frameCanvas, 0, 0, 1, height, x - p, y, p, height);
-  ctx.drawImage(frameCanvas, width - 1, 0, 1, height, x + width, y, p, height);
-
-  ctx.drawImage(frameCanvas, 0, 0, 1, 1, x - p, y - p, p, p);
-  ctx.drawImage(frameCanvas, width - 1, 0, 1, 1, x + width, y - p, p, p);
-  ctx.drawImage(frameCanvas, 0, height - 1, 1, 1, x - p, y + height, p, p);
-  ctx.drawImage(
-    frameCanvas,
-    width - 1,
-    height - 1,
-    1,
-    1,
-    x + width,
-    y + height,
-    p,
-    p,
-  );
-}
-
 function isPixelTabActive() {
   return elements.tabPanels.pixel?.classList.contains("is-active");
 }
@@ -395,7 +342,6 @@ function buildCustomSpritesheetMetadata({
   rows,
   cellSize,
   padding,
-  atlasPadding,
   fit,
   backgroundMode,
   backgroundColor,
@@ -412,7 +358,6 @@ function buildCustomSpritesheetMetadata({
       rows,
       cellSize,
       padding,
-      atlasPadding,
       fitMode: fit,
       backgroundMode,
       backgroundColor: backgroundMode === "solid" ? backgroundColor : null,
@@ -438,7 +383,6 @@ function buildPhaserArrayMetadata({
   width,
   height,
   backgroundColor,
-  atlasPadding,
   frameData,
 }) {
   return {
@@ -476,7 +420,6 @@ function buildPhaserArrayMetadata({
       format: "RGBA8888",
       size: { w: width, h: height },
       scale: 1,
-      atlasPadding,
       smartupdate: backgroundColor ?? "",
     },
   };
@@ -486,7 +429,6 @@ function buildPhaserHashMetadata({
   width,
   height,
   backgroundColor,
-  atlasPadding,
   frameData,
 }) {
   const frames = {};
@@ -529,7 +471,6 @@ function buildPhaserHashMetadata({
       format: "RGBA8888",
       size: { w: width, h: height },
       scale: 1,
-      atlasPadding,
       smartupdate: backgroundColor ?? "",
     },
   };
@@ -914,7 +855,6 @@ function buildSpritesheet() {
   const fit = elements.sheet.fitSelect.value;
   const backgroundMode = elements.sheet.backgroundMode.value;
   const backgroundColor = elements.sheet.backgroundColor.value;
-  const atlasPadding = ATLAS_EXTRUDE_PADDING;
   const rows = Math.ceil(state.sheetItems.length / columns);
   const frameData = [];
   const usedFrameNames = new Set();
@@ -927,7 +867,7 @@ function buildSpritesheet() {
   const rowHeights = framesPerRow.map((rowItems) =>
     Math.max(
       ...rowItems.map((item) =>
-        (sizingMode === "original" ? item.image.height : cellSize) + atlasPadding * 2,
+        sizingMode === "original" ? item.image.height : cellSize,
       ),
     ),
   );
@@ -935,9 +875,7 @@ function buildSpritesheet() {
   const rowWidths = framesPerRow.map((rowItems) => {
     const contentWidth = rowItems.reduce(
       (total, item) =>
-        total +
-        (sizingMode === "original" ? item.image.width : cellSize) +
-        atlasPadding * 2,
+        total + (sizingMode === "original" ? item.image.width : cellSize),
       0,
     );
     return contentWidth + Math.max(0, rowItems.length - 1) * padding;
@@ -970,18 +908,17 @@ function buildSpritesheet() {
       const index = row * columns + column;
       const frameWidth = sizingMode === "original" ? item.image.width : cellSize;
       const frameHeight = sizingMode === "original" ? item.image.height : cellSize;
-      const x = xCursor + atlasPadding;
-      const y = yCursor + atlasPadding;
-      const frameCanvas = renderSpritesheetFrame(
-        item.image,
-        frameWidth,
-        frameHeight,
-        sizingMode,
-        cellSize,
-        fit,
-      );
+      const x = xCursor;
+      const y = yCursor;
 
-      drawExtrudedFrame(ctx, frameCanvas, x, y, atlasPadding);
+      if (sizingMode === "original") {
+        ctx.drawImage(item.image, x, y, frameWidth, frameHeight);
+      } else {
+        ctx.save();
+        ctx.translate(x, y);
+        drawFittedImage(ctx, item.image, cellSize, fit);
+        ctx.restore();
+      }
 
       frameData.push({
         index,
@@ -1009,7 +946,7 @@ function buildSpritesheet() {
         },
       });
 
-      xCursor += frameWidth + atlasPadding * 2 + padding;
+      xCursor += frameWidth + padding;
     });
 
     yCursor += rowHeights[row] + padding;
@@ -1025,7 +962,6 @@ function buildSpritesheet() {
     rows,
     cellSize,
     padding,
-    atlasPadding,
     sizingMode,
     fit,
     backgroundMode,
@@ -1041,7 +977,7 @@ function buildSpritesheet() {
   );
   updateSheetCounters();
   updateSheetStatus(
-    `Spritesheet ${width}x${height} built with ${state.sheetItems.length} frame(s) using ${sizingMode} sizing. Auto atlas padding ${atlasPadding}px is included in the PNG and JSON.`,
+    `Spritesheet ${width}x${height} built with ${state.sheetItems.length} frame(s) using ${sizingMode} sizing. PNG and ${jsonFormat} JSON are ready.`,
   );
 }
 
