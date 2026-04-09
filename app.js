@@ -74,44 +74,72 @@ function formatBytes(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function htmlToText(html) {
-  const tmp = document.createElement("div");
-  tmp.innerHTML = html;
-  return (tmp.textContent || "").replace(/\s+/g, " ").trim();
+function sanitizeFileBase(name) {
+  const lastDot = name.lastIndexOf(".");
+  const base = lastDot > 0 ? name.slice(0, lastDot) : name;
+  return base.replace(/[^\w-]+/g, "_");
 }
 
-function mulberry32(seed) {
-  // Deterministic small PRNG for reproducible shuffle orders per session.
-  // https://stackoverflow.com/a/47593316
-  let t = seed >>> 0;
-  return function () {
-    t += 0x6d2b79f5;
-    let r = Math.imul(t ^ (t >>> 15), 1 | t);
-    r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
-    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+function sanitizeName(name) {
+  return `${sanitizeFileBase(name)}_pixel.png`;
+}
+
+function getSpritesheetJsonFilename(format) {
+  if (format === "phaser-array") return "spritesheet.json";
+  if (format === "phaser-hash") return "spritesheet-hash.json";
+  return "spritesheet.json";
+}
+
+function splitFileName(name) {
+  const lastDot = name.lastIndexOf(".");
+
+  if (lastDot <= 0) {
+    return { base: name, extension: "" };
+  }
+
+  return {
+    base: name.slice(0, lastDot),
+    extension: name.slice(lastDot),
   };
 }
 
-function shuffle(arr, rng) {
-  const out = arr.slice();
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(rng() * (i + 1));
-    [out[i], out[j]] = [out[j], out[i]];
+function getUniqueFrameExportName(name, usedNames) {
+  const { base, extension } = splitFileName(name);
+  let candidate = name;
+  let suffix = 2;
+
+  while (usedNames.has(candidate)) {
+    candidate = `${base}_${suffix}${extension}`;
+    suffix += 1;
   }
-  return out;
+
+  usedNames.add(candidate);
+  return candidate;
 }
 
-function safeJsonParse(s) {
-  try {
-    return JSON.parse(s);
-  } catch {
-    return null;
+function revokeIfExists(url) {
+  if (url) {
+    URL.revokeObjectURL(url);
   }
 }
 
-function loadSession() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  return raw ? safeJsonParse(raw) : null;
+function updatePixelStatus(message) {
+  elements.pixel.statusText.textContent = message;
+}
+
+function updateSheetStatus(message) {
+  elements.sheet.statusText.textContent = message;
+}
+
+function updateResizeStatus(message) {
+  elements.resize.statusText.textContent = message;
+}
+
+function updateBackgroundColorVisibility(backgroundModeSelect, backgroundColorInput) {
+  const field = backgroundColorInput?.closest(".field");
+  if (!field) return;
+
+  field.classList.toggle("is-hidden", backgroundModeSelect.value === "transparent");
 }
 
 function syncBackgroundFieldVisibility() {
@@ -263,36 +291,48 @@ function switchTab(tabName) {
   });
 }
 
-function groupExamsByCourse(exams) {
-  /** @type {Map<string, {title: string, exams: any[], totalQuestions: number}>} */
-  const map = new Map();
+function updatePixelCounters() {
+  const total = state.pixelItems.length;
+  const converted = state.pixelItems.filter((item) => item.outputUrl).length;
 
-  for (const e of exams) {
-    const raw = (e.tags && e.tags[0]) || "Ungrouped";
-    let title = String(raw).replaceAll("Outsystems", "OutSystems").trim();
-    // Make the group title cleaner for the UI (keeps the group stable and English-only).
-    title = title.replace(/\s*\(O11\)\s*/gi, "").trim();
-    const key = title.toLowerCase();
-    const entry = map.get(key) || { title, exams: [], totalQuestions: 0 };
-    entry.exams.push(e);
-    entry.totalQuestions += e.questions?.length || 0;
-    map.set(key, entry);
-  }
+  elements.pixel.fileCount.textContent =
+    total === 0
+      ? "No images added yet"
+      : `${total} images added, ${converted} converted`;
 
-  const groups = Array.from(map.values());
-  groups.sort((a, b) => a.title.localeCompare(b.title));
-  for (const g of groups) {
-    g.exams.sort((a, b) => a.title.localeCompare(b.title));
-  }
-  return groups;
+  elements.pixel.emptyState.hidden = total > 0;
+  elements.pixel.downloadAllBtn.disabled = converted === 0;
 }
 
-function getSetLabelFromTitle(title) {
-  const m = String(title).match(/Set\\s+(\\d+)/i);
-  if (!m) return null;
-  const n = Number(m[1]);
-  if (!Number.isFinite(n)) return null;
-  return `Set ${String(n).padStart(2, "0")}`;
+function updateSheetCounters() {
+  const total = state.sheetItems.length;
+
+  elements.sheet.count.textContent =
+    total === 0 ? "No frames added yet" : `${total} frames added`;
+  elements.sheet.framesEmpty.hidden = total > 0;
+  elements.sheet.emptyState.hidden = Boolean(state.sheetOutputUrl);
+  elements.sheet.previewWrap.hidden = !state.sheetOutputUrl;
+  elements.sheet.downloadBtn.disabled = !state.sheetOutputUrl;
+  elements.sheet.downloadJsonBtn.disabled = !state.sheetJsonUrl;
+}
+
+function clearSheetOutputs() {
+  revokeIfExists(state.sheetJsonUrl);
+  state.sheetOutputUrl = "";
+  state.sheetJsonUrl = "";
+}
+
+function updateResizeCounters() {
+  const total = state.resizeItems.length;
+  const resized = state.resizeItems.filter((item) => item.outputUrl).length;
+
+  elements.resize.count.textContent =
+    total === 0
+      ? "No images added yet"
+      : `${total} images added, ${resized} resized`;
+
+  elements.resize.emptyState.hidden = total > 0;
+  elements.resize.downloadAllBtn.disabled = resized === 0;
 }
 
 function buildCustomSpritesheetMetadata({
@@ -476,238 +516,313 @@ function bindPixelCard(item) {
   elements.pixel.resultsGrid.append(fragment);
 }
 
-function renderTake(examId) {
-  const exam = getExamById(examId);
-  if (!exam) return renderError("Not found", "That exam set does not exist.");
+function bindSheetCard(item) {
+  const fragment = elements.frameTemplate.content.cloneNode(true);
+  const card = fragment.querySelector(".frame-card");
+  const removeBtn = fragment.querySelector(".frame-remove-btn");
+  const preview = fragment.querySelector(".frame-preview");
+  const name = fragment.querySelector(".frame-name");
+  const info = fragment.querySelector(".frame-info");
 
-  const session = state.session || loadSession();
-  if (!session || session.examId !== examId) {
-    return renderError("No active session", "Start an exam set first.", `<a class="btn btn--primary" href="#/exam/${encodeURIComponent(examId)}">Go to setup</a>`);
-  }
+  preview.src = item.sourceUrl;
+  preview.alt = item.file.name;
+  name.textContent = item.file.name;
+  info.textContent = `${item.image.width}x${item.image.height} • ${formatBytes(
+    item.file.size,
+  )}`;
 
-  state.session = session;
-  const total = session.questionOrder.length;
-  const idx = clamp(session.currentIndex || 0, 0, total - 1);
-  session.currentIndex = idx;
+  item.card = card;
+  item.removeBtn = removeBtn;
 
-  const qid = session.questionOrder[idx];
-  const question = getQuestionById(exam, qid);
-  if (!question) return renderError("Data error", "Question not found in dataset.");
-
-  const optionOrder = session.optionOrderByQuestion?.[qid] || question.options.map((o) => o.id);
-  const chosen = session.answersByQuestion?.[qid] ?? "";
-
-  const practice = session.mode === "practice";
-  const checked = !!session.checkedByQuestion?.[qid];
-  const showInstant = practice && session.settings?.practiceInstantFeedback;
-
-  const showReveal = practice && (checked || showInstant);
-  const correctIds = question.correctOptionIds || [];
-
-  const answeredCount = session.questionOrder.reduce((acc, id) => acc + (session.answersByQuestion?.[id] ? 1 : 0), 0);
-  const progressPct = total ? (answeredCount / total) * 100 : 0;
-
-  render(`
-    <section class="hero">
-      <div class="split">
-        <div>
-          <h1 tabindex="-1" style="margin:0 0 6px">${htmlEscape(exam.title)}</h1>
-          <p class="muted" style="margin:0">
-            ${practice ? "Practice mode" : "Exam mode"} • Question <strong>${idx + 1}</strong> / ${total}
-          </p>
-        </div>
-        <div class="btnrow right">
-          <a class="btn" href="#/">Exit</a>
-          <button class="btn btn--danger" id="resetBtn" type="button">Reset</button>
-          <button class="btn btn--primary" id="submitBtn" type="button">${practice ? "Finish" : "Submit exam"}</button>
-        </div>
-      </div>
-
-      <div style="height:10px"></div>
-      <div class="progress" aria-label="Progress">
-        <div style="width:${progressPct.toFixed(2)}%"></div>
-      </div>
-      <div style="height:10px"></div>
-      <div class="split">
-        <div class="pill"><strong>${answeredCount}</strong> answered</div>
-        <div class="pill"><strong>${total - answeredCount}</strong> unanswered</div>
-        ${question.category ? `<div class="pill">Category: <strong>${htmlEscape(question.category)}</strong></div>` : ""}
-      </div>
-    </section>
-
-    <div class="card">
-      <div class="card__body">
-        <div class="q">
-          <div class="q__prompt" id="prompt" data-autofocus tabindex="-1"></div>
-          <div class="options" role="radiogroup" aria-label="Answer choices">
-            ${optionOrder
-              .map((oid) => {
-                const opt = question.options.find((o) => o.id === oid);
-                if (!opt) return "";
-
-                const isChosen = chosen === oid;
-                const isCorrect = correctIds.includes(oid);
-                const classes = [
-                  "option",
-                  showReveal && isCorrect ? "option--correct" : "",
-                  showReveal && isChosen && !isCorrect ? "option--wrong" : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ");
-
-                return `
-                  <label class="${classes}">
-                    <input type="radio" name="answer" value="${oid}" ${isChosen ? "checked" : ""} />
-                    <div class="option__body" data-opt="${oid}"></div>
-                  </label>
-                `;
-              })
-              .join("")}
-          </div>
-
-          <div style="height:14px"></div>
-
-          <div class="split">
-            <div class="btnrow">
-              <button class="btn" type="button" id="prevBtn" ${idx === 0 ? "disabled" : ""}>Prev</button>
-              <button class="btn" type="button" id="nextBtn" ${idx === total - 1 ? "disabled" : ""}>Next</button>
-              <button class="btn" type="button" id="jumpBtn">Jump…</button>
-            </div>
-            <div class="btnrow right">
-              ${
-                practice
-                  ? `
-                    <button class="btn btn--primary" type="button" id="checkBtn" ${chosen ? "" : "disabled"}>
-                      ${showReveal ? "Hide answer" : "Check answer"}
-                    </button>
-                  `
-                  : ""
-              }
-            </div>
-          </div>
-
-          <div id="jumpPanel" class="review" hidden></div>
-        </div>
-      </div>
-    </div>
-  `);
-
-  // Render prompt/options as HTML from dataset (keeps rich text/images if present).
-  qs("#prompt").innerHTML = question.promptHtml;
-  for (const optId of optionOrder) {
-    const opt = question.options.find((o) => o.id === optId);
-    const el = qs(`[data-opt="${cssEscape(optId)}"]`);
-    if (el && opt) el.innerHTML = opt.html;
-  }
-
-  // Option selection.
-  appEl.addEventListener(
-    "change",
-    (e) => {
-      const target = e.target;
-      if (!(target instanceof HTMLInputElement)) return;
-      if (target.name !== "answer") return;
-      const value = target.value;
-      session.answersByQuestion[qid] = value;
-      session.lastViewedAt = nowIso();
-
-      if (practice && showInstant) {
-        session.checkedByQuestion[qid] = true;
-      }
-      if (session.settings?.persistProgress) saveSession(session);
-
-      // Rerender to reflect correctness styles (practice) or enable buttons.
-      renderTake(examId);
-    },
-    { once: true }
-  );
-
-  // Navigation.
-  qs("#prevBtn")?.addEventListener("click", () => {
-    session.currentIndex = clamp(session.currentIndex - 1, 0, total - 1);
-    session.lastViewedAt = nowIso();
-    if (session.settings?.persistProgress) saveSession(session);
-    renderTake(examId);
+  removeBtn.addEventListener("click", () => {
+    removeSheetItem(item);
   });
 
-  qs("#nextBtn")?.addEventListener("click", () => {
-    session.currentIndex = clamp(session.currentIndex + 1, 0, total - 1);
-    session.lastViewedAt = nowIso();
-    if (session.settings?.persistProgress) saveSession(session);
-    renderTake(examId);
-  });
-
-  // Jump panel (question list).
-  qs("#jumpBtn")?.addEventListener("click", () => {
-    const panel = qs("#jumpPanel");
-    const isHidden = panel.hasAttribute("hidden");
-    if (!isHidden) {
-      panel.setAttribute("hidden", "");
-      panel.innerHTML = "";
-      return;
-    }
-    panel.removeAttribute("hidden");
-    panel.innerHTML = renderJumpList(session, idx);
-    panel.querySelectorAll("[data-jump]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const i = Number(btn.getAttribute("data-jump"));
-        session.currentIndex = clamp(i, 0, total - 1);
-        session.lastViewedAt = nowIso();
-        if (session.settings?.persistProgress) saveSession(session);
-        renderTake(examId);
-      });
-    });
-  });
-
-  // Practice: reveal/hide answer.
-  qs("#checkBtn")?.addEventListener("click", () => {
-    if (showReveal) delete session.checkedByQuestion[qid];
-    else session.checkedByQuestion[qid] = true;
-    session.lastViewedAt = nowIso();
-    if (session.settings?.persistProgress) saveSession(session);
-    renderTake(examId);
-  });
-
-  // Submit / finish.
-  qs("#submitBtn")?.addEventListener("click", () => {
-    session.submitted = true;
-    session.completedAt = nowIso();
-    session.lastViewedAt = nowIso();
-    if (session.settings?.persistProgress) saveSession(session);
-    setHash(`/result/${encodeURIComponent(examId)}`);
-  });
-
-  qs("#resetBtn")?.addEventListener("click", () => {
-    // This is intentionally destructive; keep it scoped to this app’s localStorage key.
-    clearSession();
-    setHash(`/exam/${encodeURIComponent(examId)}`);
-  });
-
-  // Keyboard shortcuts: J/K for next/prev.
-  window.onkeydown = (e) => {
-    if (e.key.toLowerCase() === "j") {
-      if (idx < total - 1) qs("#nextBtn")?.click();
-    } else if (e.key.toLowerCase() === "k") {
-      if (idx > 0) qs("#prevBtn")?.click();
-    }
-  };
+  elements.sheet.framesGrid.append(fragment);
 }
 
-function renderJumpList(session, currentIndex) {
-  const buttons = session.questionOrder
-    .map((qid, i) => {
-      const answered = session.answersByQuestion?.[qid] ? "✓" : "•";
-      const isCurrent = i === currentIndex;
-      return `<button class="btn" type="button" data-jump="${i}" ${isCurrent ? "disabled" : ""}>${i + 1} ${answered}</button>`;
-    })
-    .join(" ");
+function bindResizeCard(item) {
+  const fragment = elements.cardTemplate.content.cloneNode(true);
+  const sourcePreview = fragment.querySelector(".source-preview");
+  const resizedPreview = fragment.querySelector(".pixel-preview");
+  const fileName = fragment.querySelector(".file-name");
+  const fileInfo = fragment.querySelector(".file-info");
+  const downloadBtn = fragment.querySelector(".download-btn");
+  const labels = fragment.querySelectorAll(".canvas-pair p");
 
-  return `
-    <div class="card__body" style="padding:0">
-      <div class="muted" style="margin-bottom:10px">Jump to question (✓ answered, • unanswered)</div>
-      <div class="btnrow">${buttons}</div>
-    </div>
-  `;
+  if (labels[1]) {
+    labels[1].textContent = "Resized";
+  }
+
+  resizedPreview.classList.add("resize-preview");
+
+  sourcePreview.src = item.sourceUrl;
+  sourcePreview.alt = item.file.name;
+  fileName.textContent = item.file.name;
+  fileInfo.textContent = `${formatBytes(item.file.size)} • ${
+    item.file.type || "image"
+  }`;
+
+  item.previewCanvas = resizedPreview;
+  item.downloadBtn = downloadBtn;
+
+  downloadBtn.addEventListener("click", () => {
+    if (!item.outputUrl) return;
+    triggerDownload(item.outputUrl, sanitizeName(item.file.name));
+  });
+
+  elements.resize.resultsGrid.append(fragment);
+}
+
+async function addPixelFiles(fileList) {
+  const files = [...fileList].filter((file) => file.type.startsWith("image/"));
+
+  if (files.length === 0) {
+    updatePixelStatus("No valid image files found.");
+    return;
+  }
+
+  updatePixelStatus(`Loading ${files.length} image(s)...`);
+
+  for (const file of files) {
+    const duplicate = state.pixelItems.some(
+      (item) => item.file.name === file.name && item.file.size === file.size,
+    );
+
+    if (duplicate) continue;
+
+    try {
+      const { image, objectUrl } = await loadImage(file);
+      const item = {
+        file,
+        image,
+        sourceUrl: objectUrl,
+        outputUrl: "",
+        previewCanvas: null,
+        downloadBtn: null,
+      };
+
+      state.pixelItems.push(item);
+      bindPixelCard(item);
+    } catch (error) {
+      updatePixelStatus(error.message);
+    }
+  }
+
+  updatePixelCounters();
+  updatePixelStatus("Images are ready. Click convert to create pixel art.");
+}
+
+async function addSheetFiles(fileList) {
+  const files = [...fileList].filter((file) => file.type.startsWith("image/"));
+
+  if (files.length === 0) {
+    updateSheetStatus("No valid image files found.");
+    return;
+  }
+
+  updateSheetStatus(`Loading ${files.length} frame(s)...`);
+
+  for (const file of files) {
+    const duplicate = state.sheetItems.some(
+      (item) => item.file.name === file.name && item.file.size === file.size,
+    );
+
+    if (duplicate) continue;
+
+    try {
+      const { image, objectUrl } = await loadImage(file);
+      const item = {
+        file,
+        image,
+        sourceUrl: objectUrl,
+        card: null,
+        removeBtn: null,
+      };
+      state.sheetItems.push(item);
+      bindSheetCard(item);
+    } catch (error) {
+      updateSheetStatus(error.message);
+    }
+  }
+
+  clearSheetOutputs();
+  updateSheetCounters();
+  updateSheetStatus("Frames are ready. Click build spritesheet.");
+}
+
+async function addResizeFiles(fileList) {
+  const files = [...fileList].filter((file) => file.type.startsWith("image/"));
+
+  if (files.length === 0) {
+    updateResizeStatus("No valid image files found.");
+    return;
+  }
+
+  updateResizeStatus(`Loading ${files.length} image(s)...`);
+
+  for (const file of files) {
+    const duplicate = state.resizeItems.some(
+      (item) => item.file.name === file.name && item.file.size === file.size,
+    );
+
+    if (duplicate) continue;
+
+    try {
+      const { image, objectUrl } = await loadImage(file);
+      const item = {
+        file,
+        image,
+        sourceUrl: objectUrl,
+        outputUrl: "",
+        previewCanvas: null,
+        downloadBtn: null,
+      };
+
+      state.resizeItems.push(item);
+      bindResizeCard(item);
+    } catch (error) {
+      updateResizeStatus(error.message);
+    }
+  }
+
+  updateResizeCounters();
+  updateResizeStatus("Images are ready. Click resize to create new outputs.");
+}
+
+function convertPixelItem(item) {
+  const size = Number(elements.pixel.sizeSelect.value);
+  const fit = elements.pixel.fitSelect.value;
+  const backgroundMode = elements.pixel.backgroundMode.value;
+  const backgroundColor = elements.pixel.backgroundColor.value;
+
+  const outputCanvas = drawPixelImage(
+    item.image,
+    size,
+    fit,
+    backgroundMode,
+    backgroundColor,
+  );
+
+  item.previewCanvas.width = size;
+  item.previewCanvas.height = size;
+
+  const previewCtx = item.previewCanvas.getContext("2d", { alpha: true });
+  previewCtx.clearRect(0, 0, size, size);
+  previewCtx.imageSmoothingEnabled = false;
+  previewCtx.drawImage(outputCanvas, 0, 0);
+
+  item.outputUrl = outputCanvas.toDataURL("image/png");
+  item.downloadBtn.disabled = false;
+}
+
+function resizeItemToTarget(item) {
+  const width = Math.max(1, Number(elements.resize.width.value) || 1);
+  const height = Math.max(1, Number(elements.resize.height.value) || 1);
+
+  const outputCanvas = document.createElement("canvas");
+  outputCanvas.width = width;
+  outputCanvas.height = height;
+
+  const outputCtx = outputCanvas.getContext("2d", { alpha: true });
+  outputCtx.imageSmoothingEnabled = false;
+  outputCtx.clearRect(0, 0, width, height);
+  outputCtx.drawImage(item.image, 0, 0, width, height);
+
+  item.previewCanvas.width = width;
+  item.previewCanvas.height = height;
+
+  const previewCtx = item.previewCanvas.getContext("2d", { alpha: true });
+  previewCtx.clearRect(0, 0, width, height);
+  previewCtx.imageSmoothingEnabled = false;
+  previewCtx.drawImage(outputCanvas, 0, 0);
+
+  item.outputUrl = outputCanvas.toDataURL("image/png");
+  item.downloadBtn.disabled = false;
+}
+
+function invalidateResizeOutputs(message) {
+  state.resizeItems.forEach((item) => {
+    if (!item.outputUrl) return;
+    item.outputUrl = "";
+    item.downloadBtn.disabled = true;
+  });
+
+  updateResizeCounters();
+  updateResizeStatus(message);
+}
+
+function convertAllPixels() {
+  if (state.pixelItems.length === 0) {
+    updatePixelStatus("Add images before converting.");
+    return;
+  }
+
+  updatePixelStatus(`Converting ${state.pixelItems.length} image(s)...`);
+
+  for (const item of state.pixelItems) {
+    convertPixelItem(item);
+  }
+
+  updatePixelCounters();
+  updatePixelStatus(
+    "Conversion complete. You can download each image or download all.",
+  );
+}
+
+function resizeAllImages() {
+  if (state.resizeItems.length === 0) {
+    updateResizeStatus("Add images before resizing.");
+    return;
+  }
+
+  const width = Math.max(1, Number(elements.resize.width.value) || 1);
+  const height = Math.max(1, Number(elements.resize.height.value) || 1);
+
+  updateResizeStatus(`Resizing ${state.resizeItems.length} image(s) to ${width}x${height}...`);
+
+  for (const item of state.resizeItems) {
+    resizeItemToTarget(item);
+  }
+
+  updateResizeCounters();
+  updateResizeStatus(`Resize complete. Outputs are now ${width}x${height}.`);
+}
+
+async function downloadAllPixels() {
+  const convertedItems = state.pixelItems.filter((item) => item.outputUrl);
+
+  if (convertedItems.length === 0) {
+    updatePixelStatus("No converted images available yet.");
+    return;
+  }
+
+  updatePixelStatus(`Downloading ${convertedItems.length} image(s)...`);
+
+  for (const [index, item] of convertedItems.entries()) {
+    triggerDownload(item.outputUrl, sanitizeName(item.file.name));
+    await new Promise((resolve) => window.setTimeout(resolve, index === 0 ? 0 : 180));
+  }
+
+  updatePixelStatus("Batch download request sent.");
+}
+
+async function downloadAllResized() {
+  const resizedItems = state.resizeItems.filter((item) => item.outputUrl);
+
+  if (resizedItems.length === 0) {
+    updateResizeStatus("No resized images available yet.");
+    return;
+  }
+
+  updateResizeStatus(`Downloading ${resizedItems.length} image(s)...`);
+
+  for (const [index, item] of resizedItems.entries()) {
+    triggerDownload(item.outputUrl, sanitizeName(item.file.name));
+    await new Promise((resolve) => window.setTimeout(resolve, index === 0 ? 0 : 180));
+  }
+
+  updateResizeStatus("Batch download request sent.");
 }
 
 function clearPixelItems() {
@@ -896,86 +1011,155 @@ function clearSheetItems() {
   updateSheetStatus("Frame list cleared.");
 }
 
-function htmlEscape(s) {
-  return String(s)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
+function removeSheetItem(item) {
+  const index = state.sheetItems.indexOf(item);
+  if (index === -1) return;
 
-function cssEscape(s) {
-  // Basic CSS.escape substitute for IDs like "A", "B", ...
-  return String(s).replaceAll('"', '\\"');
-}
+  state.sheetItems.splice(index, 1);
+  URL.revokeObjectURL(item.sourceUrl);
+  item.card?.remove();
+  clearSheetOutputs();
+  updateSheetCounters();
 
-function countQuestions(exams) {
-  return exams.reduce((acc, e) => acc + (e.questions?.length || 0), 0);
-}
-
-async function loadDataset() {
-  dataStatusEl.textContent = "Loading data…";
-  try {
-    const res = await fetch(DATA_URL, { cache: "no-store" });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    dataStatusEl.textContent = `Loaded ${data.exams?.length || 0} exams`;
-    return data;
-  } catch (err) {
-    console.error(err);
-    dataStatusEl.textContent = "Failed to load data";
-
-    const help = `
-      <div class="callout">
-        <strong>Data load failed.</strong> Your browser likely blocked <code>fetch()</code> from a <code>file://</code> page.
-        <div style="height:10px"></div>
-        Run a local server: <span class="kbd">python3 -m http.server</span> then open
-        <span class="kbd">http://localhost:8000</span>.
-      </div>
-    `;
-    renderError("Cannot load dataset", "This app needs to fetch JSON.", help);
-    return null;
-  }
-}
-
-function route() {
-  const { parts } = parseHash();
-  const [root, id] = parts;
-
-  if (!state.dataset) {
-    render(`
-      <section class="hero">
-        <h1 tabindex="-1">Loading…</h1>
-        <p class="muted">Fetching dataset from <code>${DATA_URL}</code></p>
-      </section>
-    `);
+  if (state.sheetItems.length === 0) {
+    updateSheetStatus("Frame removed. Add more frames to build a spritesheet.");
     return;
   }
 
-  if (!root) return renderHome();
-
-  if (root === "exam" && id) return renderExamSetup(decodeURIComponent(id));
-  if (root === "take" && id) return renderTake(decodeURIComponent(id));
-  if (root === "result" && id) return renderResult(decodeURIComponent(id));
-  if (root === "review" && id) return renderReview(decodeURIComponent(id));
-
-  return renderError("Not found", "That page does not exist.");
+  updateSheetStatus("Frame removed. Rebuild the spritesheet to refresh the preview.");
 }
 
-async function init() {
-  syncResumeButton();
-  state.dataset = await loadDataset();
-  // If dataset failed to load, loadDataset() already rendered an error.
-  if (!state.dataset) return;
+function attachDropzone(dropzone, fileInput, onFiles) {
+  dropzone.addEventListener("click", () => fileInput.click());
+  dropzone.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      fileInput.click();
+    }
+  });
 
-  // Restore session (if any).
-  const s = loadSession();
-  if (s && s.examId && !s.submitted) state.session = s;
-  syncResumeButton();
+  fileInput.addEventListener("change", (event) => {
+    onFiles(event.target.files);
+    event.target.value = "";
+  });
 
-  window.addEventListener("hashchange", route);
-  route();
+  ["dragenter", "dragover"].forEach((eventName) => {
+    dropzone.addEventListener(eventName, (event) => {
+      event.preventDefault();
+      dropzone.classList.add("dragover");
+    });
+  });
+
+  ["dragleave", "drop"].forEach((eventName) => {
+    dropzone.addEventListener(eventName, (event) => {
+      event.preventDefault();
+      dropzone.classList.remove("dragover");
+    });
+  });
+
+  dropzone.addEventListener("drop", (event) => {
+    onFiles(event.dataTransfer.files);
+  });
 }
 
-init();
+function applyAspectRatioPreset() {
+  elements.sheet.sizingMode.value = "fixed";
+  elements.sheet.fitSelect.value = "contain";
+  updateSheetStatus(
+    "Aspect ratio preset applied: Fixed cell size + Contain.",
+  );
+}
+
+document.addEventListener("paste", async (event) => {
+  const target = event.target;
+  if (isEditablePasteTarget(target)) {
+    return;
+  }
+
+  const files = extractClipboardImageFiles(event.clipboardData);
+  if (files.length === 0) return;
+
+  if (isPixelTabActive()) {
+    event.preventDefault();
+    await addPixelFiles(files);
+    updatePixelStatus(
+      `${files.length} image(s) pasted from clipboard. Click convert to create pixel art.`,
+    );
+    return;
+  }
+
+  if (isResizeTabActive()) {
+    event.preventDefault();
+    await addResizeFiles(files);
+    updateResizeStatus(
+      `${files.length} image(s) pasted from clipboard. Click resize to continue.`,
+    );
+    return;
+  }
+
+  if (!isSpritesheetTabActive()) return;
+
+  event.preventDefault();
+  await addSheetFiles(files);
+  updateSheetStatus(
+    `${files.length} frame(s) pasted from clipboard. Click build spritesheet to continue.`,
+  );
+});
+
+elements.tabButtons.forEach((button) => {
+  button.addEventListener("click", () => switchTab(button.dataset.tab));
+});
+
+attachDropzone(elements.pixel.dropzone, elements.pixel.fileInput, addPixelFiles);
+attachDropzone(elements.sheet.dropzone, elements.sheet.fileInput, addSheetFiles);
+attachDropzone(elements.resize.dropzone, elements.resize.fileInput, addResizeFiles);
+
+elements.pixel.convertBtn.addEventListener("click", convertAllPixels);
+elements.pixel.downloadAllBtn.addEventListener("click", downloadAllPixels);
+elements.pixel.clearBtn.addEventListener("click", clearPixelItems);
+elements.pixel.backgroundMode.addEventListener("change", syncBackgroundFieldVisibility);
+
+elements.sheet.buildBtn.addEventListener("click", buildSpritesheet);
+elements.sheet.downloadBtn.addEventListener("click", downloadSpritesheet);
+elements.sheet.downloadJsonBtn.addEventListener("click", downloadSpritesheetJson);
+elements.sheet.clearBtn.addEventListener("click", clearSheetItems);
+elements.sheet.jsonFormat.value = "phaser-array";
+elements.sheet.backgroundMode.addEventListener("change", syncBackgroundFieldVisibility);
+elements.sheet.fitSelect.addEventListener("change", () => {
+  if (elements.sheet.fitSelect.value === "contain") {
+    updateSheetStatus(
+      "Contain keeps the original aspect ratio while reducing images into pixel art.",
+    );
+  }
+});
+elements.sheet.sizingMode.addEventListener("change", () => {
+  if (elements.sheet.sizingMode.value === "original") {
+    updateSheetStatus(
+      "Original size mode keeps each frame's native dimensions. Switch back to Fixed cell size if you want uniform sprite cells.",
+    );
+    return;
+  }
+
+  if (elements.sheet.fitSelect.value !== "contain") {
+    applyAspectRatioPreset();
+  }
+});
+elements.resize.resizeBtn.addEventListener("click", resizeAllImages);
+elements.resize.downloadAllBtn.addEventListener("click", downloadAllResized);
+elements.resize.clearBtn.addEventListener("click", clearResizeItems);
+elements.resize.width.addEventListener("change", () => {
+  if (state.resizeItems.some((item) => item.outputUrl)) {
+    invalidateResizeOutputs("Width changed. Click resize again to regenerate outputs.");
+  }
+});
+elements.resize.height.addEventListener("change", () => {
+  if (state.resizeItems.some((item) => item.outputUrl)) {
+    invalidateResizeOutputs("Height changed. Click resize again to regenerate outputs.");
+  }
+});
+applyAspectRatioPreset();
+syncBackgroundFieldVisibility();
+
+updatePixelCounters();
+updateSheetCounters();
+updateResizeCounters();

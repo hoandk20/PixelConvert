@@ -701,6 +701,48 @@
       </nav>
     </footer>
 
+    <template id="cardTemplate">
+      <article class="result-card">
+        <div class="canvas-pair">
+          <div>
+            <p>Original</p>
+            <img class="source-preview" alt="" />
+          </div>
+          <div>
+            <p>Pixel</p>
+            <canvas class="pixel-preview" width="32" height="32"></canvas>
+          </div>
+        </div>
+        <div class="card-meta">
+          <strong class="file-name"></strong>
+          <span class="file-info"></span>
+        </div>
+        <div class="card-actions">
+          <button class="secondary download-btn" disabled type="button">
+            Download PNG
+          </button>
+        </div>
+      </article>
+    </template>
+
+    <template id="frameTemplate">
+      <article class="frame-card">
+        <button
+          class="frame-remove-btn"
+          type="button"
+          aria-label="Remove frame"
+          title="Remove frame"
+        >
+          ×
+        </button>
+        <img class="frame-preview" alt="" />
+        <div class="card-meta">
+          <strong class="frame-name"></strong>
+          <span class="frame-info"></span>
+        </div>
+      </article>
+    </template>
+
     <script src="app.js" defer></script>
   </body>
 </html>
