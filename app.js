@@ -1,50 +1,77 @@
-/* eslint-disable no-console */
+const state = {
+  pixelItems: [],
+  sheetItems: [],
+  resizeItems: [],
+  sheetOutputUrl: "",
+  sheetJsonUrl: "",
+};
 
-// Vanilla SPA (hash-based) that loads `data/outsystems-techlead/exams.json` and runs exam/practice sessions.
-// Data model is intentionally separated: content in JSON, UI in HTML/CSS, logic here.
+const elements = {
+  tabButtons: [...document.querySelectorAll(".tab-button")],
+  tabPanels: {
+    pixel: document.querySelector("#pixelTab"),
+    spritesheet: document.querySelector("#spritesheetTab"),
+    resize: document.querySelector("#resizeTab"),
+  },
+  pixel: {
+    dropzone: document.querySelector("#dropzone"),
+    fileInput: document.querySelector("#fileInput"),
+    sizeSelect: document.querySelector("#sizeSelect"),
+    fitSelect: document.querySelector("#fitSelect"),
+    backgroundMode: document.querySelector("#backgroundMode"),
+    backgroundColor: document.querySelector("#backgroundColor"),
+    convertBtn: document.querySelector("#convertBtn"),
+    downloadAllBtn: document.querySelector("#downloadAllBtn"),
+    clearBtn: document.querySelector("#clearBtn"),
+    fileCount: document.querySelector("#fileCount"),
+    statusText: document.querySelector("#statusText"),
+    emptyState: document.querySelector("#emptyState"),
+    resultsGrid: document.querySelector("#resultsGrid"),
+  },
+  sheet: {
+    dropzone: document.querySelector("#sheetDropzone"),
+    fileInput: document.querySelector("#sheetFileInput"),
+    columns: document.querySelector("#sheetColumns"),
+    cellSize: document.querySelector("#sheetCellSize"),
+    sizingMode: document.querySelector("#sheetSizingMode"),
+    padding: document.querySelector("#sheetPadding"),
+    jsonFormat: document.querySelector("#sheetJsonFormat"),
+    fitSelect: document.querySelector("#sheetFitSelect"),
+    backgroundMode: document.querySelector("#sheetBackgroundMode"),
+    backgroundColor: document.querySelector("#sheetBackgroundColor"),
+    buildBtn: document.querySelector("#buildSheetBtn"),
+    downloadBtn: document.querySelector("#downloadSheetBtn"),
+    downloadJsonBtn: document.querySelector("#downloadSheetJsonBtn"),
+    clearBtn: document.querySelector("#clearSheetBtn"),
+    count: document.querySelector("#sheetCount"),
+    statusText: document.querySelector("#sheetStatusText"),
+    emptyState: document.querySelector("#sheetEmptyState"),
+    previewWrap: document.querySelector("#sheetPreviewWrap"),
+    previewCanvas: document.querySelector("#sheetPreviewCanvas"),
+    framesGrid: document.querySelector("#sheetFramesGrid"),
+    framesEmpty: document.querySelector("#sheetFramesEmpty"),
+  },
+  resize: {
+    dropzone: document.querySelector("#resizeDropzone"),
+    fileInput: document.querySelector("#resizeFileInput"),
+    width: document.querySelector("#resizeWidth"),
+    height: document.querySelector("#resizeHeight"),
+    resizeBtn: document.querySelector("#resizeBtn"),
+    downloadAllBtn: document.querySelector("#downloadResizeAllBtn"),
+    clearBtn: document.querySelector("#clearResizeBtn"),
+    count: document.querySelector("#resizeCount"),
+    statusText: document.querySelector("#resizeStatusText"),
+    emptyState: document.querySelector("#resizeEmptyState"),
+    resultsGrid: document.querySelector("#resizeResultsGrid"),
+  },
+  cardTemplate: document.querySelector("#cardTemplate"),
+  frameTemplate: document.querySelector("#frameTemplate"),
+};
 
-const DATA_URL = "data/outsystems-techlead/exams.json";
-const STORAGE_KEY = "examPractice:lastSession:v1";
-
-const appEl = document.getElementById("app");
-const dataStatusEl = document.getElementById("dataStatus");
-const resumeBtn = document.getElementById("resumeBtn");
-
-/** @type {{dataset: any|null, session: any|null}} */
-const state = { dataset: null, session: null };
-
-function qs(sel, root = document) {
-  return root.querySelector(sel);
-}
-
-function clamp(n, min, max) {
-  return Math.max(min, Math.min(max, n));
-}
-
-function formatPercent(n) {
-  return `${Math.round(n)}%`;
-}
-
-function nowIso() {
-  return new Date().toISOString();
-}
-
-function parseHash() {
-  const raw = window.location.hash || "#/";
-  const cleaned = raw.replace(/^#/, "");
-  const [path, query] = cleaned.split("?");
-  const parts = path.split("/").filter(Boolean);
-  const params = new URLSearchParams(query || "");
-  return { raw, parts, params };
-}
-
-function setHash(path) {
-  window.location.hash = path.startsWith("#") ? path : `#${path}`;
-}
-
-function focusFirstHeading() {
-  const h = qs("h1, h2, [data-autofocus]");
-  if (h) h.focus?.();
+function formatBytes(bytes) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function htmlToText(html) {
@@ -87,147 +114,153 @@ function loadSession() {
   return raw ? safeJsonParse(raw) : null;
 }
 
-function saveSession(session) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-  syncResumeButton();
+function syncBackgroundFieldVisibility() {
+  updateBackgroundColorVisibility(elements.pixel.backgroundMode, elements.pixel.backgroundColor);
+  updateBackgroundColorVisibility(elements.sheet.backgroundMode, elements.sheet.backgroundColor);
 }
 
-function clearSession() {
-  localStorage.removeItem(STORAGE_KEY);
-  state.session = null;
-  syncResumeButton();
+function triggerDownload(url, filename) {
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.append(link);
+  link.click();
+  link.remove();
 }
 
-function syncResumeButton() {
-  const s = loadSession();
-  const show = !!(s && s.examId && !s.submitted);
-  resumeBtn.hidden = !show;
-  if (show) {
-    resumeBtn.onclick = () => {
-      state.session = s;
-      setHash(`/take/${encodeURIComponent(s.examId)}`);
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const image = new Image();
+
+    image.onload = () => resolve({ image, objectUrl });
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error(`Unable to read image ${file.name}`));
     };
+
+    image.src = objectUrl;
+  });
+}
+
+function drawFittedImage(ctx, image, size, fit) {
+  if (fit === "stretch") {
+    ctx.drawImage(image, 0, 0, size, size);
+    return;
+  }
+
+  const sourceRatio = image.width / image.height;
+  const targetRatio = 1;
+
+  if (fit === "contain") {
+    let drawWidth = size;
+    let drawHeight = size;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    if (sourceRatio > targetRatio) {
+      drawHeight = Math.round(size / sourceRatio);
+      offsetY = Math.floor((size - drawHeight) / 2);
+    } else {
+      drawWidth = Math.round(size * sourceRatio);
+      offsetX = Math.floor((size - drawWidth) / 2);
+    }
+
+    ctx.drawImage(image, offsetX, offsetY, drawWidth, drawHeight);
+    return;
+  }
+
+  let srcX = 0;
+  let srcY = 0;
+  let srcWidth = image.width;
+  let srcHeight = image.height;
+
+  if (sourceRatio > targetRatio) {
+    srcWidth = image.height * targetRatio;
+    srcX = Math.floor((image.width - srcWidth) / 2);
   } else {
-    resumeBtn.onclick = null;
-  }
-}
-
-function getExamById(examId) {
-  return state.dataset?.exams?.find((e) => e.id === examId) || null;
-}
-
-function getQuestionById(exam, qid) {
-  return exam.questions.find((q) => q.id === qid) || null;
-}
-
-function gradeSession(session, exam) {
-  const detailsByQ = {};
-  let correct = 0;
-  let incorrect = 0;
-  let unanswered = 0;
-
-  for (const qid of session.questionOrder) {
-    const q = getQuestionById(exam, qid);
-    const chosen = session.answersByQuestion?.[qid] ?? null;
-    const correctIds = q?.correctOptionIds || [];
-    const isAnswered = chosen !== null && chosen !== undefined && chosen !== "";
-    const isCorrect = isAnswered && correctIds.includes(chosen);
-
-    if (!isAnswered) unanswered++;
-    else if (isCorrect) correct++;
-    else incorrect++;
-
-    detailsByQ[qid] = { chosen, correctIds, isAnswered, isCorrect };
+    srcHeight = image.width / targetRatio;
+    srcY = Math.floor((image.height - srcHeight) / 2);
   }
 
-  const total = session.questionOrder.length;
-  const percent = total ? (correct / total) * 100 : 0;
-  return { correct, incorrect, unanswered, total, percent, detailsByQ };
+  ctx.drawImage(image, srcX, srcY, srcWidth, srcHeight, 0, 0, size, size);
 }
 
-function render(htmlString) {
-  appEl.innerHTML = htmlString;
-  focusFirstHeading();
+function drawPixelImage(image, size, fit, backgroundMode, backgroundColor) {
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+
+  const ctx = canvas.getContext("2d", { alpha: true });
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, size, size);
+
+  if (backgroundMode === "solid") {
+    ctx.fillStyle = backgroundColor;
+    ctx.fillRect(0, 0, size, size);
+  }
+
+  drawFittedImage(ctx, image, size, fit);
+  return canvas;
 }
 
-function renderError(title, message, extraHtml = "") {
-  render(`
-    <section class="hero">
-      <h1 tabindex="-1">${title}</h1>
-      <p class="muted">${message}</p>
-    </section>
-    <div class="card">
-      <div class="card__body">
-        ${extraHtml}
-        <div class="btnrow" style="margin-top:12px">
-          <button class="btn" type="button" id="goHomeBtn">Go home</button>
-        </div>
-      </div>
-    </div>
-  `);
-  qs("#goHomeBtn")?.addEventListener("click", () => setHash("/"));
+function isPixelTabActive() {
+  return elements.tabPanels.pixel?.classList.contains("is-active");
 }
 
-function renderHome() {
-  const exams = state.dataset?.exams || [];
+function isSpritesheetTabActive() {
+  return elements.tabPanels.spritesheet?.classList.contains("is-active");
+}
 
-  const groups = groupExamsByCourse(exams);
+function isResizeTabActive() {
+  return elements.tabPanels.resize?.classList.contains("is-active");
+}
 
-  render(`
-    <section class="hero">
-      <h1 tabindex="-1">Practice exams</h1>
-      <p>Pick an exam set, choose your mode, and start practicing.</p>
-    </section>
+function isEditablePasteTarget(target) {
+  return (
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement ||
+    target?.isContentEditable
+  );
+}
 
-    <div class="grid">
-      <div class="col-12 col-8">
-        <div class="card">
-          <div class="card__body">
-            <div class="split">
-              <div class="pill"><strong>${exams.length}</strong> exam sets</div>
-              <div class="pill"><strong>${countQuestions(exams)}</strong> questions</div>
-            </div>
+function extractClipboardImageFiles(clipboardData) {
+  if (!clipboardData) return [];
 
-            <div class="list" style="margin-top:14px">
-              ${groups
-                .map((g) => {
-                  const groupTitle = htmlEscape(g.title);
-                  const groupMeta = `${g.exams.length} sets • ${g.totalQuestions} questions`;
-                  return `
-                    <div class="card exam-card" style="padding:16px">
-                      <div class="split">
-                        <div>
-                          <div class="exam-card__title">${groupTitle}</div>
-                          <div class="exam-card__meta">${groupMeta}</div>
-                        </div>
-                      </div>
-                      <div class="list" style="margin-top:12px">
-                        ${g.exams
-                          .map((e) => {
-                            const qCount = e.questions?.length || 0;
-                            const short = getSetLabelFromTitle(e.title) || e.title;
-                            return `
-                              <div class="card exam-card" style="box-shadow:none">
-                                <div class="exam-card__title">${htmlEscape(short)}</div>
-                                <div class="exam-card__meta">${qCount} questions</div>
-                                <div class="exam-card__actions">
-                                  <a class="btn btn--primary" href="#/exam/${encodeURIComponent(e.id)}">Start</a>
-                                </div>
-                              </div>
-                            `;
-                          })
-                          .join("")}
-                      </div>
-                    </div>
-                  `;
-                })
-                .join("")}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  `);
+  const files = [];
+  const timestamp = Date.now();
+
+  for (const item of clipboardData.items ?? []) {
+    if (!item.type.startsWith("image/")) continue;
+
+    const file = item.getAsFile();
+    if (!file) continue;
+
+    const extension = (file.type.split("/")[1] || "png").replace(/[^\w-]+/g, "");
+    const namedFile =
+      file.name && file.name.trim()
+        ? file
+        : new File([file], `clipboard-image-${timestamp}.${extension}`, {
+            type: file.type || "image/png",
+          });
+
+    files.push(namedFile);
+  }
+
+  return files;
+}
+
+function switchTab(tabName) {
+  elements.tabButtons.forEach((button) => {
+    const isActive = button.dataset.tab === tabName;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-selected", String(isActive));
+  });
+
+  Object.entries(elements.tabPanels).forEach(([name, panel]) => {
+    panel.classList.toggle("is-active", name === tabName);
+  });
 }
 
 function groupExamsByCourse(exams) {
@@ -262,128 +295,185 @@ function getSetLabelFromTitle(title) {
   return `Set ${String(n).padStart(2, "0")}`;
 }
 
-function renderExamSetup(examId) {
-  const exam = getExamById(examId);
-  if (!exam) return renderError("Not found", "That exam set does not exist.");
-
-  const qCount = exam.questions.length;
-  render(`
-    <section class="hero">
-      <h1 tabindex="-1">${htmlEscape(exam.title)}</h1>
-      <p>${qCount} questions • Choose your settings, then start.</p>
-    </section>
-
-    <div class="grid">
-      <div class="col-12 col-8">
-        <div class="card">
-          <div class="card__body">
-            <div class="field">
-              <label for="modeSelect">Mode</label>
-              <select id="modeSelect">
-                <option value="exam">Exam mode (submit at the end)</option>
-                <option value="practice">Practice mode (one question at a time)</option>
-              </select>
-            </div>
-
-            <div style="height:12px"></div>
-
-            <div class="checks" role="group" aria-label="Options">
-              <label class="check">
-                <input type="checkbox" id="shuffleQuestions" checked />
-                <span><strong>Randomize</strong> question order</span>
-              </label>
-              <label class="check">
-                <input type="checkbox" id="shuffleOptions" checked />
-                <span><strong>Randomize</strong> answer choices</span>
-              </label>
-              <label class="check">
-                <input type="checkbox" id="practiceInstant" />
-                <span><strong>Instant feedback</strong> in practice mode</span>
-              </label>
-              <label class="check">
-                <input type="checkbox" id="persistProgress" checked />
-                <span><strong>Save progress</strong> to localStorage</span>
-              </label>
-            </div>
-
-            <div style="height:14px"></div>
-
-            <div class="btnrow">
-              <button class="btn btn--primary" id="startBtn" type="button">Start</button>
-              <a class="btn" href="#/">Back</a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-12 col-4">
-        <div class="card">
-          <div class="card__body">
-            <h2 style="margin:0 0 6px; font-size:1.05rem">Tip</h2>
-            <p class="muted" style="margin:0">
-              Use <span class="kbd">J</span>/<span class="kbd">K</span> to move next/previous question during a session.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  `);
-
-  qs("#startBtn")?.addEventListener("click", () => {
-    const mode = qs("#modeSelect")?.value || "exam";
-    const shuffleQ = qs("#shuffleQuestions")?.checked ?? true;
-    const shuffleO = qs("#shuffleOptions")?.checked ?? true;
-    const instant = qs("#practiceInstant")?.checked ?? false;
-    const persist = qs("#persistProgress")?.checked ?? true;
-
-    const session = createSession(exam, {
-      mode,
-      shuffleQuestions: shuffleQ,
-      shuffleOptions: shuffleO,
-      practiceInstantFeedback: instant,
-      persistProgress: persist,
-    });
-
-    state.session = session;
-    if (persist) saveSession(session);
-    setHash(`/take/${encodeURIComponent(exam.id)}`);
-  });
+function buildCustomSpritesheetMetadata({
+  width,
+  height,
+  columns,
+  rows,
+  cellSize,
+  padding,
+  fit,
+  backgroundMode,
+  backgroundColor,
+  frameData,
+}) {
+  return {
+    meta: {
+      app: "Pixel Tools Studio",
+      image: "spritesheet.png",
+      format: "RGBA8888",
+      size: { w: width, h: height },
+      scale: 1,
+      columns,
+      rows,
+      cellSize,
+      padding,
+      fitMode: fit,
+      backgroundMode,
+      backgroundColor: backgroundMode === "solid" ? backgroundColor : null,
+      frameCount: frameData.length,
+      jsonFormat: "custom",
+    },
+    frames: frameData.map((frame) => ({
+      index: frame.index,
+      name: frame.name,
+      exportName: frame.exportName,
+      file: frame.file,
+      baseName: frame.baseName,
+      frame: frame.frame,
+      atlasFrame: frame.frame,
+      inputSize: frame.inputSize,
+      renderSize: frame.renderSize,
+      grid: frame.grid,
+    })),
+  };
 }
 
-function createSession(exam, settings) {
-  const seed = Date.now() >>> 0;
-  const rng = mulberry32(seed);
+function buildPhaserArrayMetadata({
+  width,
+  height,
+  backgroundColor,
+  frameData,
+}) {
+  return {
+    frames: frameData.map((frame) => ({
+      filename: frame.exportName,
+      frame: {
+        x: frame.frame.x,
+        y: frame.frame.y,
+        w: frame.frame.w,
+        h: frame.frame.h,
+      },
+      rotated: false,
+      trimmed: false,
+      spriteSourceSize: {
+        x: 0,
+        y: 0,
+        w: frame.frame.w,
+        h: frame.frame.h,
+      },
+      sourceSize: {
+        w: frame.frame.w,
+        h: frame.frame.h,
+      },
+      inputSize: frame.inputSize,
+      renderSize: frame.renderSize,
+      pivot: {
+        x: 0.5,
+        y: 0.5,
+      },
+    })),
+    meta: {
+      app: "Pixel Tools Studio",
+      version: "1.0.0",
+      image: "spritesheet.png",
+      format: "RGBA8888",
+      size: { w: width, h: height },
+      scale: 1,
+      smartupdate: backgroundColor ?? "",
+    },
+  };
+}
 
-  const originalQuestionIds = exam.questions.map((q) => q.id);
-  const questionOrder = settings.shuffleQuestions ? shuffle(originalQuestionIds, rng) : originalQuestionIds;
+function buildPhaserHashMetadata({
+  width,
+  height,
+  backgroundColor,
+  frameData,
+}) {
+  const frames = {};
 
-  const optionOrderByQuestion = {};
-  for (const q of exam.questions) {
-    const ids = q.options.map((o) => o.id);
-    optionOrderByQuestion[q.id] = settings.shuffleOptions ? shuffle(ids, rng) : ids;
-  }
+  frameData.forEach((frame) => {
+    frames[frame.exportName] = {
+      frame: {
+        x: frame.frame.x,
+        y: frame.frame.y,
+        w: frame.frame.w,
+        h: frame.frame.h,
+      },
+      rotated: false,
+      trimmed: false,
+      spriteSourceSize: {
+        x: 0,
+        y: 0,
+        w: frame.frame.w,
+        h: frame.frame.h,
+      },
+      sourceSize: {
+        w: frame.frame.w,
+        h: frame.frame.h,
+      },
+      inputSize: frame.inputSize,
+      renderSize: frame.renderSize,
+      pivot: {
+        x: 0.5,
+        y: 0.5,
+      },
+    };
+  });
 
   return {
-    schemaVersion: 1,
-    seed,
-    examId: exam.id,
-    mode: settings.mode,
-    settings: {
-      shuffleQuestions: !!settings.shuffleQuestions,
-      shuffleOptions: !!settings.shuffleOptions,
-      practiceInstantFeedback: !!settings.practiceInstantFeedback,
-      persistProgress: !!settings.persistProgress,
+    frames,
+    meta: {
+      app: "Pixel Tools Studio",
+      version: "1.0.0",
+      image: "spritesheet.png",
+      format: "RGBA8888",
+      size: { w: width, h: height },
+      scale: 1,
+      smartupdate: backgroundColor ?? "",
     },
-    startedAt: nowIso(),
-    completedAt: null,
-    submitted: false,
-    currentIndex: 0,
-    questionOrder,
-    optionOrderByQuestion,
-    answersByQuestion: {},
-    checkedByQuestion: {}, // used in practice mode to reveal correctness per question
-    lastViewedAt: nowIso(),
   };
+}
+
+function buildSpritesheetMetadata(options) {
+  const format = options.jsonFormat;
+
+  if (format === "phaser-array") {
+    return buildPhaserArrayMetadata(options);
+  }
+
+  if (format === "phaser-hash") {
+    return buildPhaserHashMetadata(options);
+  }
+
+  return buildCustomSpritesheetMetadata(options);
+}
+
+function bindPixelCard(item) {
+  const fragment = elements.cardTemplate.content.cloneNode(true);
+  const sourcePreview = fragment.querySelector(".source-preview");
+  const pixelPreview = fragment.querySelector(".pixel-preview");
+  const fileName = fragment.querySelector(".file-name");
+  const fileInfo = fragment.querySelector(".file-info");
+  const downloadBtn = fragment.querySelector(".download-btn");
+
+  sourcePreview.src = item.sourceUrl;
+  sourcePreview.alt = item.file.name;
+  fileName.textContent = item.file.name;
+  fileInfo.textContent = `${formatBytes(item.file.size)} • ${
+    item.file.type || "image"
+  }`;
+
+  item.previewCanvas = pixelPreview;
+  item.downloadBtn = downloadBtn;
+
+  downloadBtn.addEventListener("click", () => {
+    if (!item.outputUrl) return;
+    triggerDownload(item.outputUrl, sanitizeName(item.file.name));
+  });
+
+  elements.pixel.resultsGrid.append(fragment);
 }
 
 function renderTake(examId) {
@@ -620,151 +710,190 @@ function renderJumpList(session, currentIndex) {
   `;
 }
 
-function renderResult(examId) {
-  const exam = getExamById(examId);
-  if (!exam) return renderError("Not found", "That exam set does not exist.");
-
-  const session = state.session || loadSession();
-  if (!session || session.examId !== examId || !session.submitted) {
-    return renderError("No results", "Submit an exam session first.", `<a class="btn btn--primary" href="#/exam/${encodeURIComponent(examId)}">Start</a>`);
-  }
-
-  state.session = session;
-  const grade = gradeSession(session, exam);
-
-  render(`
-    <section class="hero">
-      <h1 tabindex="-1">Results</h1>
-      <p>${htmlEscape(exam.title)} • ${session.mode === "practice" ? "Practice" : "Exam"} mode</p>
-    </section>
-
-    <div class="grid">
-      <div class="col-12 col-8">
-        <div class="card">
-          <div class="card__body">
-            <div class="split">
-              <div class="pill">Score: <strong>${grade.correct} / ${grade.total}</strong></div>
-              <div class="pill">Accuracy: <strong>${formatPercent(grade.percent)}</strong></div>
-            </div>
-            <div style="height:12px"></div>
-            <div class="split">
-              <div class="pill">Correct: <strong style="color:var(--ok)">${grade.correct}</strong></div>
-              <div class="pill">Incorrect: <strong style="color:var(--danger)">${grade.incorrect}</strong></div>
-              <div class="pill">Unanswered: <strong style="color:var(--warn)">${grade.unanswered}</strong></div>
-            </div>
-
-            <div style="height:14px"></div>
-            <div class="btnrow">
-              <a class="btn btn--primary" href="#/review/${encodeURIComponent(examId)}">Review answers</a>
-              <button class="btn" type="button" id="retryBtn">Retry</button>
-              <a class="btn" href="#/">Home</a>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-12 col-4">
-        <div class="card">
-          <div class="card__body">
-            <h2 style="margin:0 0 6px; font-size:1.05rem">Saved</h2>
-            <p class="muted" style="margin:0">
-              Results are stored locally in your browser (localStorage) when “Save progress” is enabled.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  `);
-
-  qs("#retryBtn")?.addEventListener("click", () => {
-    clearSession();
-    setHash(`/exam/${encodeURIComponent(examId)}`);
-  });
+function clearPixelItems() {
+  state.pixelItems.forEach((item) => URL.revokeObjectURL(item.sourceUrl));
+  state.pixelItems = [];
+  elements.pixel.resultsGrid.innerHTML = "";
+  updatePixelCounters();
+  updatePixelStatus("Image list cleared.");
 }
 
-function renderReview(examId) {
-  const exam = getExamById(examId);
-  if (!exam) return renderError("Not found", "That exam set does not exist.");
+function clearResizeItems() {
+  state.resizeItems.forEach((item) => URL.revokeObjectURL(item.sourceUrl));
+  state.resizeItems = [];
+  elements.resize.resultsGrid.innerHTML = "";
+  updateResizeCounters();
+  updateResizeStatus("Image list cleared.");
+}
 
-  const session = state.session || loadSession();
-  if (!session || session.examId !== examId || !session.submitted) {
-    return renderError("No review", "Submit an exam session first.", `<a class="btn btn--primary" href="#/exam/${encodeURIComponent(examId)}">Start</a>`);
+function buildSpritesheet() {
+  if (state.sheetItems.length === 0) {
+    updateSheetStatus("Add frames before building a spritesheet.");
+    return;
   }
 
-  const grade = gradeSession(session, exam);
-  const incorrectOnly = (parseHash().params.get("filter") || "") === "incorrect";
+  const columns = Math.max(1, Number(elements.sheet.columns.value) || 1);
+  const cellSize = Math.max(1, Number(elements.sheet.cellSize.value) || 32);
+  const sizingMode = elements.sheet.sizingMode.value;
+  const padding = Math.max(0, Number(elements.sheet.padding.value) || 0);
+  const jsonFormat = elements.sheet.jsonFormat.value;
+  const fit = elements.sheet.fitSelect.value;
+  const backgroundMode = elements.sheet.backgroundMode.value;
+  const backgroundColor = elements.sheet.backgroundColor.value;
+  const rows = Math.ceil(state.sheetItems.length / columns);
+  const frameData = [];
+  const usedFrameNames = new Set();
 
-  const items = session.questionOrder.filter((qid) => {
-    if (!incorrectOnly) return true;
-    const d = grade.detailsByQ[qid];
-    return d.isAnswered && !d.isCorrect;
+  const framesPerRow = [];
+  for (let start = 0; start < state.sheetItems.length; start += columns) {
+    framesPerRow.push(state.sheetItems.slice(start, start + columns));
+  }
+
+  const rowHeights = framesPerRow.map((rowItems) =>
+    Math.max(
+      ...rowItems.map((item) =>
+        sizingMode === "original" ? item.image.height : cellSize,
+      ),
+    ),
+  );
+
+  const rowWidths = framesPerRow.map((rowItems) => {
+    const contentWidth = rowItems.reduce(
+      (total, item) =>
+        total + (sizingMode === "original" ? item.image.width : cellSize),
+      0,
+    );
+    return contentWidth + Math.max(0, rowItems.length - 1) * padding;
   });
 
-  render(`
-    <section class="hero">
-      <div class="split">
-        <div>
-          <h1 tabindex="-1">Review</h1>
-          <p class="muted" style="margin:0">${htmlEscape(exam.title)} • ${items.length} questions shown</p>
-        </div>
-        <div class="btnrow right">
-          <a class="btn" href="#/result/${encodeURIComponent(examId)}">Back to results</a>
-          <a class="btn" href="#/">Home</a>
-        </div>
-      </div>
-      <div style="height:10px"></div>
-      <div class="btnrow">
-        <a class="btn ${!incorrectOnly ? "btn--primary" : ""}" href="#/review/${encodeURIComponent(examId)}">All</a>
-        <a class="btn ${incorrectOnly ? "btn--primary" : ""}" href="#/review/${encodeURIComponent(examId)}?filter=incorrect">Incorrect only</a>
-      </div>
-    </section>
+  const width = rowWidths.length > 0 ? Math.max(...rowWidths) : 0;
+  const height =
+    rowHeights.reduce((total, rowHeight) => total + rowHeight, 0) +
+    Math.max(0, rowHeights.length - 1) * padding;
 
-    <div class="card">
-      <div class="card__body">
-        <div class="review">
-          ${items
-            .map((qid, i) => {
-              const q = getQuestionById(exam, qid);
-              const d = grade.detailsByQ[qid];
-              const chosen = d.chosen;
-              const correctId = d.correctIds[0];
-              const chosenText = chosen ? (q.options.find((o) => o.id === chosen)?.text || chosen) : "—";
-              const correctText = correctId ? (q.options.find((o) => o.id === correctId)?.text || correctId) : "—";
-              const status = !d.isAnswered ? "Unanswered" : d.isCorrect ? "Correct" : "Incorrect";
-              const statusColor = !d.isAnswered ? "var(--warn)" : d.isCorrect ? "var(--ok)" : "var(--danger)";
-              const snippetSource = q.promptText || htmlToText(q.promptHtml);
-              const snippet =
-                snippetSource.length > 90 ? `${snippetSource.slice(0, 90)}…` : snippetSource;
+  const canvas = elements.sheet.previewCanvas;
+  canvas.width = width;
+  canvas.height = height;
 
-              return `
-                <details class="review-item">
-                  <summary>
-                    <span class="muted">#${i + 1}</span>
-                    <span style="color:${statusColor}; margin-left:10px; font-weight:800">${status}</span>
-                    <span class="muted" style="margin-left:10px">${htmlEscape(snippet)}</span>
-                  </summary>
-                  <div style="height:10px"></div>
-                  <div class="muted">Your answer: <strong style="color:var(--text)">${htmlEscape(chosenText)}</strong></div>
-                  <div class="muted">Correct answer: <strong style="color:var(--text)">${htmlEscape(correctText)}</strong></div>
-                  <div style="height:10px"></div>
-                  <div class="q__prompt"></div>
-                </details>
-              `;
-            })
-            .join("")}
-        </div>
-      </div>
-    </div>
-  `);
+  const ctx = canvas.getContext("2d", { alpha: true });
+  ctx.imageSmoothingEnabled = false;
+  ctx.clearRect(0, 0, width, height);
 
-  // Inject full prompt HTML after render to keep the template concise.
-  const detailEls = Array.from(appEl.querySelectorAll(".review-item"));
-  for (let i = 0; i < items.length; i++) {
-    const qid = items[i];
-    const q = getQuestionById(exam, qid);
-    const promptEl = detailEls[i]?.querySelector(".q__prompt");
-    if (promptEl) promptEl.innerHTML = q.promptHtml;
+  if (backgroundMode === "solid") {
+    ctx.fillStyle = backgroundColor;
+    ctx.fillRect(0, 0, width, height);
   }
+
+  let yCursor = 0;
+
+  framesPerRow.forEach((rowItems, row) => {
+    let xCursor = 0;
+
+    rowItems.forEach((item, column) => {
+      const index = row * columns + column;
+      const frameWidth = sizingMode === "original" ? item.image.width : cellSize;
+      const frameHeight = sizingMode === "original" ? item.image.height : cellSize;
+      const x = xCursor;
+      const y = yCursor;
+
+      if (sizingMode === "original") {
+        ctx.drawImage(item.image, x, y, frameWidth, frameHeight);
+      } else {
+        ctx.save();
+        ctx.translate(x, y);
+        drawFittedImage(ctx, item.image, cellSize, fit);
+        ctx.restore();
+      }
+
+      frameData.push({
+        index,
+        name: item.file.name,
+        exportName: getUniqueFrameExportName(item.file.name, usedFrameNames),
+        file: item.file.name,
+        baseName: sanitizeFileBase(item.file.name),
+        frame: {
+          x,
+          y,
+          w: frameWidth,
+          h: frameHeight,
+        },
+        inputSize: {
+          w: item.image.width,
+          h: item.image.height,
+        },
+        renderSize: {
+          w: frameWidth,
+          h: frameHeight,
+        },
+        grid: {
+          row,
+          column,
+        },
+      });
+
+      xCursor += frameWidth + padding;
+    });
+
+    yCursor += rowHeights[row] + padding;
+  });
+
+  state.sheetOutputUrl = canvas.toDataURL("image/png");
+  revokeIfExists(state.sheetJsonUrl);
+
+  const metadata = buildSpritesheetMetadata({
+    width,
+    height,
+    columns,
+    rows,
+    cellSize,
+    padding,
+    sizingMode,
+    fit,
+    backgroundMode,
+    backgroundColor,
+    frameData,
+    jsonFormat,
+  });
+
+  state.sheetJsonUrl = URL.createObjectURL(
+    new Blob([JSON.stringify(metadata, null, 2)], {
+      type: "application/json",
+    }),
+  );
+  updateSheetCounters();
+  updateSheetStatus(
+    `Spritesheet ${width}x${height} built with ${state.sheetItems.length} frame(s) using ${sizingMode} sizing. PNG and ${jsonFormat} JSON are ready.`,
+  );
+}
+
+function downloadSpritesheet() {
+  if (!state.sheetOutputUrl) {
+    updateSheetStatus("No spritesheet available to download.");
+    return;
+  }
+
+  triggerDownload(state.sheetOutputUrl, "spritesheet.png");
+}
+
+function downloadSpritesheetJson() {
+  if (!state.sheetJsonUrl) {
+    updateSheetStatus("No spritesheet JSON available to download.");
+    return;
+  }
+
+  triggerDownload(
+    state.sheetJsonUrl,
+    getSpritesheetJsonFilename(elements.sheet.jsonFormat.value),
+  );
+}
+
+function clearSheetItems() {
+  state.sheetItems.forEach((item) => URL.revokeObjectURL(item.sourceUrl));
+  state.sheetItems = [];
+  clearSheetOutputs();
+  elements.sheet.framesGrid.innerHTML = "";
+  updateSheetCounters();
+  updateSheetStatus("Frame list cleared.");
 }
 
 function htmlEscape(s) {

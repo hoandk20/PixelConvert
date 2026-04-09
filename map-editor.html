@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="google-adsense-account" content="ca-pub-9205579999231437" />
     <title>Pixel Tools | 2D Tile Map Editor</title>
     <meta
       name="description"
@@ -33,6 +34,65 @@
       name="twitter:description"
       content="Create browser-based 2D tilemaps with spritesheet import, brush and erase tools, zoom and pan, grid toggle, JSON import/export, and CSV export."
     />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Pixel Tools 2D Tile Map Editor",
+        "creator": {
+          "@type": "Person",
+          "name": "DK"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Pixel Tools"
+        },
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "Web",
+        "description": "A browser-based 2D tile map editor for importing spritesheets, painting layouts, saving project JSON, and exporting engine-ready bundles.",
+        "featureList": [
+          "Spritesheet PNG import",
+          "Tile palette selection",
+          "Multi-layout map editing",
+          "Undo and redo history",
+          "Project JSON save and load",
+          "Phaser, Tiled, and Unity export bundles",
+          "CSV export for active layers"
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What can I export from the Pixel Tools map editor?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "You can save an editor project JSON, export engine-ready ZIP bundles, and download CSV data for the active layer together with the spritesheet PNG."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I build a tileset palette?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Import one or more spritesheet PNG files, set tileset name, spacing, and margin if needed, and then load the tilesets to slice the sheet into selectable tiles."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I use the editor for quick tilemap prototyping?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. The editor is designed for quick browser-based prototyping with brush, rectangle, erase, grid toggle, pan, zoom, undo, redo, and project persistence in local storage."
+            }
+          }
+        ]
+      }
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -53,6 +113,12 @@
       <header class="hero hero-compact">
         <a class="text-link" href="./index.html">Back to main tools</a>
         <p class="eyebrow">Tile Map Editor</p>
+        <h1>Build browser-based 2D tilemaps from your own spritesheets</h1>
+        <p class="hero-copy">
+          Use this editor to import tile graphics, slice a spritesheet into a
+          selectable palette, paint layouts on a grid, and export project data
+          for prototyping in Phaser, Tiled, or Unity-style workflows.
+        </p>
         <div class="action-row hero-editor-actions">
           <button
             id="openProjectsPopupBtn"
@@ -520,7 +586,178 @@
           </div>
         </div>
       </div>
+
+      <section class="panel seo-intro">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Overview</p>
+            <h2>What this 2D tile map editor is built for</h2>
+          </div>
+        </div>
+        <p class="seo-copy">
+          Pixel Tools Map Editor is designed for indie developers, pixel artists,
+          and level designers who need a lightweight browser workflow for
+          assembling game maps. This page now explains the editing workflow,
+          supported exports, and common use cases so visitors can understand the
+          product before opening or saving a project.
+        </p>
+      </section>
+
+      <section class="panel seo-content">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Workflow</p>
+            <h2>Typical map-building flow</h2>
+          </div>
+        </div>
+        <div class="seo-grid">
+          <article>
+            <h3>1. Import tilesets</h3>
+            <p>
+              Load one or more PNG spritesheets, then define spacing and margin
+              so the editor can slice the sheet into individual paintable tiles.
+            </p>
+          </article>
+          <article>
+            <h3>2. Organize layouts</h3>
+            <p>
+              Create multiple layouts for floor, props, collision, or decorative
+              details, then drag to reorder them in the draw stack.
+            </p>
+          </article>
+          <article>
+            <h3>3. Export project data</h3>
+            <p>
+              Save editor JSON for later edits, or export engine bundles and CSV
+              data when you need a handoff for development or testing.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel seo-content">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Use Cases</p>
+            <h2>When this editor is useful</h2>
+          </div>
+        </div>
+        <div class="seo-grid">
+          <article>
+            <h3>Rapid level blocking</h3>
+            <p>
+              Sketch a room layout, dungeon, or platforming zone before moving
+              into a larger engine or desktop map pipeline.
+            </p>
+          </article>
+          <article>
+            <h3>Asset validation</h3>
+            <p>
+              Test whether a tileset reads clearly at a given tile size and check
+              seams, spacing, and repeated patterns directly in the browser.
+            </p>
+          </article>
+          <article>
+            <h3>Collaboration handoff</h3>
+            <p>
+              Share exported JSON and spritesheet bundles with programmers or
+              teammates who need structured map data instead of screenshots.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel seo-content">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Export Guide</p>
+            <h2>Formats and project data explained</h2>
+          </div>
+        </div>
+        <div class="seo-grid">
+          <article>
+            <h3>Project JSON</h3>
+            <p>
+              Keeps editor-specific state such as layouts, tileset references,
+              map size, and local progress so you can reopen the same project in
+              the browser later.
+            </p>
+          </article>
+          <article>
+            <h3>Engine ZIP</h3>
+            <p>
+              Packages tilemap JSON with the current spritesheet PNG for faster
+              handoff into engine experiments and early gameplay tests.
+            </p>
+          </article>
+          <article>
+            <h3>CSV Bundle</h3>
+            <p>
+              Exports the active layer in a simple grid-friendly format that is
+              useful for custom importers or spreadsheet-style inspection.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel faq-section" aria-labelledby="map-faq-heading">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">FAQ</p>
+            <h2 id="map-faq-heading">Questions about the map editor</h2>
+          </div>
+        </div>
+        <div class="faq-list">
+          <details>
+            <summary>Do I need a full spritesheet before I can start?</summary>
+            <p>
+              No. You can begin with a single small sheet or a rough prototype
+              PNG, then replace it later as your art pipeline matures.
+            </p>
+          </details>
+          <details>
+            <summary>What is the difference between Project JSON and Engine ZIP?</summary>
+            <p>
+              Project JSON is for reopening and editing inside Pixel Tools. The
+              Engine ZIP is a delivery format meant for use outside the editor.
+            </p>
+          </details>
+          <details>
+            <summary>Can I build collision or logic layers?</summary>
+            <p>
+              Yes. Create multiple layouts and use the block marker to separate
+              structural or collision-oriented data from visual decoration.
+            </p>
+          </details>
+          <details>
+            <summary>Is this page intended as a production editor or a fast prototype tool?</summary>
+            <p>
+              It is primarily a fast browser-based prototyping tool for pixel
+              map layout, tileset testing, and lightweight export workflows.
+            </p>
+          </details>
+        </div>
+      </section>
     </main>
+
+    <footer class="site-footer">
+      <p>
+        <span class="footer-brand">Pixel Tools</span>
+        2D Tile Map Editor helps you import spritesheets, paint layouts, and
+        export structured data for pixel game prototypes.
+      </p>
+      <p class="footer-contact">
+        Created by DK. Contact: <a href="https://www.facebook.com/hoandk20h" target="_blank" rel="noreferrer">Facebook</a>
+        <span aria-hidden="true">•</span>
+        <a href="mailto:dkhoankieu@gmail.com">dkhoankieu@gmail.com</a>
+      </p>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="./about.html">About</a>
+        <a href="./contact.html">Contact</a>
+        <a href="./privacy.html">Privacy Policy</a>
+        <a href="./terms.html">Terms</a>
+      </nav>
+    </footer>
 
     <script src="https://stuk.github.io/jszip/dist/jszip.min.js"></script>
     <script src="./map-editor.js"></script>
