@@ -492,6 +492,8 @@ function buildSpritesheetMetadata(options) {
 
 function bindPixelCard(item) {
   const fragment = elements.cardTemplate.content.cloneNode(true);
+  const card = fragment.querySelector(".result-card");
+  const removeBtn = fragment.querySelector(".card-remove-btn");
   const sourcePreview = fragment.querySelector(".source-preview");
   const pixelPreview = fragment.querySelector(".pixel-preview");
   const fileName = fragment.querySelector(".file-name");
@@ -505,8 +507,14 @@ function bindPixelCard(item) {
     item.file.type || "image"
   }`;
 
+  item.card = card;
+  item.removeBtn = removeBtn;
   item.previewCanvas = pixelPreview;
   item.downloadBtn = downloadBtn;
+
+  removeBtn?.addEventListener("click", () => {
+    removePixelItem(item);
+  });
 
   downloadBtn.addEventListener("click", () => {
     if (!item.outputUrl) return;
@@ -543,6 +551,7 @@ function bindSheetCard(item) {
 
 function bindResizeCard(item) {
   const fragment = elements.cardTemplate.content.cloneNode(true);
+  fragment.querySelector(".card-remove-btn")?.remove();
   const sourcePreview = fragment.querySelector(".source-preview");
   const resizedPreview = fragment.querySelector(".pixel-preview");
   const fileName = fragment.querySelector(".file-name");
@@ -598,6 +607,8 @@ async function addPixelFiles(fileList) {
         image,
         sourceUrl: objectUrl,
         outputUrl: "",
+        card: null,
+        removeBtn: null,
         previewCanvas: null,
         downloadBtn: null,
       };
@@ -831,6 +842,24 @@ function clearPixelItems() {
   elements.pixel.resultsGrid.innerHTML = "";
   updatePixelCounters();
   updatePixelStatus("Image list cleared.");
+}
+
+function removePixelItem(item) {
+  const index = state.pixelItems.indexOf(item);
+  if (index === -1) return;
+
+  state.pixelItems.splice(index, 1);
+  URL.revokeObjectURL(item.sourceUrl);
+  item.outputUrl = "";
+  item.card?.remove();
+  updatePixelCounters();
+
+  if (state.pixelItems.length === 0) {
+    updatePixelStatus("Image removed. Add more images to convert.");
+    return;
+  }
+
+  updatePixelStatus("Image removed.");
 }
 
 function clearResizeItems() {
