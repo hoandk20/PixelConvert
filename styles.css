@@ -594,6 +594,36 @@ button:disabled {
   text-decoration: underline;
 }
 
+.footer-nav {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 14px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.82rem;
+}
+
+.footer-nav a {
+  color: var(--accent-dark);
+  text-decoration: none;
+}
+
+.footer-nav a:hover {
+  text-decoration: underline;
+}
+
+.content-list {
+  margin: 0;
+  padding-left: 20px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.content-list li + li {
+  margin-top: 8px;
+}
+
 .text-link,
 .cta-link {
   color: var(--accent-dark);
@@ -1482,7 +1512,9 @@ button:disabled {
 }
 
 .map-editor-page:fullscreen .hero .text-link,
-.map-editor-page:fullscreen .hero .eyebrow {
+.map-editor-page:fullscreen .hero .eyebrow,
+.map-editor-page:fullscreen .hero h1,
+.map-editor-page:fullscreen .hero .hero-copy {
   display: none;
 }
 
