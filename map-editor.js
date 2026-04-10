@@ -79,6 +79,11 @@ const editorState = {
     name: DEFAULT_PROJECT_NAME,
     isOpen: false,
   },
+  clipboard: {
+    cells: [],
+    width: 0,
+    height: 0,
+  },
 };
 
 const elements = {
@@ -201,6 +206,14 @@ const mapRectangleState = {
   pointerId: null,
 };
 
+const mapCopySelectionState = {
+  isSelecting: false,
+  startCell: null,
+  currentCell: null,
+  pointerId: null,
+  copiedBounds: null,
+};
+
 function createProjectId() {
   return `project_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -287,7 +300,7 @@ const UI_TRANSLATIONS = {
     fullscreenEnter: "Fullscreen",
     fullscreenExit: "Exit Fullscreen",
     mapInstruction:
-      "Drag to paint. Right click the map to pick a tile. Hold space and drag to pan. Shortcuts: B brush, R rectangle, E erase, G grid.",
+      "Drag to paint. Right click the map to pick a tile. Hold space and drag to pan. Hold Shift and drag to copy a region. Shortcuts: B brush, R rectangle, E erase, G grid, Ctrl/Cmd+V paste.",
     mapSetupSection: "Map Setup",
     mapMeta: (columns, rows, tileWidth, tileHeight) => `${columns} x ${rows} tiles • ${tileWidth}x${tileHeight}px`,
     selectedTileNone: "Selected tile: none",
@@ -325,7 +338,7 @@ const UI_TRANSLATIONS = {
     shortcutsZoomHtml:
       "<p><strong>Q</strong> zoom out on the map</p><p><strong>W</strong> zoom in on the map</p><p><strong>0</strong> reset the view</p>",
     shortcutsNavigationHtml:
-      "<p><strong>Arrow Left</strong> move camera left</p><p><strong>Arrow Right</strong> move camera right</p><p><strong>Arrow Up</strong> move camera up</p><p><strong>Arrow Down</strong> move camera down</p><p><strong>Space + Drag</strong> pan with the mouse</p>",
+      "<p><strong>Arrow Left</strong> move camera left</p><p><strong>Arrow Right</strong> move camera right</p><p><strong>Arrow Up</strong> move camera up</p><p><strong>Arrow Down</strong> move camera down</p><p><strong>Space + Drag</strong> pan with the mouse</p><p><strong>Shift + Drag</strong> copy a region from the map</p><p><strong>Ctrl/Cmd + V</strong> paste the copied region at the hovered cell</p>",
     importPopupEyebrow: "Import",
     importPopupTitle: "Load tiles or project data",
     importSpritesheetTitle: "Import Spritesheet",
@@ -402,7 +415,7 @@ const UI_TRANSLATIONS = {
     fullscreenEnter: "Toàn màn hình",
     fullscreenExit: "Thoát toàn màn hình",
     mapInstruction:
-      "Kéo để vẽ. Nhấp chuột phải lên bản đồ để lấy tile. Giữ phím cách và kéo để di chuyển. Phím tắt: B cọ vẽ, R hình chữ nhật, E xóa, G lưới.",
+      "Kéo để vẽ. Nhấp chuột phải lên bản đồ để lấy tile. Giữ phím cách và kéo để di chuyển. Giữ Shift và kéo để copy một vùng. Phím tắt: B cọ vẽ, R hình chữ nhật, E xóa, G lưới, Ctrl/Cmd+V dán.",
     mapSetupSection: "Thiết lập bản đồ",
     mapMeta: (columns, rows, tileWidth, tileHeight) => `${columns} x ${rows} ô • ${tileWidth}x${tileHeight}px`,
     selectedTileNone: "Tile đã chọn: không có",
@@ -440,7 +453,7 @@ const UI_TRANSLATIONS = {
     shortcutsZoomHtml:
       "<p><strong>Q</strong> thu nhỏ trên bản đồ</p><p><strong>W</strong> phóng to trên bản đồ</p><p><strong>0</strong> đặt lại khung nhìn</p>",
     shortcutsNavigationHtml:
-      "<p><strong>Mũi tên trái</strong> di chuyển camera sang trái</p><p><strong>Mũi tên phải</strong> di chuyển camera sang phải</p><p><strong>Mũi tên lên</strong> di chuyển camera lên</p><p><strong>Mũi tên xuống</strong> di chuyển camera xuống</p><p><strong>Phím cách + kéo</strong> di chuyển bằng chuột</p>",
+      "<p><strong>Mũi tên trái</strong> di chuyển camera sang trái</p><p><strong>Mũi tên phải</strong> di chuyển camera sang phải</p><p><strong>Mũi tên lên</strong> di chuyển camera lên</p><p><strong>Mũi tên xuống</strong> di chuyển camera xuống</p><p><strong>Phím cách + kéo</strong> di chuyển bằng chuột</p><p><strong>Shift + kéo</strong> copy một vùng trên map</p><p><strong>Ctrl/Cmd + V</strong> dán vùng đã copy tại ô đang hover</p>",
     importPopupEyebrow: "Nhập",
     importPopupTitle: "Tải tiles hoặc dữ liệu dự án",
     importSpritesheetTitle: "Nhập Spritesheet",
@@ -1471,6 +1484,16 @@ function resetRectangleDragState() {
   mapRectangleState.pointerId = null;
 }
 
+function resetCopySelectionState({ keepCopiedBounds = true } = {}) {
+  mapCopySelectionState.isSelecting = false;
+  mapCopySelectionState.startCell = null;
+  mapCopySelectionState.currentCell = null;
+  mapCopySelectionState.pointerId = null;
+  if (!keepCopiedBounds) {
+    mapCopySelectionState.copiedBounds = null;
+  }
+}
+
 function collapseTilesetSelectionForRectangle() {
   const selectedTileIndices = getSelectedTileIndices();
   if (selectedTileIndices.length <= 1) {
@@ -1831,6 +1854,13 @@ function drawTilesetSelectionOverlay(overlayCanvas, selectionState) {
 }
 
 function drawMapRectanglePreview(ctx, startCell, endCell) {
+  drawMapBoundsOverlay(ctx, startCell, endCell);
+}
+
+function drawMapBoundsOverlay(ctx, startCell, endCell, {
+  fillStyle = "rgba(246, 203, 125, 0.14)",
+  strokeStyle = "#f6cb7d",
+} = {}) {
   const bounds = getCellBounds(startCell, endCell);
   if (!bounds) {
     return;
@@ -1844,12 +1874,16 @@ function drawMapRectanglePreview(ctx, startCell, endCell) {
   const height = (bounds.maxRow - bounds.minRow + 1) * tileHeight * zoom;
 
   ctx.save();
-  ctx.fillStyle = "rgba(246, 203, 125, 0.14)";
-  ctx.strokeStyle = "#f6cb7d";
+  ctx.fillStyle = fillStyle;
+  ctx.strokeStyle = strokeStyle;
   ctx.lineWidth = 2;
   ctx.fillRect(x, y, width, height);
   ctx.strokeRect(x + 0.5, y + 0.5, width - 1, height - 1);
   ctx.restore();
+}
+
+function isAreaSelectionTool(tool = editorState.tool) {
+  return tool === "rectangle" || tool === "erase";
 }
 
 function setSelectedTiles(
@@ -2458,9 +2492,22 @@ function renderGrid(ctx, width, height) {
 function renderHover(ctx) {
   const hoveredCell = editorState.hoveredCell;
   const rectanglePreviewCell =
-    editorState.tool === "rectangle" && mapRectangleState.startCell
+    isAreaSelectionTool() && mapRectangleState.startCell
       ? mapRectangleState.currentCell ?? hoveredCell ?? mapRectangleState.startCell
       : null;
+
+  if (mapCopySelectionState.isSelecting && mapCopySelectionState.startCell) {
+    drawMapBoundsOverlay(
+      ctx,
+      mapCopySelectionState.startCell,
+      mapCopySelectionState.currentCell ?? hoveredCell ?? mapCopySelectionState.startCell,
+      {
+        fillStyle: "rgba(103, 200, 255, 0.14)",
+        strokeStyle: "#67c8ff",
+      },
+    );
+    return;
+  }
 
   if (!hoveredCell && !rectanglePreviewCell) return;
 
@@ -2540,6 +2587,86 @@ function renderHover(ctx) {
   ctx.restore();
 }
 
+function renderClipboardOverlay(ctx) {
+  if (mapCopySelectionState.copiedBounds && !mapCopySelectionState.isSelecting) {
+    drawMapBoundsOverlay(
+      ctx,
+      {
+        column: mapCopySelectionState.copiedBounds.minColumn,
+        row: mapCopySelectionState.copiedBounds.minRow,
+      },
+      {
+        column: mapCopySelectionState.copiedBounds.maxColumn,
+        row: mapCopySelectionState.copiedBounds.maxRow,
+      },
+      {
+        fillStyle: "rgba(103, 200, 255, 0.08)",
+        strokeStyle: "rgba(103, 200, 255, 0.9)",
+      },
+    );
+  }
+
+  if (!editorState.hoveredCell || !hasClipboardCells() || mapCopySelectionState.isSelecting) {
+    return;
+  }
+
+  const { tileWidth, tileHeight } = editorState.map;
+  const zoom = editorState.camera.zoom;
+  const originColumn = editorState.hoveredCell.column;
+  const originRow = editorState.hoveredCell.row;
+
+  ctx.save();
+  ctx.fillStyle = "rgba(103, 200, 255, 0.08)";
+  ctx.strokeStyle = "rgba(103, 200, 255, 0.95)";
+  ctx.lineWidth = 2;
+  ctx.imageSmoothingEnabled = false;
+
+  for (let row = 0; row < editorState.clipboard.height; row += 1) {
+    for (let column = 0; column < editorState.clipboard.width; column += 1) {
+      const targetColumn = originColumn + column;
+      const targetRow = originRow + row;
+      if (
+        targetColumn < 0 ||
+        targetRow < 0 ||
+        targetColumn >= editorState.map.columns ||
+        targetRow >= editorState.map.rows
+      ) {
+        continue;
+      }
+
+      const x = editorState.camera.offsetX + targetColumn * tileWidth * zoom;
+      const y = editorState.camera.offsetY + targetRow * tileHeight * zoom;
+      const width = tileWidth * zoom;
+      const height = tileHeight * zoom;
+      const tileIndex = editorState.clipboard.cells[row][column];
+
+      ctx.fillRect(x, y, width, height);
+      if (tileIndex >= 0) {
+        const tile = editorState.tileset.tiles[tileIndex];
+        if (tile && editorState.tileset.image) {
+          ctx.globalAlpha = 0.45;
+          ctx.drawImage(
+            editorState.tileset.image,
+            tile.sourceX,
+            tile.sourceY,
+            tile.sourceWidth,
+            tile.sourceHeight,
+            x,
+            y,
+            width,
+            height,
+          );
+          ctx.globalAlpha = 1;
+        }
+      }
+
+      ctx.strokeRect(x + 0.5, y + 0.5, width - 1, height - 1);
+    }
+  }
+
+  ctx.restore();
+}
+
 function renderEditor() {
   updateMetaText();
 
@@ -2572,6 +2699,7 @@ function renderEditor() {
 
   renderGrid(ctx, mapPixelSize.width, mapPixelSize.height);
   renderHover(ctx);
+  renderClipboardOverlay(ctx);
 }
 
 function updateToolButtons() {
@@ -2781,16 +2909,16 @@ function drawCellToSurface(column, row) {
   }
 }
 
-function rectangleWouldChange(startCell, endCell, tileIndex) {
+function areaWouldChange(startCell, endCell, nextValue) {
   const bounds = getCellBounds(startCell, endCell);
-  if (!bounds || tileIndex < 0) {
+  if (!bounds) {
     return false;
   }
 
   const layer = getActiveLayer();
   for (let row = bounds.minRow; row <= bounds.maxRow; row += 1) {
     for (let column = bounds.minColumn; column <= bounds.maxColumn; column += 1) {
-      if (layer.data[row][column] !== tileIndex) {
+      if (layer.data[row][column] !== nextValue) {
         return true;
       }
     }
@@ -2799,9 +2927,9 @@ function rectangleWouldChange(startCell, endCell, tileIndex) {
   return false;
 }
 
-function applyRectangleToCells(startCell, endCell, tileIndex) {
+function applyValueToCells(startCell, endCell, nextValue) {
   const bounds = getCellBounds(startCell, endCell);
-  if (!bounds || tileIndex < 0) {
+  if (!bounds) {
     return false;
   }
 
@@ -2810,11 +2938,11 @@ function applyRectangleToCells(startCell, endCell, tileIndex) {
 
   for (let row = bounds.minRow; row <= bounds.maxRow; row += 1) {
     for (let column = bounds.minColumn; column <= bounds.maxColumn; column += 1) {
-      if (layer.data[row][column] === tileIndex) {
+      if (layer.data[row][column] === nextValue) {
         continue;
       }
 
-      layer.data[row][column] = tileIndex;
+      layer.data[row][column] = nextValue;
       drawCellToSurface(column, row);
       changed = true;
     }
@@ -2827,7 +2955,109 @@ function applyRectangleToCells(startCell, endCell, tileIndex) {
   editorState.hoveredCell = {
     column: bounds.maxColumn,
     row: bounds.maxRow,
-    value: tileIndex,
+    value: nextValue,
+  };
+  persistProject();
+  markDirty();
+  return true;
+}
+
+function copyCellsToClipboard(startCell, endCell) {
+  const bounds = getCellBounds(startCell, endCell);
+  if (!bounds) {
+    return false;
+  }
+
+  const layer = getActiveLayer();
+  const cells = [];
+  for (let row = bounds.minRow; row <= bounds.maxRow; row += 1) {
+    const rowData = [];
+    for (let column = bounds.minColumn; column <= bounds.maxColumn; column += 1) {
+      rowData.push(layer.data[row][column]);
+    }
+    cells.push(rowData);
+  }
+
+  editorState.clipboard.cells = cells;
+  editorState.clipboard.width = bounds.maxColumn - bounds.minColumn + 1;
+  editorState.clipboard.height = bounds.maxRow - bounds.minRow + 1;
+  mapCopySelectionState.copiedBounds = bounds;
+  markDirty();
+  return true;
+}
+
+function hasClipboardCells() {
+  return editorState.clipboard.width > 0 && editorState.clipboard.height > 0;
+}
+
+function clipboardWouldChange(originCell) {
+  if (!originCell || !hasClipboardCells()) {
+    return false;
+  }
+
+  const layer = getActiveLayer();
+  for (let row = 0; row < editorState.clipboard.height; row += 1) {
+    for (let column = 0; column < editorState.clipboard.width; column += 1) {
+      const targetColumn = originCell.column + column;
+      const targetRow = originCell.row + row;
+      if (
+        targetColumn < 0 ||
+        targetRow < 0 ||
+        targetColumn >= editorState.map.columns ||
+        targetRow >= editorState.map.rows
+      ) {
+        continue;
+      }
+
+      if (layer.data[targetRow][targetColumn] !== editorState.clipboard.cells[row][column]) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
+function pasteClipboardAtCell(originCell) {
+  if (!originCell || !hasClipboardCells()) {
+    return false;
+  }
+
+  const layer = getActiveLayer();
+  let changed = false;
+
+  for (let row = 0; row < editorState.clipboard.height; row += 1) {
+    for (let column = 0; column < editorState.clipboard.width; column += 1) {
+      const targetColumn = originCell.column + column;
+      const targetRow = originCell.row + row;
+      if (
+        targetColumn < 0 ||
+        targetRow < 0 ||
+        targetColumn >= editorState.map.columns ||
+        targetRow >= editorState.map.rows
+      ) {
+        continue;
+      }
+
+      const nextValue = editorState.clipboard.cells[row][column];
+      if (layer.data[targetRow][targetColumn] === nextValue) {
+        continue;
+      }
+
+      layer.data[targetRow][targetColumn] = nextValue;
+      drawCellToSurface(targetColumn, targetRow);
+      changed = true;
+    }
+  }
+
+  if (!changed) {
+    return false;
+  }
+
+  editorState.hoveredCell = {
+    column: originCell.column,
+    row: originCell.row,
+    value: layer.data[originCell.row]?.[originCell.column] ?? -1,
   };
   persistProject();
   markDirty();
@@ -3941,7 +4171,15 @@ function handlePointerMove(event) {
     return;
   }
 
-  if (editorState.isPointerDown && editorState.tool === "rectangle") {
+  if (editorState.isPointerDown && mapCopySelectionState.isSelecting) {
+    if (cell) {
+      mapCopySelectionState.currentCell = cell;
+    }
+    markDirty();
+    return;
+  }
+
+  if (editorState.isPointerDown && isAreaSelectionTool()) {
     if (cell) {
       mapRectangleState.currentCell = cell;
       mapRectangleState.isDragging = true;
@@ -4139,19 +4377,30 @@ function bindEvents() {
       return;
     }
 
-    if (editorState.tool === "rectangle") {
-      const selectedTileIndex = getSelectedRectangleTileIndex();
-      if (selectedTileIndex < 0) {
-        editorState.isPointerDown = false;
-        updateStatus("Select a tile from the tileset first.");
-        markDirty();
-        return;
-      }
+    if (event.shiftKey && cell) {
+      mapCopySelectionState.isSelecting = true;
+      mapCopySelectionState.startCell = cell;
+      mapCopySelectionState.currentCell = cell;
+      mapCopySelectionState.pointerId = event.pointerId;
+      markDirty();
+      return;
+    }
 
+    if (isAreaSelectionTool()) {
       if (!cell) {
         editorState.isPointerDown = false;
         markDirty();
         return;
+      }
+
+      if (editorState.tool === "rectangle") {
+        const selectedTileIndex = getSelectedRectangleTileIndex();
+        if (selectedTileIndex < 0) {
+          editorState.isPointerDown = false;
+          updateStatus("Select a tile from the tileset first.");
+          markDirty();
+          return;
+        }
       }
 
       mapRectangleState.isDragging = false;
@@ -4202,31 +4451,71 @@ function bindEvents() {
       stopMapTouchGesture();
     }
 
-    if (
-      editorState.tool === "rectangle" &&
-      mapRectangleState.startCell &&
-      mapRectangleState.currentCell
-    ) {
-      const selectedTileIndex = getSelectedRectangleTileIndex();
-      const shouldPaint = rectangleWouldChange(
-        mapRectangleState.startCell,
-        mapRectangleState.currentCell,
-        selectedTileIndex,
-      );
+    if (mapCopySelectionState.pointerId === event.pointerId) {
+      if (mapCopySelectionState.startCell && mapCopySelectionState.currentCell) {
+        copyCellsToClipboard(
+          mapCopySelectionState.startCell,
+          mapCopySelectionState.currentCell,
+        );
+        const bounds = getCellBounds(
+          mapCopySelectionState.startCell,
+          mapCopySelectionState.currentCell,
+        );
+        if (bounds) {
+          const width = bounds.maxColumn - bounds.minColumn + 1;
+          const height = bounds.maxRow - bounds.minRow + 1;
+          updateStatus(`Copied ${width} x ${height} cells. Hover a tile and press Ctrl/Cmd + V to paste.`);
+        }
+      }
+    } else if (mapRectangleState.pointerId === event.pointerId) {
+      if (
+        editorState.tool === "rectangle" &&
+        mapRectangleState.startCell &&
+        mapRectangleState.currentCell
+      ) {
+        const selectedTileIndex = getSelectedRectangleTileIndex();
+        const shouldPaint = selectedTileIndex >= 0
+          ? areaWouldChange(
+            mapRectangleState.startCell,
+            mapRectangleState.currentCell,
+            selectedTileIndex,
+          )
+          : false;
 
-      if (shouldPaint) {
-        pushUndoState();
-        applyRectangleToCells(
+        if (shouldPaint) {
+          pushUndoState();
+          applyValueToCells(
+            mapRectangleState.startCell,
+            mapRectangleState.currentCell,
+            selectedTileIndex,
+          );
+        }
+      } else if (
+        editorState.tool === "erase" &&
+        mapRectangleState.startCell &&
+        mapRectangleState.currentCell
+      ) {
+        const shouldErase = areaWouldChange(
           mapRectangleState.startCell,
           mapRectangleState.currentCell,
-          selectedTileIndex,
+          -1,
         );
+
+        if (shouldErase) {
+          pushUndoState();
+          applyValueToCells(
+            mapRectangleState.startCell,
+            mapRectangleState.currentCell,
+            -1,
+          );
+        }
       }
     }
 
     editorState.isPointerDown = false;
     editorState.isPanning = false;
     resetRectangleDragState();
+    resetCopySelectionState();
     markDirty();
   });
 
@@ -4245,6 +4534,31 @@ function bindEvents() {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z" && event.shiftKey) {
       event.preventDefault();
       redoLastAction();
+      return;
+    }
+
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "v") {
+      event.preventDefault();
+      if (!hasClipboardCells()) {
+        updateStatus("Copy a region first with Shift + Drag.");
+        return;
+      }
+
+      if (!editorState.hoveredCell) {
+        updateStatus("Hover a map cell before pasting.");
+        return;
+      }
+
+      if (!clipboardWouldChange(editorState.hoveredCell)) {
+        updateStatus("Paste target is unchanged.");
+        return;
+      }
+
+      pushUndoState();
+      pasteClipboardAtCell(editorState.hoveredCell);
+      updateStatus(
+        `Pasted ${editorState.clipboard.width} x ${editorState.clipboard.height} cells.`,
+      );
       return;
     }
 
