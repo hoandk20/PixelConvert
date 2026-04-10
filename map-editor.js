@@ -302,7 +302,7 @@ const UI_TRANSLATIONS = {
     fullscreenEnter: "Fullscreen",
     fullscreenExit: "Exit Fullscreen",
     mapInstruction:
-      "Drag to paint. Right click the map to pick a tile. Hold space and drag to pan. Use the Copy tool to drag a region. Shortcuts: B brush, R rectangle, E erase, C copy, G grid, Ctrl/Cmd+V paste.",
+      "Drag to paint. Right click the map to pick a tile. Hold space and drag to pan. In Copy, drag to copy a region, left click to paste, and right click to reset the copied region. Shortcuts: B brush, R rectangle, E erase, C copy, G grid.",
     mapSetupSection: "Map Setup",
     mapMeta: (columns, rows, tileWidth, tileHeight) => `${columns} x ${rows} tiles • ${tileWidth}x${tileHeight}px`,
     selectedTileNone: "Selected tile: none",
@@ -340,7 +340,7 @@ const UI_TRANSLATIONS = {
     shortcutsZoomHtml:
       "<p><strong>Q</strong> zoom out on the map</p><p><strong>W</strong> zoom in on the map</p><p><strong>0</strong> reset the view</p>",
     shortcutsNavigationHtml:
-      "<p><strong>Arrow Left</strong> move camera left</p><p><strong>Arrow Right</strong> move camera right</p><p><strong>Arrow Up</strong> move camera up</p><p><strong>Arrow Down</strong> move camera down</p><p><strong>Space + Drag</strong> pan with the mouse</p><p><strong>Copy tool + Drag</strong> copy a region from the map</p><p><strong>Ctrl/Cmd + V</strong> paste the copied region at the hovered cell</p>",
+      "<p><strong>Arrow Left</strong> move camera left</p><p><strong>Arrow Right</strong> move camera right</p><p><strong>Arrow Up</strong> move camera up</p><p><strong>Arrow Down</strong> move camera down</p><p><strong>Space + Drag</strong> pan with the mouse</p><p><strong>Copy tool + Drag</strong> copy a region from the map</p><p><strong>Copy tool + Left Click</strong> paste the copied region</p><p><strong>Copy tool + Right Click</strong> reset the copied region</p>",
     importPopupEyebrow: "Import",
     importPopupTitle: "Load tiles or project data",
     importSpritesheetTitle: "Import Spritesheet",
@@ -418,7 +418,7 @@ const UI_TRANSLATIONS = {
     fullscreenEnter: "Toàn màn hình",
     fullscreenExit: "Thoát toàn màn hình",
     mapInstruction:
-      "Kéo để vẽ. Nhấp chuột phải lên bản đồ để lấy tile. Giữ phím cách và kéo để di chuyển. Dùng tool Copy để kéo chọn một vùng. Phím tắt: B cọ vẽ, R hình chữ nhật, E xóa, C copy, G lưới, Ctrl/Cmd+V dán.",
+      "Kéo để vẽ. Nhấp chuột phải lên bản đồ để lấy tile. Giữ phím cách và kéo để di chuyển. Ở tool Copy, kéo để copy vùng, click trái để dán, click phải để reset vùng đã copy. Phím tắt: B cọ vẽ, R hình chữ nhật, E xóa, C copy, G lưới.",
     mapSetupSection: "Thiết lập bản đồ",
     mapMeta: (columns, rows, tileWidth, tileHeight) => `${columns} x ${rows} ô • ${tileWidth}x${tileHeight}px`,
     selectedTileNone: "Tile đã chọn: không có",
@@ -456,7 +456,7 @@ const UI_TRANSLATIONS = {
     shortcutsZoomHtml:
       "<p><strong>Q</strong> thu nhỏ trên bản đồ</p><p><strong>W</strong> phóng to trên bản đồ</p><p><strong>0</strong> đặt lại khung nhìn</p>",
     shortcutsNavigationHtml:
-      "<p><strong>Mũi tên trái</strong> di chuyển camera sang trái</p><p><strong>Mũi tên phải</strong> di chuyển camera sang phải</p><p><strong>Mũi tên lên</strong> di chuyển camera lên</p><p><strong>Mũi tên xuống</strong> di chuyển camera xuống</p><p><strong>Phím cách + kéo</strong> di chuyển bằng chuột</p><p><strong>Tool Copy + kéo</strong> copy một vùng trên map</p><p><strong>Ctrl/Cmd + V</strong> dán vùng đã copy tại ô đang hover</p>",
+      "<p><strong>Mũi tên trái</strong> di chuyển camera sang trái</p><p><strong>Mũi tên phải</strong> di chuyển camera sang phải</p><p><strong>Mũi tên lên</strong> di chuyển camera lên</p><p><strong>Mũi tên xuống</strong> di chuyển camera xuống</p><p><strong>Phím cách + kéo</strong> di chuyển bằng chuột</p><p><strong>Tool Copy + kéo</strong> copy một vùng trên map</p><p><strong>Tool Copy + Click trái</strong> dán vùng đã copy</p><p><strong>Tool Copy + Click phải</strong> reset vùng đã copy</p>",
     importPopupEyebrow: "Nhập",
     importPopupTitle: "Tải tiles hoặc dữ liệu dự án",
     importSpritesheetTitle: "Nhập Spritesheet",
@@ -2999,6 +2999,14 @@ function copyCellsToClipboard(startCell, endCell) {
   return true;
 }
 
+function clearCopiedCells() {
+  editorState.clipboard.cells = [];
+  editorState.clipboard.width = 0;
+  editorState.clipboard.height = 0;
+  resetCopySelectionState({ keepCopiedBounds: false });
+  markDirty();
+}
+
 function hasClipboardCells() {
   return editorState.clipboard.width > 0 && editorState.clipboard.height > 0;
 }
@@ -4380,6 +4388,16 @@ function bindEvents() {
     editorState.hoveredCell = cell;
 
     if (event.button === 2) {
+      if (editorState.tool === "copy") {
+        const hadClipboardCells = hasClipboardCells() || Boolean(mapCopySelectionState.copiedBounds);
+        clearCopiedCells();
+        editorState.isPointerDown = false;
+        if (hadClipboardCells) {
+          updateStatus("Copied region cleared. Drag to select a new region.");
+        }
+        markDirty();
+        return;
+      }
       pickTileFromMap(cell);
       editorState.isPointerDown = false;
       markDirty();
@@ -4392,6 +4410,24 @@ function bindEvents() {
     }
 
     if (editorState.tool === "copy" && cell) {
+      if (hasClipboardCells()) {
+        if (!clipboardWouldChange(cell)) {
+          editorState.isPointerDown = false;
+          updateStatus("Paste target is unchanged.");
+          markDirty();
+          return;
+        }
+
+        pushUndoState();
+        pasteClipboardAtCell(cell);
+        editorState.isPointerDown = false;
+        updateStatus(
+          `Pasted ${editorState.clipboard.width} x ${editorState.clipboard.height} cells.`,
+        );
+        markDirty();
+        return;
+      }
+
       mapCopySelectionState.isSelecting = true;
       mapCopySelectionState.startCell = cell;
       mapCopySelectionState.currentCell = cell;
@@ -4478,7 +4514,7 @@ function bindEvents() {
         if (bounds) {
           const width = bounds.maxColumn - bounds.minColumn + 1;
           const height = bounds.maxRow - bounds.minRow + 1;
-          updateStatus(`Copied ${width} x ${height} cells. Hover a tile and press Ctrl/Cmd + V to paste.`);
+          updateStatus(`Copied ${width} x ${height} cells. Left click to paste, right click to reset.`);
         }
       }
     } else if (mapRectangleState.pointerId === event.pointerId) {
@@ -4554,7 +4590,7 @@ function bindEvents() {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "v") {
       event.preventDefault();
       if (!hasClipboardCells()) {
-        updateStatus("Copy a region first with Shift + Drag.");
+        updateStatus("Copy a region first with the Copy tool.");
         return;
       }
 
