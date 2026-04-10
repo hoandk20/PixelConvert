@@ -93,6 +93,7 @@ const elements = {
   brushToolBtn: document.querySelector("#brushToolBtn"),
   rectangleToolBtn: document.querySelector("#rectangleToolBtn"),
   eraseToolBtn: document.querySelector("#eraseToolBtn"),
+  copyToolBtn: document.querySelector("#copyToolBtn"),
   zoomOutBtn: document.querySelector("#zoomOutBtn"),
   zoomInBtn: document.querySelector("#zoomInBtn"),
   resetViewBtn: document.querySelector("#resetViewBtn"),
@@ -292,6 +293,7 @@ const UI_TRANSLATIONS = {
     brush: "Brush",
     rectangle: "Rectangle",
     erase: "Erase",
+    copy: "Copy",
     zoomOut: "Zoom -",
     zoomIn: "Zoom +",
     resetView: "Reset View",
@@ -300,7 +302,7 @@ const UI_TRANSLATIONS = {
     fullscreenEnter: "Fullscreen",
     fullscreenExit: "Exit Fullscreen",
     mapInstruction:
-      "Drag to paint. Right click the map to pick a tile. Hold space and drag to pan. Hold Shift and drag to copy a region. Shortcuts: B brush, R rectangle, E erase, G grid, Ctrl/Cmd+V paste.",
+      "Drag to paint. Right click the map to pick a tile. Hold space and drag to pan. Use the Copy tool to drag a region. Shortcuts: B brush, R rectangle, E erase, C copy, G grid, Ctrl/Cmd+V paste.",
     mapSetupSection: "Map Setup",
     mapMeta: (columns, rows, tileWidth, tileHeight) => `${columns} x ${rows} tiles • ${tileWidth}x${tileHeight}px`,
     selectedTileNone: "Selected tile: none",
@@ -334,11 +336,11 @@ const UI_TRANSLATIONS = {
     shortcutsZoomTitle: "Zoom",
     shortcutsNavigationTitle: "Navigation",
     shortcutsToolsHtml:
-      "<p><strong>B</strong> switch to Brush</p><p><strong>R</strong> switch to Rectangle</p><p><strong>E</strong> switch to Erase</p><p><strong>G</strong> toggle Grid</p><p><strong>Ctrl/Cmd + Z</strong> undo</p><p><strong>Ctrl/Cmd + Shift + Z</strong> redo</p><p><strong>Ctrl + Y</strong> redo on Windows</p>",
+      "<p><strong>B</strong> switch to Brush</p><p><strong>R</strong> switch to Rectangle</p><p><strong>E</strong> switch to Erase</p><p><strong>C</strong> switch to Copy</p><p><strong>G</strong> toggle Grid</p><p><strong>Ctrl/Cmd + Z</strong> undo</p><p><strong>Ctrl/Cmd + Shift + Z</strong> redo</p><p><strong>Ctrl + Y</strong> redo on Windows</p>",
     shortcutsZoomHtml:
       "<p><strong>Q</strong> zoom out on the map</p><p><strong>W</strong> zoom in on the map</p><p><strong>0</strong> reset the view</p>",
     shortcutsNavigationHtml:
-      "<p><strong>Arrow Left</strong> move camera left</p><p><strong>Arrow Right</strong> move camera right</p><p><strong>Arrow Up</strong> move camera up</p><p><strong>Arrow Down</strong> move camera down</p><p><strong>Space + Drag</strong> pan with the mouse</p><p><strong>Shift + Drag</strong> copy a region from the map</p><p><strong>Ctrl/Cmd + V</strong> paste the copied region at the hovered cell</p>",
+      "<p><strong>Arrow Left</strong> move camera left</p><p><strong>Arrow Right</strong> move camera right</p><p><strong>Arrow Up</strong> move camera up</p><p><strong>Arrow Down</strong> move camera down</p><p><strong>Space + Drag</strong> pan with the mouse</p><p><strong>Copy tool + Drag</strong> copy a region from the map</p><p><strong>Ctrl/Cmd + V</strong> paste the copied region at the hovered cell</p>",
     importPopupEyebrow: "Import",
     importPopupTitle: "Load tiles or project data",
     importSpritesheetTitle: "Import Spritesheet",
@@ -407,6 +409,7 @@ const UI_TRANSLATIONS = {
     brush: "Cọ vẽ",
     rectangle: "Hình chữ nhật",
     erase: "Xóa",
+    copy: "Copy",
     zoomOut: "Thu phóng -",
     zoomIn: "Thu phóng +",
     resetView: "Đặt lại khung nhìn",
@@ -415,7 +418,7 @@ const UI_TRANSLATIONS = {
     fullscreenEnter: "Toàn màn hình",
     fullscreenExit: "Thoát toàn màn hình",
     mapInstruction:
-      "Kéo để vẽ. Nhấp chuột phải lên bản đồ để lấy tile. Giữ phím cách và kéo để di chuyển. Giữ Shift và kéo để copy một vùng. Phím tắt: B cọ vẽ, R hình chữ nhật, E xóa, G lưới, Ctrl/Cmd+V dán.",
+      "Kéo để vẽ. Nhấp chuột phải lên bản đồ để lấy tile. Giữ phím cách và kéo để di chuyển. Dùng tool Copy để kéo chọn một vùng. Phím tắt: B cọ vẽ, R hình chữ nhật, E xóa, C copy, G lưới, Ctrl/Cmd+V dán.",
     mapSetupSection: "Thiết lập bản đồ",
     mapMeta: (columns, rows, tileWidth, tileHeight) => `${columns} x ${rows} ô • ${tileWidth}x${tileHeight}px`,
     selectedTileNone: "Tile đã chọn: không có",
@@ -449,11 +452,11 @@ const UI_TRANSLATIONS = {
     shortcutsZoomTitle: "Thu phóng",
     shortcutsNavigationTitle: "Điều hướng",
     shortcutsToolsHtml:
-      "<p><strong>B</strong> chuyển sang Cọ vẽ</p><p><strong>R</strong> chuyển sang Hình chữ nhật</p><p><strong>E</strong> chuyển sang Xóa</p><p><strong>G</strong> bật/tắt Lưới</p><p><strong>Ctrl/Cmd + Z</strong> hoàn tác</p><p><strong>Ctrl/Cmd + Shift + Z</strong> làm lại</p><p><strong>Ctrl + Y</strong> làm lại trên Windows</p>",
+      "<p><strong>B</strong> chuyển sang Cọ vẽ</p><p><strong>R</strong> chuyển sang Hình chữ nhật</p><p><strong>E</strong> chuyển sang Xóa</p><p><strong>C</strong> chuyển sang Copy</p><p><strong>G</strong> bật/tắt Lưới</p><p><strong>Ctrl/Cmd + Z</strong> hoàn tác</p><p><strong>Ctrl/Cmd + Shift + Z</strong> làm lại</p><p><strong>Ctrl + Y</strong> làm lại trên Windows</p>",
     shortcutsZoomHtml:
       "<p><strong>Q</strong> thu nhỏ trên bản đồ</p><p><strong>W</strong> phóng to trên bản đồ</p><p><strong>0</strong> đặt lại khung nhìn</p>",
     shortcutsNavigationHtml:
-      "<p><strong>Mũi tên trái</strong> di chuyển camera sang trái</p><p><strong>Mũi tên phải</strong> di chuyển camera sang phải</p><p><strong>Mũi tên lên</strong> di chuyển camera lên</p><p><strong>Mũi tên xuống</strong> di chuyển camera xuống</p><p><strong>Phím cách + kéo</strong> di chuyển bằng chuột</p><p><strong>Shift + kéo</strong> copy một vùng trên map</p><p><strong>Ctrl/Cmd + V</strong> dán vùng đã copy tại ô đang hover</p>",
+      "<p><strong>Mũi tên trái</strong> di chuyển camera sang trái</p><p><strong>Mũi tên phải</strong> di chuyển camera sang phải</p><p><strong>Mũi tên lên</strong> di chuyển camera lên</p><p><strong>Mũi tên xuống</strong> di chuyển camera xuống</p><p><strong>Phím cách + kéo</strong> di chuyển bằng chuột</p><p><strong>Tool Copy + kéo</strong> copy một vùng trên map</p><p><strong>Ctrl/Cmd + V</strong> dán vùng đã copy tại ô đang hover</p>",
     importPopupEyebrow: "Nhập",
     importPopupTitle: "Tải tiles hoặc dữ liệu dự án",
     importSpritesheetTitle: "Nhập Spritesheet",
@@ -539,6 +542,7 @@ function applyLanguage(language = DEFAULT_UI_LANGUAGE) {
   setUiText("#brushToolBtn", copy.brush);
   setUiText("#rectangleToolBtn", copy.rectangle);
   setUiText("#eraseToolBtn", copy.erase);
+  setUiText("#copyToolBtn", copy.copy);
 
   setUiText(".control-fab-menu .eyebrow", copy.controlsSection);
   setUiText("#zoomOutBtn", copy.zoomOut);
@@ -2706,18 +2710,22 @@ function updateToolButtons() {
   const brushActive = editorState.tool === "brush";
   const rectangleActive = editorState.tool === "rectangle";
   const eraseActive = editorState.tool === "erase";
+  const copyActive = editorState.tool === "copy";
 
   elements.brushToolBtn.classList.toggle("is-active", brushActive);
   elements.rectangleToolBtn.classList.toggle("is-active", rectangleActive);
   elements.eraseToolBtn.classList.toggle("is-active", eraseActive);
+  elements.copyToolBtn.classList.toggle("is-active", copyActive);
 
   elements.brushToolBtn.setAttribute("aria-pressed", String(brushActive));
   elements.rectangleToolBtn.setAttribute("aria-pressed", String(rectangleActive));
   elements.eraseToolBtn.setAttribute("aria-pressed", String(eraseActive));
+  elements.copyToolBtn.setAttribute("aria-pressed", String(copyActive));
 }
 
 function setTool(tool, { silent = false } = {}) {
   resetRectangleDragState();
+  resetCopySelectionState();
   if (tool === "rectangle") {
     collapseTilesetSelectionForRectangle();
   }
@@ -2725,8 +2733,13 @@ function setTool(tool, { silent = false } = {}) {
   editorState.tool = tool;
   updateToolButtons();
   if (!silent) {
-    const toolLabel =
-      tool === "brush" ? "Brush" : tool === "erase" ? "Erase" : "Rectangle";
+    const toolLabel = tool === "brush"
+      ? "Brush"
+      : tool === "erase"
+        ? "Erase"
+        : tool === "copy"
+          ? "Copy"
+          : "Rectangle";
     updateStatus(`${toolLabel} tool selected.`);
   }
   markDirty();
@@ -4171,7 +4184,7 @@ function handlePointerMove(event) {
     return;
   }
 
-  if (editorState.isPointerDown && mapCopySelectionState.isSelecting) {
+  if (editorState.isPointerDown && editorState.tool === "copy" && mapCopySelectionState.isSelecting) {
     if (cell) {
       mapCopySelectionState.currentCell = cell;
     }
@@ -4205,6 +4218,7 @@ function bindEvents() {
   elements.brushToolBtn.addEventListener("click", () => setTool("brush"));
   elements.rectangleToolBtn.addEventListener("click", () => setTool("rectangle"));
   elements.eraseToolBtn.addEventListener("click", () => setTool("erase"));
+  elements.copyToolBtn.addEventListener("click", () => setTool("copy"));
   elements.undoBtn.addEventListener("click", () => {
     void undoLastAction();
   });
@@ -4377,7 +4391,7 @@ function bindEvents() {
       return;
     }
 
-    if (event.shiftKey && cell) {
+    if (editorState.tool === "copy" && cell) {
       mapCopySelectionState.isSelecting = true;
       mapCopySelectionState.startCell = cell;
       mapCopySelectionState.currentCell = cell;
@@ -4579,12 +4593,14 @@ function bindEvents() {
       editorState.spacePressed = true;
     }
 
-    if (event.key === "b" || event.key === "B") {
+    if (!event.ctrlKey && !event.metaKey && !event.altKey && (event.key === "b" || event.key === "B")) {
       setTool("brush");
-    } else if (event.key === "r" || event.key === "R") {
+    } else if (!event.ctrlKey && !event.metaKey && !event.altKey && (event.key === "r" || event.key === "R")) {
       setTool("rectangle");
-    } else if (event.key === "e" || event.key === "E") {
+    } else if (!event.ctrlKey && !event.metaKey && !event.altKey && (event.key === "e" || event.key === "E")) {
       setTool("erase");
+    } else if (!event.ctrlKey && !event.metaKey && !event.altKey && (event.key === "c" || event.key === "C")) {
+      setTool("copy");
     } else if (event.key === "q" || event.key === "Q") {
       event.preventDefault();
       const rect = elements.mapCanvas.getBoundingClientRect();
