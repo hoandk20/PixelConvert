@@ -14,10 +14,6 @@
       name="description"
       content="Convert images to pixel art, build spritesheets, and launch a 2D tile map editor with tile import, map painting, JSON save/load, and PNG export."
     />
-    <meta
-      name="keywords"
-      content="pixel art converter, spritesheet generator, 2d tile map editor, tilemap maker, tilesheet slicer, pixel game tools, map editor online, game asset tool"
-    />
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <meta name="author" content="DK" />
     <meta name="theme-color" content="#241748" />
@@ -37,7 +33,7 @@
     />
     <meta property="og:site_name" content="Pixel Tools" />
     <meta property="og:locale" content="en_US" />
-    <meta property="og:image" content="https://pixeltool.io.vn/favicon.png" />
+    <meta property="og:image" content="https://pixeltool.io.vn/og-preview.svg" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:url" content="https://pixeltool.io.vn/" />
     <meta
@@ -48,7 +44,7 @@
       name="twitter:description"
       content="Convert images to pixel art, export spritesheets, and build 2D tile maps with browser-based tools."
     />
-    <meta name="twitter:image" content="https://pixeltool.io.vn/favicon.png" />
+    <meta name="twitter:image" content="https://pixeltool.io.vn/og-preview.svg" />
     <link rel="manifest" href="./site.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -84,6 +80,20 @@
           "Tilesheet slicing and tile palette import",
           "Tile map JSON save and load",
           "Tile map PNG export"
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://pixeltool.io.vn/"
+          }
         ]
       }
     </script>
@@ -136,54 +146,9 @@
           <span class="brand__text">Pixel Tools</span>
         </a>
         <h1 class="sr-only">Pixel Tools for pixel art conversion, spritesheets, and 2D tile map editing</h1>
-
-        <aside class="hero-spotlight panel" aria-label="Map editor spotlight">
-          <p class="hero-spotlight-label">Featured Mode</p>
-          <h2>2D Tile Map Editor</h2>
-          <p>
-            Import tile images, slice a tilesheet, paint maps on a grid, and
-            export JSON or PNG for your pixel game pipeline.
-          </p>
-          <ul class="hero-list">
-            <li>Tile palette with click-to-paint workflow</li>
-            <li>Tilesheet slicing with width, height, spacing, and margin</li>
-            <li>JSON save/load plus PNG export</li>
-          </ul>
-          <a class="cta-link cta-link-primary hero-spotlight-link" href="./map-editor.html">
-            Enter editor
-          </a>
-        </aside>
-      </header>
-
-      <nav class="tab-bar panel" aria-label="Tool navigation">
-        <button
-          class="tab-button is-active"
-          data-tab="pixel"
-          type="button"
-          aria-controls="pixelTab"
-          aria-selected="true"
-        >
-          Pixel Convert
-        </button>
-        <button
-          class="tab-button"
-          data-tab="spritesheet"
-          type="button"
-          aria-controls="spritesheetTab"
-          aria-selected="false"
-        >
-          Spritesheet
-        </button>
-        <button
-          class="tab-button"
-          data-tab="resize"
-          type="button"
-          aria-controls="resizeTab"
-          aria-selected="false"
-        >
-          Resize
-        </button>
-      </nav>
+      </div>
+    </header>
+      <main class="app-shell">
 
       <section class="panel seo-intro">
         <div class="section-heading">
@@ -198,364 +163,12 @@
           files, generate spritesheets with JSON metadata, and build 2D tile
           maps directly in the browser.
         </p>
-      </section>
-
-      <section
-        id="pixelTab"
-        class="tab-panel is-active"
-        aria-labelledby="pixel-tool-heading"
-      >
-        <section class="panel controls">
-          <div class="sr-only">
-            <h2 id="pixel-tool-heading">Batch pixel art converter</h2>
-          </div>
-          <div
-            id="dropzone"
-            class="dropzone"
-            role="button"
-            tabindex="0"
-            aria-label="Choose or drag and drop images for pixel conversion"
-          >
-            <input id="fileInput" type="file" accept="image/*" multiple hidden />
-            <div class="dropzone-content">
-              <span class="dropzone-badge">Batch Upload</span>
-              <h2>Drop images here</h2>
-              <p>or click to select multiple files at once</p>
-              <p class="dropzone-hint">
-                You can also paste an image from the clipboard with
-                <strong>Ctrl/Cmd + V</strong>
-              </p>
-            </div>
-          </div>
-
-          <div class="settings-grid">
-            <label class="field">
-              <span>Output size</span>
-              <select id="sizeSelect">
-                <option value="32" selected>32 x 32</option>
-                <option value="16">16 x 16</option>
-                <option value="64">64 x 64</option>
-              </select>
-            </label>
-
-            <label class="field">
-              <span>Image fit</span>
-              <select id="fitSelect">
-                <option value="contain" selected>Contain</option>
-                <option value="cover">Cover</option>
-                <option value="stretch">Stretch</option>
-              </select>
-            </label>
-
-            <label class="field">
-              <span>Canvas background</span>
-              <select id="backgroundMode">
-                <option value="transparent" selected>Transparent</option>
-                <option value="solid">Solid color</option>
-              </select>
-            </label>
-
-            <label class="field">
-              <span>Background color</span>
-              <input id="backgroundColor" type="color" value="#f5deb3" />
-            </label>
-          </div>
-
-          <div class="action-row">
-            <button id="convertBtn" class="primary" type="button">
-              Convert all
-            </button>
-            <button
-              id="downloadAllBtn"
-              class="secondary"
-              type="button"
-              disabled
-            >
-              Download all
-            </button>
-            <button id="clearBtn" class="ghost" type="button">
-              Clear list
-            </button>
-          </div>
-
-          <div class="status-bar">
-            <span id="fileCount">No images added yet</span>
-            <span id="statusText">Ready for batch processing</span>
-          </div>
-        </section>
-
-        <section class="panel results">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Results</p>
-              <h2>Converted images</h2>
-            </div>
-          </div>
-
-          <div id="emptyState" class="empty-state">
-            Add images to preview your 32x32 pixel outputs here.
-          </div>
-
-          <div id="resultsGrid" class="results-grid" aria-live="polite"></div>
-        </section>
-      </section>
-
-      <section
-        id="spritesheetTab"
-        class="tab-panel"
-        aria-labelledby="spritesheet-tool-heading"
-      >
-        <section class="panel controls">
-          <div class="sr-only">
-            <h2 id="spritesheet-tool-heading">Spritesheet generator with JSON export</h2>
-          </div>
-          <div
-            id="sheetDropzone"
-            class="dropzone"
-            role="button"
-            tabindex="0"
-            aria-label="Choose or drag and drop images to build a spritesheet"
-          >
-            <input
-              id="sheetFileInput"
-              type="file"
-              accept="image/*"
-              multiple
-              hidden
-            />
-            <div class="dropzone-content">
-              <span class="dropzone-badge">Sprite Frames</span>
-              <h2>Upload frames for the spritesheet</h2>
-              <p>images will be arranged in a grid and exported as one PNG</p>
-              <p class="dropzone-hint">
-                You can also paste an image from the clipboard with
-                <strong>Ctrl/Cmd + V</strong>
-              </p>
-            </div>
-          </div>
-
-          <div class="settings-grid sprite-grid">
-            <label class="field">
-              <span>Columns</span>
-              <input id="sheetColumns" type="number" min="1" value="4" />
-            </label>
-
-            <label class="field">
-              <span>Cell size</span>
-              <input id="sheetCellSize" type="number" min="1" value="32" />
-            </label>
-
-            <label class="field">
-              <span>Frame sizing</span>
-              <select id="sheetSizingMode">
-                <option value="fixed" selected>Fixed cell size</option>
-                <option value="original">Keep original size</option>
-              </select>
-            </label>
-
-            <label class="field">
-              <span>Padding</span>
-              <input id="sheetPadding" type="number" min="0" value="0" />
-            </label>
-
-            <label class="field">
-              <span class="field-label">
-                Fit mode
-                <button
-                  type="button"
-                  class="info-trigger"
-                  aria-label="Fit mode help"
-                  data-tooltip="Use Contain to reduce images into pixel art while keeping the original aspect ratio."
-                >
-                  i
-                </button>
-              </span>
-              <select id="sheetFitSelect">
-                <option value="contain" selected>Contain</option>
-                <option value="cover">Cover</option>
-                <option value="stretch">Stretch</option>
-              </select>
-            </label>
-
-            <label class="field">
-              <span>Spritesheet background</span>
-              <select id="sheetBackgroundMode">
-                <option value="transparent" selected>Transparent</option>
-                <option value="solid">Solid color</option>
-              </select>
-            </label>
-
-            <label class="field">
-              <span>Background color</span>
-              <input id="sheetBackgroundColor" type="color" value="#0f172a" />
-            </label>
-
-            <label class="field">
-              <span>JSON format</span>
-              <select id="sheetJsonFormat">
-                <option value="phaser-array" selected>
-                  Phaser / TexturePacker (Array)
-                </option>
-                <option value="phaser-hash">Phaser / TexturePacker (Hash)</option>
-                <option value="custom">Custom metadata</option>
-              </select>
-            </label>
-          </div>
-
-          <div class="action-row">
-            <button id="buildSheetBtn" class="primary" type="button">
-              Build spritesheet
-            </button>
-            <button
-              id="downloadSheetBtn"
-              class="secondary"
-              type="button"
-              disabled
-            >
-              Download spritesheet PNG
-            </button>
-            <button
-              id="downloadSheetJsonBtn"
-              class="secondary"
-              type="button"
-              disabled
-            >
-              Download spritesheet JSON
-            </button>
-            <button id="clearSheetBtn" class="ghost" type="button">
-              Clear frames
-            </button>
-          </div>
-
-          <div class="status-bar">
-            <span id="sheetCount">No frames added yet</span>
-            <span id="sheetStatusText">Ready to build a spritesheet</span>
-          </div>
-        </section>
-
-        <section class="sheet-layout">
-          <section class="panel results">
-            <div class="section-heading">
-              <div>
-                <p class="eyebrow">Spritesheet</p>
-                <h2>Preview canvas</h2>
-              </div>
-            </div>
-
-            <div id="sheetEmptyState" class="empty-state">
-              Add frames and click build spritesheet to preview the result.
-            </div>
-
-            <div id="sheetPreviewWrap" class="sheet-preview-wrap" hidden>
-              <canvas
-                id="sheetPreviewCanvas"
-                class="sheet-preview-canvas"
-                width="128"
-                height="128"
-              ></canvas>
-            </div>
-          </section>
-
-          <section class="panel results">
-            <div class="section-heading">
-              <div>
-                <p class="eyebrow">Frames</p>
-                <h2>Frame list</h2>
-              </div>
-            </div>
-
-            <div id="sheetFramesEmpty" class="empty-state">
-              No frames in the spritesheet yet.
-            </div>
-
-            <div id="sheetFramesGrid" class="frame-grid"></div>
-          </section>
-        </section>
-      </section>
-
-      <section
-        id="resizeTab"
-        class="tab-panel"
-        aria-labelledby="resize-tool-heading"
-      >
-        <section class="panel controls">
-          <div class="sr-only">
-            <h2 id="resize-tool-heading">Image resize tool</h2>
-          </div>
-          <div
-            id="resizeDropzone"
-            class="dropzone"
-            role="button"
-            tabindex="0"
-            aria-label="Choose or drag and drop images to resize"
-          >
-            <input
-              id="resizeFileInput"
-              type="file"
-              accept="image/*"
-              multiple
-              hidden
-            />
-            <div class="dropzone-content">
-              <span class="dropzone-badge">Resize</span>
-              <h2>Drop images here</h2>
-              <p>or click to select multiple files at once</p>
-              <p class="dropzone-hint">
-                You can also paste an image from the clipboard with
-                <strong>Ctrl/Cmd + V</strong>
-              </p>
-            </div>
-          </div>
-
-          <div class="settings-grid resize-grid">
-            <label class="field">
-              <span>Output width</span>
-              <input id="resizeWidth" type="number" min="1" value="448" />
-            </label>
-
-            <label class="field">
-              <span>Output height</span>
-              <input id="resizeHeight" type="number" min="1" value="600" />
-            </label>
-          </div>
-
-          <div class="action-row">
-            <button id="resizeBtn" class="primary" type="button">
-              Resize all
-            </button>
-            <button
-              id="downloadResizeAllBtn"
-              class="secondary"
-              type="button"
-              disabled
-            >
-              Download all
-            </button>
-            <button id="clearResizeBtn" class="ghost" type="button">
-              Clear list
-            </button>
-          </div>
-
-          <div class="status-bar">
-            <span id="resizeCount">No images added yet</span>
-            <span id="resizeStatusText">Ready to resize images</span>
-          </div>
-        </section>
-
-        <section class="panel results">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Results</p>
-              <h2>Resized images</h2>
-            </div>
-          </div>
-
-          <div id="resizeEmptyState" class="empty-state">
-            Add images to preview your resized outputs here.
-          </div>
-
-          <div id="resizeResultsGrid" class="results-grid" aria-live="polite"></div>
-        </section>
+        <div class="action-row">
+          <a class="cta-link cta-link-primary cta-link-featured-home" href="./map-editor.html">2D Tile Map Editor</a>
+          <a class="cta-link" href="./pixel-art-converter.html">Pixel Art Converter</a>
+          <a class="cta-link" href="./spritesheet-generator.html">Spritesheet Generator</a>
+          <a class="cta-link" href="./image-resizer.html">Image Resizer</a>
+        </div>
       </section>
 
       <section class="panel seo-content">
@@ -592,20 +205,48 @@
         </div>
       </section>
 
-      <section class="panel seo-content featured-editor-section">
+      <section class="panel seo-content">
         <div class="section-heading">
           <div>
-            <p class="eyebrow">Featured Tool</p>
-            <h2>Start with the 2D tile map editor</h2>
+            <p class="eyebrow">Tool Pages</p>
+            <h2>Choose the right tool for each asset task</h2>
           </div>
-          <a class="cta-link cta-link-primary" href="./map-editor.html">Launch editor</a>
         </div>
-        <p class="seo-copy">
-          Build a 2D map from imported tile images or a sliced tilesheet, paint
-          directly on a grid canvas, and save or reload your work as JSON with
-          PNG export for previews. This layout is designed to make the editor
-          the main jump-off point for level design.
-        </p>
+        <div class="seo-grid">
+          <article class="tool-card tool-card-featured tool-card-featured-hero">
+            <h3>2D Tile Map Editor</h3>
+            <p>
+              Best when you need to import tile images, slice tilesheets, paint
+              maps on a grid, and export JSON or PNG for your game pipeline.
+            </p>
+            <p class="tool-card-note">Featured for level design, tile workflows, and fast map prototyping.</p>
+            <a class="text-link" href="./map-editor.html">Open tool page</a>
+          </article>
+          <article>
+            <h3>Pixel Art Converter</h3>
+            <p>
+              Best when you need fixed-size pixel outputs such as 16x16, 32x32,
+              or 64x64 with quick batch export.
+            </p>
+            <a class="text-link" href="./pixel-art-converter.html">Open tool page</a>
+          </article>
+          <article>
+            <h3>Spritesheet Generator</h3>
+            <p>
+              Best when you need to arrange multiple frames into one sheet and
+              export metadata for game-engine import.
+            </p>
+            <a class="text-link" href="./spritesheet-generator.html">Open tool page</a>
+          </article>
+          <article>
+            <h3>Image Resizer</h3>
+            <p>
+              Best when you just need fast width and height changes without
+              converting the image into pixel art.
+            </p>
+            <a class="text-link" href="./image-resizer.html">Open tool page</a>
+          </article>
+        </div>
       </section>
 
       <section class="panel seo-content">
@@ -672,17 +313,18 @@
           <details>
             <summary>Can I build a spritesheet and export JSON metadata?</summary>
             <p>
-              Yes. The spritesheet tab can export both
+              Yes. The dedicated spritesheet generator page can export both
               <code>spritesheet.png</code> and <code>spritesheet.json</code>
               with atlas frame coordinates, row and column positions, and
-              layout settings.
+              layout settings for downstream game workflows.
             </p>
           </details>
           <details>
             <summary>Is this tool good for 32x32 pixel art conversion?</summary>
             <p>
-              Yes. The default output size is 32x32, and you can also switch to
-              16x16 or 64x64 depending on your art style and target game engine.
+              Yes. The dedicated pixel art converter supports 32x32 output by
+              default, and you can also switch to 16x16 or 64x64 depending on
+              your art style and target game engine.
             </p>
           </details>
         </div>
@@ -706,57 +348,5 @@
         <a href="./terms.html">Terms</a>
       </nav>
     </footer>
-
-    <template id="cardTemplate">
-      <article class="result-card">
-        <button
-          class="frame-remove-btn card-remove-btn"
-          type="button"
-          aria-label="Remove image"
-          title="Remove image"
-        >
-          ×
-        </button>
-        <div class="canvas-pair">
-          <div>
-            <p>Original</p>
-            <img class="source-preview" alt="" />
-          </div>
-          <div>
-            <p>Pixel</p>
-            <canvas class="pixel-preview" width="32" height="32"></canvas>
-          </div>
-        </div>
-        <div class="card-meta">
-          <strong class="file-name"></strong>
-          <span class="file-info"></span>
-        </div>
-        <div class="card-actions">
-          <button class="secondary download-btn" disabled type="button">
-            Download PNG
-          </button>
-        </div>
-      </article>
-    </template>
-
-    <template id="frameTemplate">
-      <article class="frame-card">
-        <button
-          class="frame-remove-btn"
-          type="button"
-          aria-label="Remove frame"
-          title="Remove frame"
-        >
-          ×
-        </button>
-        <img class="frame-preview" alt="" />
-        <div class="card-meta">
-          <strong class="frame-name"></strong>
-          <span class="frame-info"></span>
-        </div>
-      </article>
-    </template>
-
-    <script src="app.js" defer></script>
   </body>
 </html>

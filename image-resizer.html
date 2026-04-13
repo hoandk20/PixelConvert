@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script id="aclib" type="text/javascript" src="//acscdn.com/script/aclib.js"></script>
+    <script type="text/javascript">
+      aclib.runAutoTag({
+        zoneId: 'v3gzmo3bzm',
+      });
+    </script>
+    <title>Image Resizer | Pixel Tools</title>
+    <meta
+      name="description"
+      content="Resize images online in batches with fixed width and height outputs, fast previews, and downloadable PNG files."
+    />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="author" content="DK" />
+    <meta name="theme-color" content="#241748" />
+    <link rel="canonical" href="https://pixeltool.io.vn/image-resizer.html" />
+    <link rel="icon" href="./favicon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="./favicon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://pixeltool.io.vn/image-resizer.html" />
+    <meta property="og:title" content="Image Resizer | Pixel Tools" />
+    <meta
+      property="og:description"
+      content="Resize images online in batches with fixed width and height outputs, fast previews, and downloadable PNG files."
+    />
+    <meta property="og:site_name" content="Pixel Tools" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:image" content="https://pixeltool.io.vn/og-preview.svg" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:url" content="https://pixeltool.io.vn/image-resizer.html" />
+    <meta name="twitter:title" content="Image Resizer | Pixel Tools" />
+    <meta
+      name="twitter:description"
+      content="Resize images online in batches with fixed width and height outputs, fast previews, and downloadable PNG files."
+    />
+    <meta name="twitter:image" content="https://pixeltool.io.vn/og-preview.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="./visit-counter.js" defer></script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Image Resizer",
+        "applicationCategory": "MultimediaApplication",
+        "operatingSystem": "Web",
+        "description": "A browser-based batch image resizer for exporting fixed-width and fixed-height PNG outputs.",
+        "creator": {
+          "@type": "Person",
+          "name": "DK"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Pixel Tools"
+        },
+        "url": "https://pixeltool.io.vn/image-resizer.html",
+        "image": "https://pixeltool.io.vn/og-preview.svg"
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://pixeltool.io.vn/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Image Resizer",
+            "item": "https://pixeltool.io.vn/image-resizer.html"
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body data-tool-page="resize">
+    <main class="app-shell">
+      <header class="hero hero-compact">
+        <a class="text-link" href="./index.html">Back to Pixel Tools</a>
+        <p class="eyebrow">Tool</p>
+        <h1>Resize images online in batches</h1>
+        <p class="hero-copy">
+          Drop in one or many images, set a fixed width and height, then export
+          resized PNG outputs from the browser without switching apps.
+        </p>
+      </header>
+
+      <section class="panel controls">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Resizer</p>
+            <h2 id="resize-tool-heading">Image resize tool</h2>
+          </div>
+        </div>
+        <div
+          id="resizeDropzone"
+          class="dropzone"
+          role="button"
+          tabindex="0"
+          aria-label="Choose or drag and drop images to resize"
+        >
+          <input id="resizeFileInput" type="file" accept="image/*" multiple hidden />
+          <div class="dropzone-content">
+            <span class="dropzone-badge">Resize</span>
+            <h2>Drop images here</h2>
+            <p>or click to select multiple files at once</p>
+            <p class="dropzone-hint">
+              You can also paste an image from the clipboard with
+              <strong>Ctrl/Cmd + V</strong>
+            </p>
+          </div>
+        </div>
+
+        <div class="settings-grid resize-grid">
+          <label class="field">
+            <span>Output width</span>
+            <input id="resizeWidth" type="number" min="1" value="448" />
+          </label>
+          <label class="field">
+            <span>Output height</span>
+            <input id="resizeHeight" type="number" min="1" value="600" />
+          </label>
+        </div>
+
+        <div class="action-row">
+          <button id="resizeBtn" class="primary" type="button">Resize all</button>
+          <button id="downloadResizeAllBtn" class="secondary" type="button" disabled>Download all</button>
+          <button id="clearResizeBtn" class="ghost" type="button">Clear list</button>
+        </div>
+
+        <div class="status-bar">
+          <span id="resizeCount">No images added yet</span>
+          <span id="resizeStatusText">Ready to resize images</span>
+        </div>
+      </section>
+
+      <section class="panel results">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Results</p>
+            <h2>Resized images</h2>
+          </div>
+        </div>
+        <div id="resizeEmptyState" class="empty-state">
+          Add images to preview your resized outputs here.
+        </div>
+        <div id="resizeResultsGrid" class="results-grid" aria-live="polite"></div>
+      </section>
+
+      <section class="panel seo-content">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">More Tools</p>
+            <h2>Continue with the rest of the toolkit</h2>
+          </div>
+        </div>
+        <div class="seo-grid">
+          <article>
+            <h3>Pixel Art Converter</h3>
+            <p>Batch-convert regular images into compact pixel outputs.</p>
+            <a class="text-link" href="./pixel-art-converter.html">Open tool</a>
+          </article>
+          <article>
+            <h3>Spritesheet Generator</h3>
+            <p>Arrange frames into a sheet and export JSON metadata.</p>
+            <a class="text-link" href="./spritesheet-generator.html">Open tool</a>
+          </article>
+          <article>
+            <h3>Image Resizer</h3>
+            <p>Resize multiple images to fixed dimensions in one pass.</p>
+            <span class="page-badge" aria-current="page">Current page</span>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel seo-content">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Related Tools</p>
+            <h2>Continue preparing your assets</h2>
+          </div>
+        </div>
+        <ul class="content-list">
+          <li><a class="text-link" href="./pixel-art-converter.html">Open the pixel art converter</a></li>
+          <li><a class="text-link" href="./spritesheet-generator.html">Open the spritesheet generator</a></li>
+          <li><a class="text-link" href="./map-editor.html">Open the 2D tile map editor</a></li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>
+        <span class="footer-brand">Pixel Tools</span>
+        is a browser-based pixel game toolkit with pixel art conversion,
+        spritesheet export, and a 2D tile map editor.
+      </p>
+      <p class="footer-contact">
+        Created by DK. Contact: <a href="https://www.facebook.com/hoandk20h" target="_blank" rel="noreferrer">Facebook</a>
+        <span aria-hidden="true">•</span>
+        <a href="mailto:dkhoankieu@gmail.com">dkhoankieu@gmail.com</a>
+      </p>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="./about.html">About</a>
+        <a href="./contact.html">Contact</a>
+        <a href="./privacy.html">Privacy Policy</a>
+        <a href="./terms.html">Terms</a>
+      </nav>
+    </footer>
+
+    <template id="cardTemplate">
+      <article class="result-card">
+        <div class="canvas-pair">
+          <div>
+            <p>Original</p>
+            <img class="source-preview" alt="" />
+          </div>
+          <div>
+            <p>Resized</p>
+            <canvas class="pixel-preview" width="32" height="32"></canvas>
+          </div>
+        </div>
+        <div class="card-meta">
+          <strong class="file-name"></strong>
+          <span class="file-info"></span>
+        </div>
+        <div class="card-actions">
+          <button class="secondary download-btn" disabled type="button">Download PNG</button>
+        </div>
+      </article>
+    </template>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>

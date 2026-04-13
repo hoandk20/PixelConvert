@@ -68,6 +68,8 @@ const elements = {
   frameTemplate: document.querySelector("#frameTemplate"),
 };
 
+const pageTool = document.body?.dataset.toolPage || "";
+
 function formatBytes(bytes) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -124,14 +126,17 @@ function revokeIfExists(url) {
 }
 
 function updatePixelStatus(message) {
+  if (!elements.pixel.statusText) return;
   elements.pixel.statusText.textContent = message;
 }
 
 function updateSheetStatus(message) {
+  if (!elements.sheet.statusText) return;
   elements.sheet.statusText.textContent = message;
 }
 
 function updateResizeStatus(message) {
+  if (!elements.resize.statusText) return;
   elements.resize.statusText.textContent = message;
 }
 
@@ -143,8 +148,13 @@ function updateBackgroundColorVisibility(backgroundModeSelect, backgroundColorIn
 }
 
 function syncBackgroundFieldVisibility() {
-  updateBackgroundColorVisibility(elements.pixel.backgroundMode, elements.pixel.backgroundColor);
-  updateBackgroundColorVisibility(elements.sheet.backgroundMode, elements.sheet.backgroundColor);
+  if (elements.pixel.backgroundMode && elements.pixel.backgroundColor) {
+    updateBackgroundColorVisibility(elements.pixel.backgroundMode, elements.pixel.backgroundColor);
+  }
+
+  if (elements.sheet.backgroundMode && elements.sheet.backgroundColor) {
+    updateBackgroundColorVisibility(elements.sheet.backgroundMode, elements.sheet.backgroundColor);
+  }
 }
 
 function triggerDownload(url, filename) {
@@ -233,14 +243,20 @@ function drawPixelImage(image, size, fit, backgroundMode, backgroundColor) {
 }
 
 function isPixelTabActive() {
+  if (pageTool === "pixel") return true;
+  if (pageTool && pageTool !== "pixel") return false;
   return elements.tabPanels.pixel?.classList.contains("is-active");
 }
 
 function isSpritesheetTabActive() {
+  if (pageTool === "spritesheet") return true;
+  if (pageTool && pageTool !== "spritesheet") return false;
   return elements.tabPanels.spritesheet?.classList.contains("is-active");
 }
 
 function isResizeTabActive() {
+  if (pageTool === "resize") return true;
+  if (pageTool && pageTool !== "resize") return false;
   return elements.tabPanels.resize?.classList.contains("is-active");
 }
 
@@ -280,6 +296,8 @@ function extractClipboardImageFiles(clipboardData) {
 }
 
 function switchTab(tabName) {
+  if (elements.tabButtons.length === 0) return;
+
   elements.tabButtons.forEach((button) => {
     const isActive = button.dataset.tab === tabName;
     button.classList.toggle("is-active", isActive);
@@ -292,6 +310,10 @@ function switchTab(tabName) {
 }
 
 function updatePixelCounters() {
+  if (!elements.pixel.fileCount || !elements.pixel.emptyState || !elements.pixel.downloadAllBtn) {
+    return;
+  }
+
   const total = state.pixelItems.length;
   const converted = state.pixelItems.filter((item) => item.outputUrl).length;
 
@@ -305,6 +327,17 @@ function updatePixelCounters() {
 }
 
 function updateSheetCounters() {
+  if (
+    !elements.sheet.count ||
+    !elements.sheet.framesEmpty ||
+    !elements.sheet.emptyState ||
+    !elements.sheet.previewWrap ||
+    !elements.sheet.downloadBtn ||
+    !elements.sheet.downloadJsonBtn
+  ) {
+    return;
+  }
+
   const total = state.sheetItems.length;
 
   elements.sheet.count.textContent =
@@ -318,11 +351,16 @@ function updateSheetCounters() {
 
 function clearSheetOutputs() {
   revokeIfExists(state.sheetJsonUrl);
+  revokeIfExists(state.sheetOutputUrl);
   state.sheetOutputUrl = "";
   state.sheetJsonUrl = "";
 }
 
 function updateResizeCounters() {
+  if (!elements.resize.count || !elements.resize.emptyState || !elements.resize.downloadAllBtn) {
+    return;
+  }
+
   const total = state.resizeItems.length;
   const resized = state.resizeItems.filter((item) => item.outputUrl).length;
 
@@ -491,6 +529,8 @@ function buildSpritesheetMetadata(options) {
 }
 
 function bindPixelCard(item) {
+  if (!elements.cardTemplate || !elements.pixel.resultsGrid) return;
+
   const fragment = elements.cardTemplate.content.cloneNode(true);
   const card = fragment.querySelector(".result-card");
   const removeBtn = fragment.querySelector(".card-remove-btn");
@@ -525,6 +565,8 @@ function bindPixelCard(item) {
 }
 
 function bindSheetCard(item) {
+  if (!elements.frameTemplate || !elements.sheet.framesGrid) return;
+
   const fragment = elements.frameTemplate.content.cloneNode(true);
   const card = fragment.querySelector(".frame-card");
   const removeBtn = fragment.querySelector(".frame-remove-btn");
@@ -550,6 +592,8 @@ function bindSheetCard(item) {
 }
 
 function bindResizeCard(item) {
+  if (!elements.cardTemplate || !elements.resize.resultsGrid) return;
+
   const fragment = elements.cardTemplate.content.cloneNode(true);
   fragment.querySelector(".card-remove-btn")?.remove();
   const sourcePreview = fragment.querySelector(".source-preview");
@@ -839,7 +883,9 @@ async function downloadAllResized() {
 function clearPixelItems() {
   state.pixelItems.forEach((item) => URL.revokeObjectURL(item.sourceUrl));
   state.pixelItems = [];
-  elements.pixel.resultsGrid.innerHTML = "";
+  if (elements.pixel.resultsGrid) {
+    elements.pixel.resultsGrid.innerHTML = "";
+  }
   updatePixelCounters();
   updatePixelStatus("Image list cleared.");
 }
@@ -865,7 +911,9 @@ function removePixelItem(item) {
 function clearResizeItems() {
   state.resizeItems.forEach((item) => URL.revokeObjectURL(item.sourceUrl));
   state.resizeItems = [];
-  elements.resize.resultsGrid.innerHTML = "";
+  if (elements.resize.resultsGrid) {
+    elements.resize.resultsGrid.innerHTML = "";
+  }
   updateResizeCounters();
   updateResizeStatus("Image list cleared.");
 }
@@ -1035,7 +1083,9 @@ function clearSheetItems() {
   state.sheetItems.forEach((item) => URL.revokeObjectURL(item.sourceUrl));
   state.sheetItems = [];
   clearSheetOutputs();
-  elements.sheet.framesGrid.innerHTML = "";
+  if (elements.sheet.framesGrid) {
+    elements.sheet.framesGrid.innerHTML = "";
+  }
   updateSheetCounters();
   updateSheetStatus("Frame list cleared.");
 }
@@ -1059,6 +1109,8 @@ function removeSheetItem(item) {
 }
 
 function attachDropzone(dropzone, fileInput, onFiles) {
+  if (!dropzone || !fileInput) return;
+
   dropzone.addEventListener("click", () => fileInput.click());
   dropzone.addEventListener("keydown", (event) => {
     if (event.key === "Enter" || event.key === " ") {
@@ -1092,6 +1144,8 @@ function attachDropzone(dropzone, fileInput, onFiles) {
 }
 
 function applyAspectRatioPreset() {
+  if (!elements.sheet.sizingMode || !elements.sheet.fitSelect) return;
+
   elements.sheet.sizingMode.value = "fixed";
   elements.sheet.fitSelect.value = "contain";
   updateSheetStatus(
@@ -1143,25 +1197,27 @@ attachDropzone(elements.pixel.dropzone, elements.pixel.fileInput, addPixelFiles)
 attachDropzone(elements.sheet.dropzone, elements.sheet.fileInput, addSheetFiles);
 attachDropzone(elements.resize.dropzone, elements.resize.fileInput, addResizeFiles);
 
-elements.pixel.convertBtn.addEventListener("click", convertAllPixels);
-elements.pixel.downloadAllBtn.addEventListener("click", downloadAllPixels);
-elements.pixel.clearBtn.addEventListener("click", clearPixelItems);
-elements.pixel.backgroundMode.addEventListener("change", syncBackgroundFieldVisibility);
+elements.pixel.convertBtn?.addEventListener("click", convertAllPixels);
+elements.pixel.downloadAllBtn?.addEventListener("click", downloadAllPixels);
+elements.pixel.clearBtn?.addEventListener("click", clearPixelItems);
+elements.pixel.backgroundMode?.addEventListener("change", syncBackgroundFieldVisibility);
 
-elements.sheet.buildBtn.addEventListener("click", buildSpritesheet);
-elements.sheet.downloadBtn.addEventListener("click", downloadSpritesheet);
-elements.sheet.downloadJsonBtn.addEventListener("click", downloadSpritesheetJson);
-elements.sheet.clearBtn.addEventListener("click", clearSheetItems);
-elements.sheet.jsonFormat.value = "phaser-array";
-elements.sheet.backgroundMode.addEventListener("change", syncBackgroundFieldVisibility);
-elements.sheet.fitSelect.addEventListener("change", () => {
+elements.sheet.buildBtn?.addEventListener("click", buildSpritesheet);
+elements.sheet.downloadBtn?.addEventListener("click", downloadSpritesheet);
+elements.sheet.downloadJsonBtn?.addEventListener("click", downloadSpritesheetJson);
+elements.sheet.clearBtn?.addEventListener("click", clearSheetItems);
+if (elements.sheet.jsonFormat) {
+  elements.sheet.jsonFormat.value = "phaser-array";
+}
+elements.sheet.backgroundMode?.addEventListener("change", syncBackgroundFieldVisibility);
+elements.sheet.fitSelect?.addEventListener("change", () => {
   if (elements.sheet.fitSelect.value === "contain") {
     updateSheetStatus(
       "Contain keeps the original aspect ratio while reducing images into pixel art.",
     );
   }
 });
-elements.sheet.sizingMode.addEventListener("change", () => {
+elements.sheet.sizingMode?.addEventListener("change", () => {
   if (elements.sheet.sizingMode.value === "original") {
     updateSheetStatus(
       "Original size mode keeps each frame's native dimensions. Switch back to Fixed cell size if you want uniform sprite cells.",
@@ -1169,19 +1225,19 @@ elements.sheet.sizingMode.addEventListener("change", () => {
     return;
   }
 
-  if (elements.sheet.fitSelect.value !== "contain") {
+  if (elements.sheet.fitSelect?.value !== "contain") {
     applyAspectRatioPreset();
   }
 });
-elements.resize.resizeBtn.addEventListener("click", resizeAllImages);
-elements.resize.downloadAllBtn.addEventListener("click", downloadAllResized);
-elements.resize.clearBtn.addEventListener("click", clearResizeItems);
-elements.resize.width.addEventListener("change", () => {
+elements.resize.resizeBtn?.addEventListener("click", resizeAllImages);
+elements.resize.downloadAllBtn?.addEventListener("click", downloadAllResized);
+elements.resize.clearBtn?.addEventListener("click", clearResizeItems);
+elements.resize.width?.addEventListener("change", () => {
   if (state.resizeItems.some((item) => item.outputUrl)) {
     invalidateResizeOutputs("Width changed. Click resize again to regenerate outputs.");
   }
 });
-elements.resize.height.addEventListener("change", () => {
+elements.resize.height?.addEventListener("change", () => {
   if (state.resizeItems.some((item) => item.outputUrl)) {
     invalidateResizeOutputs("Height changed. Click resize again to regenerate outputs.");
   }

@@ -1,0 +1,40 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="80" y1="40" x2="1120" y2="590" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#231D39"/>
+      <stop offset="0.52" stop-color="#19162A"/>
+      <stop offset="1" stop-color="#141220"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#F6CB7D"/>
+      <stop offset="1" stop-color="#F18A5B"/>
+    </linearGradient>
+    <linearGradient id="accent2" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#7DC9C2"/>
+      <stop offset="1" stop-color="#5EB8AF"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" rx="32" fill="url(#bg)"/>
+  <circle cx="196" cy="126" r="120" fill="#F18A5B" fill-opacity="0.12"/>
+  <circle cx="1038" cy="112" r="100" fill="#7DC9C2" fill-opacity="0.12"/>
+  <circle cx="1060" cy="530" r="140" fill="#F6CB7D" fill-opacity="0.08"/>
+  <rect x="76" y="78" width="1048" height="474" rx="28" fill="#1B1730" fill-opacity="0.9" stroke="rgba(255,255,255,0.08)"/>
+  <rect x="118" y="120" width="94" height="94" rx="22" fill="url(#accent)"/>
+  <path d="M118 167H212M165 120V214" stroke="#1B1630" stroke-width="10" stroke-linecap="round"/>
+  <rect x="246" y="130" width="178" height="22" rx="11" fill="#F6CB7D" fill-opacity="0.18"/>
+  <rect x="246" y="168" width="330" height="56" rx="16" fill="#FFFFFF" fill-opacity="0.04"/>
+  <rect x="118" y="270" width="288" height="210" rx="22" fill="#FFFFFF" fill-opacity="0.04" stroke="rgba(255,255,255,0.08)"/>
+  <rect x="454" y="270" width="288" height="210" rx="22" fill="#FFFFFF" fill-opacity="0.04" stroke="rgba(255,255,255,0.08)"/>
+  <rect x="790" y="270" width="288" height="210" rx="22" fill="#FFFFFF" fill-opacity="0.04" stroke="rgba(255,255,255,0.08)"/>
+  <rect x="148" y="302" width="78" height="78" rx="16" fill="url(#accent)"/>
+  <rect x="484" y="302" width="78" height="78" rx="16" fill="url(#accent2)"/>
+  <rect x="820" y="302" width="78" height="78" rx="16" fill="#F6CB7D" fill-opacity="0.88"/>
+  <rect x="148" y="398" width="210" height="18" rx="9" fill="#FFFFFF" fill-opacity="0.08"/>
+  <rect x="148" y="428" width="164" height="14" rx="7" fill="#FFFFFF" fill-opacity="0.06"/>
+  <rect x="484" y="398" width="210" height="18" rx="9" fill="#FFFFFF" fill-opacity="0.08"/>
+  <rect x="484" y="428" width="164" height="14" rx="7" fill="#FFFFFF" fill-opacity="0.06"/>
+  <rect x="820" y="398" width="210" height="18" rx="9" fill="#FFFFFF" fill-opacity="0.08"/>
+  <rect x="820" y="428" width="164" height="14" rx="7" fill="#FFFFFF" fill-opacity="0.06"/>
+  <text x="246" y="207" fill="#F5F1E8" font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="700">Pixel Tools</text>
+  <text x="119" y="526" fill="#B9B2C8" font-family="Arial, Helvetica, sans-serif" font-size="28">Pixel Art Converter   •   Spritesheets   •   2D Tile Map Editor</text>
+</svg>
