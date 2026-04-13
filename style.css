@@ -80,16 +80,101 @@ code {
   width: 34px;
   height: 34px;
   border-radius: 10px;
-  background: linear-gradient(135deg, var(--primary), rgba(66, 211, 155, 0.7));
+  background: linear-gradient(135deg, rgba(11, 18, 32, 0.15), rgba(11, 18, 32, 0.55)),
+    linear-gradient(135deg, var(--primary), rgba(66, 211, 155, 0.85));
   color: #041028;
   font-weight: 800;
   display: grid;
   place-items: center;
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.35);
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    filter 180ms ease;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+    monospace;
+  letter-spacing: -0.08em;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.brand__mark::before {
+  content: "";
+  position: absolute;
+  inset: -60%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.55) 45%,
+    rgba(255, 255, 255, 0) 70%
+  );
+  opacity: 0;
+  transform: translateX(-60%) rotate(25deg);
+  transition: transform 320ms ease, opacity 320ms ease;
+  pointer-events: none;
+}
+
+.brand__mark::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(231, 238, 252, 0.16) 1px, transparent 1px),
+    linear-gradient(rgba(231, 238, 252, 0.14) 1px, transparent 1px),
+    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.28), transparent 60%);
+  background-size: 7px 7px, 7px 7px, auto;
+  background-position: 0 0, 0 0, 0 0;
+  opacity: 0.75;
+  mix-blend-mode: overlay;
+  pointer-events: none;
 }
 
 .brand__text {
   font-weight: 700;
+  position: relative;
+}
+
+.brand__text::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  height: 2px;
+  border-radius: 99px;
+  background: linear-gradient(90deg, var(--primary), rgba(90, 169, 255, 0.95), rgba(241, 74, 128, 0.95));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 200ms ease;
+  opacity: 0.9;
+}
+
+.brand:hover .brand__mark {
+  transform: translateY(-1px) scale(1.03);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.5);
+  filter: saturate(1.1);
+}
+
+.brand:hover .brand__mark::before {
+  opacity: 0.9;
+  transform: translateX(60%) rotate(25deg);
+}
+
+.brand:hover .brand__text::after {
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand__mark,
+  .brand__text::after {
+    transition: none;
+  }
+
+  .brand__mark::before {
+    transition: none;
+    opacity: 0;
+  }
 }
 
 .topnav {
@@ -449,4 +534,3 @@ code {
 .callout strong {
   color: var(--text);
 }
-
