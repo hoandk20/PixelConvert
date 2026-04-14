@@ -128,6 +128,8 @@ const elements = {
   tileMarginInput: document.querySelector("#tileMarginInput"),
   sliceTilesheetBtn: document.querySelector("#sliceTilesheetBtn"),
   clearTilesetBtn: document.querySelector("#clearTilesetBtn"),
+  tilesetZoomOutBtn: document.querySelector("#tilesetZoomOutBtn"),
+  tilesetZoomInBtn: document.querySelector("#tilesetZoomInBtn"),
   toggleTilesetGridBtn: document.querySelector("#toggleTilesetGridBtn"),
   tilePalette: document.querySelector("#tilePalette"),
   paletteEmptyState: document.querySelector("#paletteEmptyState"),
@@ -271,9 +273,11 @@ const UI_TRANSLATIONS = {
     export: "Export",
     deleteLocal: "Delete local",
     tilesetSection: "Tileset",
-    clearTileset: "Clear tileset",
-    tilesetGridOn: "Tileset Grid On",
-    tilesetGridOff: "Tileset Grid Off",
+    clearTileset: "Clear",
+    tilesetZoomOut: "-",
+    tilesetZoomIn: "+",
+    tilesetGridOn: "Grid",
+    tilesetGridOff: "Grid",
     tilesetHint: "Click, Ctrl/Cmd-click, or drag on the tileset to select multiple tiles.",
     tilesetEmptyState: "Import a spritesheet to build the selectable tileset.",
     noSpritesheetLoaded: "No spritesheet loaded",
@@ -387,9 +391,11 @@ const UI_TRANSLATIONS = {
     export: "Xuất",
     deleteLocal: "Xóa local",
     tilesetSection: "Tileset",
-    clearTileset: "Xóa tileset",
-    tilesetGridOn: "Lưới tileset bật",
-    tilesetGridOff: "Lưới tileset tắt",
+    clearTileset: "Xóa",
+    tilesetZoomOut: "-",
+    tilesetZoomIn: "+",
+    tilesetGridOn: "Lưới",
+    tilesetGridOff: "Lưới",
     tilesetHint: "Nhấn, Ctrl/Cmd-click hoặc kéo trên tileset để chọn nhiều tile.",
     tilesetEmptyState: "Nhập spritesheet để tạo tileset có thể chọn.",
     noSpritesheetLoaded: "Chưa có spritesheet",
@@ -526,6 +532,8 @@ function applyLanguage(language = DEFAULT_UI_LANGUAGE) {
 
   setUiText(".map-sidebar .panel .eyebrow", copy.tilesetSection, 0);
   elements.clearTilesetBtn.textContent = copy.clearTileset;
+  elements.tilesetZoomOutBtn.textContent = copy.tilesetZoomOut;
+  elements.tilesetZoomInBtn.textContent = copy.tilesetZoomIn;
   setUiText(".tileset-hint", copy.tilesetHint);
   setUiText("#paletteEmptyState", copy.tilesetEmptyState);
 
@@ -1787,7 +1795,7 @@ function drawTilesetGridOverlay(ctx, overlayCanvas, selectionState) {
   const gridStepY = Math.max(1, Number(selectionState.gridStepY) || DEFAULT_TILE_SIZE);
   const gridOffsetX = Math.max(0, Number(selectionState.gridOffsetX) || 0);
   const gridOffsetY = Math.max(0, Number(selectionState.gridOffsetY) || 0);
-  const gridColor = selectionState.gridColor || "rgba(255, 255, 255, 0.08)";
+  const gridColor = selectionState.gridColor || "rgba(255, 255, 255, 0.04)";
 
   ctx.save();
   ctx.strokeStyle = gridColor;
@@ -1930,6 +1938,18 @@ function setSelectedTiles(
   }
 
   markDirty();
+}
+
+function syncToolWithTilesetSelection(selectedIndices) {
+  const normalized = Array.isArray(selectedIndices) ? selectedIndices : [];
+  if (normalized.length === 1) {
+    setTool("rectangle", { silent: true });
+    return;
+  }
+
+  if (normalized.length > 1) {
+    setTool("brush", { silent: true });
+  }
 }
 
 function createLayerIcon(pathData) {
@@ -3320,6 +3340,20 @@ function setTilesetZoom(nextZoom, clientX, clientY) {
   viewport.scrollTop = contentY * clampedZoom - localY;
 }
 
+function zoomTilesetFromViewportCenter(multiplier) {
+  const viewport = tilesetInteractionState.viewport;
+  if (!viewport) {
+    return;
+  }
+
+  const rect = viewport.getBoundingClientRect();
+  setTilesetZoom(
+    tilesetInteractionState.zoom * multiplier,
+    rect.left + rect.width / 2,
+    rect.top + rect.height / 2,
+  );
+}
+
 function startTilesetPinchGesture() {
   const metrics = getPointerPairMetrics(tilesetInteractionState.touchPointers);
   if (!metrics) {
@@ -3436,7 +3470,7 @@ function renderTilesetPalette() {
   );
   tilesetInteractionState.gridOffsetX = Math.max(0, Number(editorState.tileset.margin) || 0);
   tilesetInteractionState.gridOffsetY = Math.max(0, Number(editorState.tileset.margin) || 0);
-  tilesetInteractionState.gridColor = "rgba(255, 255, 255, 0.08)";
+  tilesetInteractionState.gridColor = "rgba(255, 255, 255, 0.04)";
   tilesetInteractionState.viewport = viewport;
   tilesetInteractionState.stage = stage;
   tilesetInteractionState.canvas = canvas;
@@ -3449,16 +3483,18 @@ function renderTilesetPalette() {
   ctx.drawImage(editorState.tileset.image, 0, 0);
 
   ctx.save();
-  ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
-  ctx.lineWidth = 1;
+  if (editorState.showTilesetGrid) {
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+    ctx.lineWidth = 1;
 
-  for (const tile of editorState.tileset.tiles) {
-    ctx.strokeRect(
-      tile.sourceX + 0.5,
-      tile.sourceY + 0.5,
-      tile.sourceWidth - 1,
-      tile.sourceHeight - 1,
-    );
+    for (const tile of editorState.tileset.tiles) {
+      ctx.strokeRect(
+        tile.sourceX + 0.5,
+        tile.sourceY + 0.5,
+        tile.sourceWidth - 1,
+        tile.sourceHeight - 1,
+      );
+    }
   }
 
   const selectedTileIndices =
@@ -3547,6 +3583,7 @@ function renderTilesetPalette() {
         primaryIndex: tile.index,
         statusMessage: `Toggled tile #${tile.index}.`,
       });
+      syncToolWithTilesetSelection(nextIndices);
       tilesetInteractionState.isPointerDown = false;
     }
   };
@@ -3632,7 +3669,7 @@ function renderTilesetPalette() {
         primaryIndex: tile.index,
         statusMessage: `Selected tile #${tile.index}.`,
       });
-      editorState.tool = "brush";
+      syncToolWithTilesetSelection([tile.index]);
       tilesetInteractionState.isPointerDown = false;
       drawTilesetSelectionOverlay(overlayCanvas, tilesetInteractionState);
       return;
@@ -3659,7 +3696,7 @@ function renderTilesetPalette() {
             ? `Selected tile #${nextIndices[0]}.`
             : `Selected ${nextIndices.length} tiles.`,
       });
-      editorState.tool = "brush";
+      syncToolWithTilesetSelection(nextIndices);
     }
 
     tilesetInteractionState.isPointerDown = false;
@@ -4268,6 +4305,12 @@ function bindEvents() {
     syncToolbarState();
     renderTilesetPalette();
     persistProject();
+  });
+  elements.tilesetZoomOutBtn.addEventListener("click", () => {
+    zoomTilesetFromViewportCenter(1 / ZOOM_STEP);
+  });
+  elements.tilesetZoomInBtn.addEventListener("click", () => {
+    zoomTilesetFromViewportCenter(ZOOM_STEP);
   });
   elements.fullscreenBtn.addEventListener("click", () => {
     void toggleFullscreenMode();
