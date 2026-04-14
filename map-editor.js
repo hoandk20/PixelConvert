@@ -372,7 +372,8 @@ const UI_TRANSLATIONS = {
     engineFormat: "Engine format",
     phaserStandard: "Phaser standard",
     tiledJson: "Tiled JSON",
-    unityJson: "Unity JSON",
+    unityJson: "Unity JSON (custom)",
+    godotJson: "Godot JSON (custom)",
     exportEngineZip: "Export Engine ZIP",
     csvBundleTitle: "Export CSV Bundle",
     csvBundleDescription:
@@ -490,7 +491,8 @@ const UI_TRANSLATIONS = {
     engineFormat: "Định dạng engine",
     phaserStandard: "Phaser standard",
     tiledJson: "Tiled JSON",
-    unityJson: "Unity JSON",
+    unityJson: "Unity JSON (custom)",
+    godotJson: "Godot JSON (custom)",
     exportEngineZip: "Xuất ZIP engine",
     csvBundleTitle: "Xuất gói CSV",
     csvBundleDescription:
@@ -648,6 +650,7 @@ function applyLanguage(language = DEFAULT_UI_LANGUAGE) {
     if (options[0]) options[0].textContent = copy.phaserStandard;
     if (options[1]) options[1].textContent = copy.tiledJson;
     if (options[2]) options[2].textContent = copy.unityJson;
+    if (options[3]) options[3].textContent = copy.godotJson;
     exportArticles[1].querySelector("#exportGameJsonBtn").textContent = copy.exportEngineZip;
   }
   if (exportArticles[2]) {
@@ -2386,14 +2389,57 @@ function buildPhaserMapExport() {
   };
 }
 
+function getTilesetAtlasCoords(tileIndex) {
+  const tile = editorState.tileset.tiles[tileIndex];
+  if (!tile) {
+    return null;
+  }
+
+  const stepX = Math.max(1, editorState.tileset.tileWidth + editorState.tileset.spacing);
+  const stepY = Math.max(1, editorState.tileset.tileHeight + editorState.tileset.spacing);
+  const margin = Math.max(0, editorState.tileset.margin);
+
+  return {
+    x: Math.round((tile.sourceX - margin) / stepX),
+    y: Math.round((tile.sourceY - margin) / stepY),
+  };
+}
+
+function buildLayerCellExport(layer) {
+  const cells = [];
+
+  for (let row = 0; row < editorState.map.rows; row += 1) {
+    for (let column = 0; column < editorState.map.columns; column += 1) {
+      const tileIndex = layer.data[row][column];
+      if (tileIndex < 0) continue;
+
+      const atlasCoords = getTilesetAtlasCoords(tileIndex);
+      cells.push({
+        x: column,
+        y: row,
+        tileIndex,
+        atlasX: atlasCoords?.x ?? 0,
+        atlasY: atlasCoords?.y ?? 0,
+      });
+    }
+  }
+
+  return cells;
+}
+
 function buildUnityMapExport() {
   return {
     type: "tilemap",
     engine: "unity",
+    format: "custom-json",
     width: editorState.map.columns,
     height: editorState.map.rows,
     tileWidth: editorState.map.tileWidth,
     tileHeight: editorState.map.tileHeight,
+    cellSize: {
+      x: editorState.map.tileWidth,
+      y: editorState.map.tileHeight,
+    },
     tileset: {
       name: editorState.tileset.name,
       reference: getExportTilesetReference(),
@@ -2411,8 +2457,52 @@ function buildUnityMapExport() {
       width: editorState.map.columns,
       height: editorState.map.rows,
       data: layer.data.flat(),
+      cells: buildLayerCellExport(layer),
     })),
-    note: "Tile indices are zero-based. Empty cells use -1.",
+    note: "Custom Unity-friendly JSON. This is not a native Unity Tilemap asset. Tile indices are zero-based and empty cells use -1.",
+  };
+}
+
+function buildGodotMapExport() {
+  return {
+    type: "tilemap",
+    engine: "godot",
+    format: "custom-json",
+    width: editorState.map.columns,
+    height: editorState.map.rows,
+    tileSize: {
+      x: editorState.map.tileWidth,
+      y: editorState.map.tileHeight,
+    },
+    tileset: {
+      name: editorState.tileset.name,
+      reference: getExportTilesetReference(),
+      columns: editorState.tileset.columns,
+      tileWidth: editorState.tileset.tileWidth,
+      tileHeight: editorState.tileset.tileHeight,
+      margin: editorState.tileset.margin,
+      spacing: editorState.tileset.spacing,
+      count: editorState.tileset.count,
+      sourceId: 0,
+    },
+    layers: editorState.map.layers.map((layer, index) => ({
+      id: layer.id,
+      name: layer.name,
+      hidden: Boolean(layer.hidden),
+      block: Boolean(layer.block),
+      index,
+      width: editorState.map.columns,
+      height: editorState.map.rows,
+      cells: buildLayerCellExport(layer).map((cell) => ({
+        x: cell.x,
+        y: cell.y,
+        source_id: 0,
+        atlas_coords: [cell.atlasX, cell.atlasY],
+        alternative_tile: 0,
+        tile_index: cell.tileIndex,
+      })),
+    })),
+    note: "Custom Godot-friendly JSON. This is not a native .tscn or .tres TileMap resource.",
   };
 }
 
@@ -4056,6 +4146,10 @@ function buildGameExport(format) {
     return buildUnityMapExport();
   }
 
+  if (format === "godot") {
+    return buildGodotMapExport();
+  }
+
   return buildTiledMapExport();
 }
 
@@ -4085,7 +4179,9 @@ async function exportGameJson() {
       ? "Phaser standard"
       : format === "tiled"
         ? "Tiled JSON"
-        : "Unity";
+        : format === "unity"
+          ? "Unity JSON"
+          : "Godot JSON";
   updateStatus(
     `${formatLabel} ZIP exported.`,
   );
