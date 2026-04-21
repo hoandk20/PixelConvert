@@ -1094,6 +1094,672 @@ button:disabled {
   gap: 10px;
 }
 
+.tool-visual-showcase {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(260px, 0.75fr);
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.tool-visual-stack {
+  display: grid;
+  gap: 14px;
+}
+
+.tool-visual-card {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: 0 14px 30px rgba(6, 5, 12, 0.16);
+}
+
+.tool-visual-card-featured {
+  padding: 18px;
+  background:
+    radial-gradient(circle at top right, rgba(125, 201, 194, 0.18), transparent 34%),
+    linear-gradient(180deg, rgba(241, 138, 91, 0.14), transparent 52%),
+    rgba(255, 255, 255, 0.05);
+  border-color: rgba(246, 203, 125, 0.3);
+}
+
+.tool-visual-card__topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.tool-visual-badge,
+.tool-visual-label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.tool-visual-badge {
+  background: rgba(246, 203, 125, 0.18);
+  color: var(--accent-dark);
+}
+
+.tool-visual-label {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+}
+
+.tool-visual-caption,
+.tool-visual-card-mini p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.tool-visual-card-mini {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.map-preview,
+.tool-thumb,
+.mini-preview {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(15, 18, 34, 0.96), rgba(26, 21, 42, 0.94));
+}
+
+.map-preview {
+  display: grid;
+  grid-template-columns: 54px minmax(0, 1fr) 92px;
+  gap: 12px;
+  min-height: 220px;
+  margin-bottom: 14px;
+  padding: 14px;
+}
+
+.map-preview__sidebar,
+.map-preview__inspector {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 10px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.map-preview__sidebar span,
+.map-preview__inspector span {
+  display: block;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.map-preview__sidebar span {
+  height: 34px;
+}
+
+.map-preview__inspector span:nth-child(1) {
+  height: 42px;
+}
+
+.map-preview__inspector span:nth-child(2),
+.map-preview__inspector span:nth-child(3),
+.map-preview__inspector span:nth-child(4) {
+  height: 24px;
+}
+
+.map-preview__canvas {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  padding: 10px;
+  position: relative;
+  border-radius: 12px;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+    rgba(11, 15, 28, 0.92);
+  background-size: 25% 25%;
+}
+
+.map-preview__canvas-image {
+  background:
+    linear-gradient(rgba(10, 14, 27, 0.16), rgba(10, 14, 27, 0.22)),
+    url("https://upload.wikimedia.org/wikipedia/commons/6/65/Monochrome_RPG_tilemap_packed.png")
+      center / cover no-repeat,
+    rgba(11, 15, 28, 0.92);
+}
+
+.map-preview__canvas-image .tile {
+  opacity: 0;
+  animation: none !important;
+}
+
+.tile,
+.map-cell {
+  display: block;
+  position: relative;
+  border-radius: 6px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.22), transparent 50%);
+  opacity: 0.24;
+}
+
+.tile-build-1,
+.tile-build-2,
+.tile-build-3,
+.tile-build-4,
+.tile-build-5 {
+  animation: tilePulse 5.4s steps(1) infinite;
+  transform-origin: center;
+}
+
+.tile-build-2 {
+  animation-delay: 0.6s;
+}
+
+.tile-build-3 {
+  animation-delay: 1.2s;
+}
+
+.tile-build-4 {
+  animation-delay: 1.8s;
+}
+
+.tile-build-5 {
+  animation-delay: 2.4s;
+}
+
+.tile-water,
+.map-cell-water {
+  background: linear-gradient(180deg, #5cc6ff, #2f79d5);
+}
+
+.tile-grass,
+.map-cell-grass {
+  background:
+    radial-gradient(circle at 25% 30%, rgba(171, 240, 129, 0.55) 0 12%, transparent 13%),
+    radial-gradient(circle at 70% 68%, rgba(68, 135, 57, 0.45) 0 10%, transparent 11%),
+    linear-gradient(180deg, #8de274, #3c9a4b);
+}
+
+.tile-stone,
+.map-cell-stone {
+  background: linear-gradient(180deg, #c7c9d4, #7d8398);
+}
+
+.tile-sand,
+.map-cell-sand {
+  background: linear-gradient(180deg, #f3d38b, #d49f49);
+}
+
+.tile-water,
+.tile-water-deep,
+.map-cell-water {
+  overflow: hidden;
+}
+
+.tile-water::before,
+.tile-water-deep::before,
+.map-cell-water::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 24% 32%, rgba(255, 255, 255, 0.24) 0 10%, transparent 11%),
+    radial-gradient(circle at 68% 58%, rgba(255, 255, 255, 0.18) 0 8%, transparent 9%),
+    linear-gradient(180deg, transparent, rgba(8, 31, 73, 0.18));
+  opacity: 0.72;
+}
+
+.tile-water-deep {
+  background:
+    linear-gradient(180deg, #2f8be1, #134c95);
+}
+
+.tile-road,
+.map-cell-road {
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 232, 181, 0.4) 0 10%, transparent 11%),
+    radial-gradient(circle at 72% 66%, rgba(120, 78, 38, 0.24) 0 8%, transparent 9%),
+    linear-gradient(180deg, #d7b06d, #a06a37);
+}
+
+.tile-road::before,
+.map-cell-road::before {
+  content: "";
+  position: absolute;
+  inset: 22% 10%;
+  border-radius: 999px;
+  background: rgba(116, 71, 32, 0.18);
+}
+
+.tile-tree,
+.map-cell-tree {
+  background:
+    radial-gradient(circle at 50% 38%, #2d7b3c 0 28%, transparent 29%),
+    radial-gradient(circle at 34% 52%, #3f9b4f 0 20%, transparent 21%),
+    radial-gradient(circle at 66% 52%, #3f9b4f 0 20%, transparent 21%),
+    linear-gradient(180deg, #8de274, #3c9a4b);
+}
+
+.tile-tree::before,
+.map-cell-tree::before {
+  content: "";
+  position: absolute;
+  left: 43%;
+  bottom: 14%;
+  width: 14%;
+  height: 24%;
+  border-radius: 3px;
+  background: #7a4c27;
+}
+
+.tile-rock,
+.map-cell-rock {
+  background:
+    radial-gradient(circle at 38% 54%, #d9dde8 0 16%, transparent 17%),
+    radial-gradient(circle at 62% 46%, #aeb3c4 0 18%, transparent 19%),
+    linear-gradient(180deg, #8de274, #3c9a4b);
+}
+
+.tile-rock::before,
+.map-cell-rock::before {
+  content: "";
+  position: absolute;
+  inset: 34% 24% 22% 24%;
+  border-radius: 45% 55% 50% 50%;
+  background: linear-gradient(180deg, #d6dae4, #858c9e);
+}
+
+.tile-flower {
+  background:
+    radial-gradient(circle at 50% 48%, #ffd4ec 0 7%, transparent 8%),
+    radial-gradient(circle at 38% 44%, #ff86b3 0 7%, transparent 8%),
+    radial-gradient(circle at 62% 44%, #ff86b3 0 7%, transparent 8%),
+    radial-gradient(circle at 38% 58%, #ff86b3 0 7%, transparent 8%),
+    radial-gradient(circle at 62% 58%, #ff86b3 0 7%, transparent 8%),
+    linear-gradient(180deg, #8de274, #3c9a4b);
+}
+
+.tile-house,
+.map-cell-house {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent 28%),
+    linear-gradient(180deg, #8de274, #3c9a4b);
+}
+
+.tile-house::before,
+.map-cell-house::before {
+  content: "";
+  position: absolute;
+  left: 20%;
+  right: 20%;
+  bottom: 18%;
+  height: 34%;
+  border-radius: 2px;
+  background: #ead7b8;
+  box-shadow: inset 0 -2px 0 rgba(120, 78, 38, 0.16);
+}
+
+.tile-house::after,
+.map-cell-house::after {
+  content: "";
+  position: absolute;
+  left: 16%;
+  right: 16%;
+  top: 24%;
+  height: 24%;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  background: #d26b4a;
+  opacity: 1;
+}
+
+.map-preview__cursor,
+.map-preview__selection {
+  position: absolute;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.map-preview__cursor {
+  top: 14px;
+  left: 14px;
+  width: 16px;
+  height: 16px;
+  clip-path: polygon(0 0, 100% 54%, 58% 58%, 72% 100%, 48% 100%, 38% 62%, 0 100%);
+  background: linear-gradient(180deg, #fff3d1, #f6cb7d);
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.35));
+  animation: mapCursorMove 5.4s ease-in-out infinite;
+}
+
+.map-preview__selection {
+  top: calc(10px + 6px);
+  left: calc(10px + 6px);
+  width: calc((100% - 18px) / 4 - 6px);
+  height: calc((100% - 18px) / 4 - 6px);
+  border: 2px solid rgba(246, 203, 125, 0.95);
+  border-radius: 8px;
+  box-shadow:
+    0 0 0 1px rgba(15, 18, 34, 0.85),
+    0 0 18px rgba(241, 138, 91, 0.26);
+  animation: mapSelectionMove 5.4s ease-in-out infinite;
+}
+
+.map-preview__selection::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: rgba(246, 203, 125, 0.12);
+}
+
+.map-preview__sidebar span {
+  position: relative;
+}
+
+.map-preview__sidebar span:nth-child(2)::after {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(125, 201, 194, 0.8), rgba(77, 157, 160, 0.65));
+  animation: activeToolPulse 1.8s ease-in-out infinite;
+}
+
+.map-preview__inspector span {
+  position: relative;
+}
+
+.map-preview__inspector span.is-live::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 12px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #8de274;
+  box-shadow: 0 0 0 0 rgba(141, 226, 116, 0.5);
+  transform: translateY(-50%);
+  animation: livePing 1.8s ease-out infinite;
+}
+
+.mini-preview,
+.tool-thumb {
+  display: grid;
+  place-items: center;
+}
+
+.mini-preview {
+  min-height: 84px;
+  padding: 12px;
+}
+
+.mini-preview-converter,
+.tool-thumb-converter {
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.mini-preview-converter span,
+.tool-thumb-converter span {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #f18a5b, #f6cb7d);
+}
+
+.mini-preview-converter span:nth-child(2),
+.tool-thumb-converter span:nth-child(2) {
+  background: linear-gradient(180deg, #7dc9c2, #4d9da0);
+}
+
+.mini-preview-converter span:nth-child(3),
+.tool-thumb-converter span:nth-child(3) {
+  background: linear-gradient(180deg, #c8a0ff, #7b58d4);
+}
+
+.mini-preview-converter span:nth-child(4),
+.tool-thumb-converter span:nth-child(4) {
+  background: linear-gradient(180deg, #ff808f, #d34b6b);
+}
+
+.mini-preview-spritesheet,
+.tool-thumb-spritesheet {
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.mini-preview-spritesheet span,
+.tool-thumb-spritesheet span {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 4px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.06));
+  outline: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.mini-preview-spritesheet span:nth-child(odd),
+.tool-thumb-spritesheet span:nth-child(odd) {
+  background: linear-gradient(180deg, #7dc9c2, #467b86);
+}
+
+.mini-preview-resizer,
+.tool-thumb-resizer {
+  grid-template-columns: 1fr auto 1.35fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.mini-frame,
+.frame-small,
+.frame-large {
+  display: block;
+  border: 2px solid rgba(246, 203, 125, 0.88);
+  border-radius: 6px;
+}
+
+.mini-frame,
+.frame-small {
+  width: 42px;
+  height: 42px;
+}
+
+.mini-frame-target,
+.frame-large {
+  width: 64px;
+  height: 52px;
+}
+
+.mini-arrow,
+.resize-arrow {
+  position: relative;
+  display: block;
+  width: 28px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.mini-arrow::after,
+.resize-arrow::after {
+  content: "";
+  position: absolute;
+  top: -4px;
+  right: -1px;
+  width: 10px;
+  height: 10px;
+  border-top: 2px solid rgba(255, 255, 255, 0.72);
+  border-right: 2px solid rgba(255, 255, 255, 0.72);
+  transform: rotate(45deg);
+}
+
+.tool-thumb {
+  min-height: 118px;
+  margin-bottom: 14px;
+  padding: 14px;
+}
+
+.tool-thumb-map {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.tool-thumb-map-image {
+  background:
+    linear-gradient(rgba(10, 14, 27, 0.12), rgba(10, 14, 27, 0.18)),
+    url("https://upload.wikimedia.org/wikipedia/commons/6/65/Monochrome_RPG_tilemap_packed.png")
+      center / cover no-repeat,
+    rgba(11, 15, 28, 0.92);
+}
+
+.tool-thumb-map-image .map-cell {
+  opacity: 0;
+  animation: none !important;
+}
+
+.tool-thumb-map .map-cell {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  animation: thumbMapShift 4.2s ease-in-out infinite;
+}
+
+.tool-thumb-map .map-cell:nth-child(2) {
+  animation-delay: 0.3s;
+}
+
+.tool-thumb-map .map-cell:nth-child(4) {
+  animation-delay: 0.6s;
+}
+
+.tool-thumb-map .map-cell:nth-child(7) {
+  animation-delay: 0.9s;
+}
+
+@keyframes tilePulse {
+  0%,
+  18%,
+  100% {
+    transform: scale(0.76);
+    opacity: 0.38;
+    filter: saturate(0.7);
+  }
+
+  22%,
+  70% {
+    transform: scale(1);
+    opacity: 1;
+    filter: saturate(1);
+  }
+}
+
+@keyframes mapCursorMove {
+  0% {
+    transform: translate(16px, 18px) rotate(-6deg);
+  }
+
+  22% {
+    transform: translate(72px, 18px) rotate(2deg);
+  }
+
+  44% {
+    transform: translate(72px, 72px) rotate(4deg);
+  }
+
+  68% {
+    transform: translate(130px, 72px) rotate(-2deg);
+  }
+
+  100% {
+    transform: translate(130px, 128px) rotate(0deg);
+  }
+}
+
+@keyframes mapSelectionMove {
+  0%,
+  12% {
+    transform: translate(0, 0);
+  }
+
+  24%,
+  36% {
+    transform: translate(calc(100% + 6px), 0);
+  }
+
+  48%,
+  60% {
+    transform: translate(calc(100% + 6px), calc(100% + 6px));
+  }
+
+  72%,
+  84% {
+    transform: translate(calc(200% + 12px), calc(100% + 6px));
+  }
+
+  100% {
+    transform: translate(calc(200% + 12px), calc(200% + 12px));
+  }
+}
+
+@keyframes activeToolPulse {
+  0%,
+  100% {
+    opacity: 0.65;
+    transform: scale(0.96);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes livePing {
+  0% {
+    box-shadow: 0 0 0 0 rgba(141, 226, 116, 0.5);
+    opacity: 1;
+  }
+
+  70% {
+    box-shadow: 0 0 0 8px rgba(141, 226, 116, 0);
+    opacity: 0.9;
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(141, 226, 116, 0);
+    opacity: 1;
+  }
+}
+
+@keyframes thumbMapShift {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    filter: saturate(0.95);
+  }
+
+  50% {
+    transform: translateY(-2px) scale(1.04);
+    filter: saturate(1.1);
+  }
+}
+
 .map-editor-page {
   position: relative;
   width: 100%;
@@ -1952,6 +2618,14 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
+  .tool-visual-showcase {
+    grid-template-columns: 1fr;
+  }
+
+  .tool-visual-stack {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .sprite-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -1992,6 +2666,19 @@ button:disabled {
     grid-template-columns: 1fr;
   }
 
+  .tool-visual-stack {
+    grid-template-columns: 1fr;
+  }
+
+  .map-preview {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .map-preview__inspector {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
   .settings-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -2027,6 +2714,21 @@ button:disabled {
 
   .map-bottom-dock-actions {
     flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile-build-1,
+  .tile-build-2,
+  .tile-build-3,
+  .tile-build-4,
+  .tile-build-5,
+  .map-preview__cursor,
+  .map-preview__selection,
+  .map-preview__sidebar span:nth-child(2)::after,
+  .map-preview__inspector span.is-live::after,
+  .tool-thumb-map .map-cell {
+    animation: none !important;
   }
 }
 
