@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script id="aclib" type="text/javascript" src="//acscdn.com/script/aclib.js"></script>
+    <script type="text/javascript">
+      aclib.runAutoTag({
+        zoneId: 'v3gzmo3bzm',
+      });
+    </script>
+    <title>How to Use the Spritesheet Generator | Pixel Tools</title>
+    <meta
+      name="description"
+      content="Learn how to use the Spritesheet Generator to combine multiple frames into one PNG spritesheet, configure columns, padding, cell size, and export JSON metadata."
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="author" content="DK" />
+    <meta name="theme-color" content="#241748" />
+    <link rel="canonical" href="https://pixeltool.io.vn/how-to-use-spritesheet-generator.html" />
+    <link rel="icon" href="./favicon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="./favicon.png" />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="https://pixeltool.io.vn/how-to-use-spritesheet-generator.html" />
+    <meta property="og:title" content="How to Use the Spritesheet Generator | Pixel Tools" />
+    <meta
+      property="og:description"
+      content="Learn how to use the Spritesheet Generator to combine multiple frames into one PNG spritesheet, configure columns, padding, cell size, and export JSON metadata."
+    />
+    <meta property="og:site_name" content="Pixel Tools" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:image" content="https://pixeltool.io.vn/og-preview.svg" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:url" content="https://pixeltool.io.vn/how-to-use-spritesheet-generator.html" />
+    <meta name="twitter:title" content="How to Use the Spritesheet Generator | Pixel Tools" />
+    <meta
+      name="twitter:description"
+      content="Learn how to use the Spritesheet Generator to combine multiple frames into one PNG spritesheet, configure columns, padding, cell size, and export JSON metadata."
+    />
+    <meta name="twitter:image" content="https://pixeltool.io.vn/og-preview.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="./visit-counter.js" defer></script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "How to Use the Spritesheet Generator",
+        "description": "A guide for building PNG spritesheets and JSON metadata with Pixel Tools.",
+        "author": {
+          "@type": "Person",
+          "name": "DK"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Pixel Tools"
+        },
+        "mainEntityOfPage": "https://pixeltool.io.vn/how-to-use-spritesheet-generator.html",
+        "image": "https://pixeltool.io.vn/og-preview.svg"
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "How many columns should I use?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "There is no fixed number, but 4 to 8 columns are often practical for medium-sized animation sets."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Is padding necessary?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, if you want to reduce the risk of texture bleeding or neighboring pixel sampling in some engine workflows."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "When should I export JSON?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Export JSON when you want to move the spritesheet into an engine, animation system, or any workflow that benefits from frame metadata."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="hero hero-compact">
+        <a class="text-link" href="./index.html">Back to main tools</a>
+        <p class="eyebrow">Guide</p>
+        <h1>How to use the Spritesheet Generator</h1>
+        <p class="hero-copy">
+          The Spritesheet Generator helps you combine many image frames into a
+          single PNG file and export matching JSON metadata. It is a practical
+          step for 2D game animation workflows when you want cleaner asset handoff.
+        </p>
+        <div class="action-row">
+          <a class="cta-link cta-link-primary" href="./spritesheet-generator.html">Open the Spritesheet Generator</a>
+          <a class="cta-link" href="./pixel-art-converter.html">Prepare pixel frames</a>
+          <a class="cta-link" href="./map-editor.html">Use assets in map workflows</a>
+        </div>
+      </header>
+
+      <section class="panel seo-intro">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Overview</p>
+            <h2>When the Spritesheet Generator is useful</h2>
+          </div>
+        </div>
+        <p class="seo-copy">
+          If you have separate animation frames such as idle, walk, attack, or
+          effect sequences, combining them into one spritesheet keeps the asset
+          set easier to manage and easier to import into engines. This tool
+          gives you control over columns, cell size, padding, and JSON export format.
+        </p>
+      </section>
+
+      <section class="panel seo-content">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Step 1</p>
+            <h2>Upload every frame you want to combine</h2>
+          </div>
+        </div>
+        <ul class="content-list">
+          <li>Open the <a class="text-link" href="./spritesheet-generator.html">Spritesheet Generator</a> and drag in all the animation frames.</li>
+          <li>Keep the frame order organized from the start so the final animation sequence stays correct.</li>
+          <li>If the source frames are inconsistent, prepare them first with the <a class="text-link" href="./pixel-art-converter.html">Pixel Art Converter</a>.</li>
+        </ul>
+      </section>
+
+      <section class="panel seo-content">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Step 2</p>
+            <h2>Set columns, cell size, and padding</h2>
+          </div>
+        </div>
+        <div class="seo-grid">
+          <article>
+            <h3>Columns</h3>
+            <p>Control how many frames appear in each row so the sheet stays balanced and readable.</p>
+          </article>
+          <article>
+            <h3>Cell size</h3>
+            <p>Use a fixed cell size when you want every frame to align cleanly in a uniform animation grid.</p>
+          </article>
+          <article>
+            <h3>Padding</h3>
+            <p>Add spacing between frames to reduce pixel bleeding or incorrect texture sampling in some pipelines.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel seo-content">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Step 3</p>
+            <h2>Build the spritesheet and inspect the preview</h2>
+          </div>
+        </div>
+        <p class="seo-copy">
+          After choosing your settings, click `Build spritesheet` to generate a
+          preview. At this stage, check whether any frame is cropped, distorted,
+          or offset by the wrong padding. If the result does not look right,
+          adjust the columns or cell size before exporting.
+        </p>
+      </section>
+
+      <section class="panel seo-content">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Step 4</p>
+            <h2>Export the PNG and JSON files</h2>
+          </div>
+        </div>
+        <ul class="content-list">
+          <li>Download the `spritesheet PNG` if you only need the combined image atlas.</li>
+          <li>Download the `spritesheet JSON` if you want frame positions, rows, columns, and layout metadata.</li>
+          <li>Use the JSON output for Phaser or other animation import workflows to reduce manual setup.</li>
+        </ul>
+      </section>
+
+      <section class="panel faq-section" aria-labelledby="spritesheet-generator-faq">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">FAQ</p>
+            <h2 id="spritesheet-generator-faq">Common questions</h2>
+          </div>
+        </div>
+        <div class="faq-list">
+          <details>
+            <summary>How many columns should I use?</summary>
+            <p>Four to eight columns are often a practical range for many medium-sized animation sets, but the best number depends on your frame count and frame size.</p>
+          </details>
+          <details>
+            <summary>Is padding really necessary?</summary>
+            <p>Yes, especially when you want to reduce texture sampling issues between frames in some engines or atlas workflows.</p>
+          </details>
+          <details>
+            <summary>When should I export JSON?</summary>
+            <p>Export JSON when you want to preserve frame metadata for engine import, animation systems, or any reusable asset pipeline.</p>
+          </details>
+        </div>
+      </section>
+
+      <section class="panel seo-content" aria-labelledby="related-spritesheet-generator">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Related</p>
+            <h2 id="related-spritesheet-generator">Next steps in the workflow</h2>
+          </div>
+        </div>
+        <ul class="content-list">
+          <li><a class="text-link" href="./spritesheet-generator.html">Open the Spritesheet Generator</a></li>
+          <li><a class="text-link" href="./how-to-make-pixel-art-spritesheets.html">Read the detailed spritesheet guide</a></li>
+          <li><a class="text-link" href="./pixel-art-converter.html">Prepare frames with the Pixel Art Converter</a></li>
+          <li><a class="text-link" href="./map-editor.html">Move assets into the map editor</a></li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>
+        <span class="footer-brand">Pixel Tools</span>
+        is a browser-based pixel game toolkit with pixel art conversion,
+        spritesheet export, and a 2D tile map editor.
+      </p>
+      <p class="footer-contact">
+        Created by DK. Contact: <a href="https://www.facebook.com/hoandk20h" target="_blank" rel="noreferrer">Facebook</a>
+        <span aria-hidden="true">•</span>
+        <a href="mailto:dkhoankieu@gmail.com">dkhoankieu@gmail.com</a>
+      </p>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="./about.html">About</a>
+        <a href="./contact.html">Contact</a>
+        <a href="./privacy.html">Privacy Policy</a>
+        <a href="./terms.html">Terms</a>
+      </nav>
+    </footer>
+  </body>
+</html>

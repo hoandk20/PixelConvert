@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script id="aclib" type="text/javascript" src="//acscdn.com/script/aclib.js"></script>
+    <script type="text/javascript">
+      aclib.runAutoTag({
+        zoneId: 'v3gzmo3bzm',
+      });
+    </script>
+    <title>How to Use the Image Resizer | Pixel Tools</title>
+    <meta
+      name="description"
+      content="Learn how to use the Image Resizer to batch-resize images, set fixed width and height values, and export PNG outputs quickly in the browser."
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="author" content="DK" />
+    <meta name="theme-color" content="#241748" />
+    <link rel="canonical" href="https://pixeltool.io.vn/how-to-use-image-resizer.html" />
+    <link rel="icon" href="./favicon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="./favicon.png" />
+    <meta property="og:type" content="article" />
+    <meta property="og:url" content="https://pixeltool.io.vn/how-to-use-image-resizer.html" />
+    <meta property="og:title" content="How to Use the Image Resizer | Pixel Tools" />
+    <meta
+      property="og:description"
+      content="Learn how to use the Image Resizer to batch-resize images, set fixed width and height values, and export PNG outputs quickly in the browser."
+    />
+    <meta property="og:site_name" content="Pixel Tools" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:image" content="https://pixeltool.io.vn/og-preview.svg" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:url" content="https://pixeltool.io.vn/how-to-use-image-resizer.html" />
+    <meta name="twitter:title" content="How to Use the Image Resizer | Pixel Tools" />
+    <meta
+      name="twitter:description"
+      content="Learn how to use the Image Resizer to batch-resize images, set fixed width and height values, and export PNG outputs quickly in the browser."
+    />
+    <meta name="twitter:image" content="https://pixeltool.io.vn/og-preview.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="./visit-counter.js" defer></script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Article",
+        "headline": "How to Use the Image Resizer",
+        "description": "A guide for batch-resizing images with Pixel Tools.",
+        "author": {
+          "@type": "Person",
+          "name": "DK"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Pixel Tools"
+        },
+        "mainEntityOfPage": "https://pixeltool.io.vn/how-to-use-image-resizer.html",
+        "image": "https://pixeltool.io.vn/og-preview.svg"
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "When should I use the image resizer?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Use it when you want to standardize image dimensions before moving assets into pixel conversion, spritesheet generation, or map workflows."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I resize many images at once?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. The Image Resizer is designed for batch processing in the browser."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How should I choose the width and height?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Choose the dimensions required by the next tool in your pipeline or by the asset size conventions in your project."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="hero hero-compact">
+        <a class="text-link" href="./index.html">Back to main tools</a>
+        <p class="eyebrow">Guide</p>
+        <h1>How to use the Image Resizer</h1>
+        <p class="hero-copy">
+          The Image Resizer is useful when you need to standardize many image
+          dimensions quickly before moving into pixel conversion, spritesheets,
+          or direct game asset preparation. It is simple, but it solves an
+          important part of the asset pipeline.
+        </p>
+        <div class="action-row">
+          <a class="cta-link cta-link-primary" href="./image-resizer.html">Open the Image Resizer</a>
+          <a class="cta-link" href="./pixel-art-converter.html">Convert to pixel art</a>
+          <a class="cta-link" href="./spritesheet-generator.html">Build spritesheets</a>
+        </div>
+      </header>
+
+      <section class="panel seo-intro">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Overview</p>
+            <h2>How the Image Resizer fits into an asset workflow</h2>
+          </div>
+        </div>
+        <p class="seo-copy">
+          Before using assets in a project, you often need to move them into a
+          fixed size. That keeps later steps such as pixel conversion,
+          animation sheet generation, or map building more consistent. The
+          Image Resizer addresses that need with fast browser-based batch resizing.
+        </p>
+      </section>
+
+      <section class="panel seo-content">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Step 1</p>
+            <h2>Upload the images you want to resize</h2>
+          </div>
+        </div>
+        <ul class="content-list">
+          <li>Open the <a class="text-link" href="./image-resizer.html">Image Resizer</a> and add one or many images.</li>
+          <li>Use batch upload when you want the whole asset set standardized to the same dimensions.</li>
+          <li>Check the file list so you do not miss any important assets before resizing.</li>
+        </ul>
+      </section>
+
+      <section class="panel seo-content">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Step 2</p>
+            <h2>Enter the output width and height</h2>
+          </div>
+        </div>
+        <div class="seo-grid">
+          <article>
+            <h3>Resize for UI</h3>
+            <p>Choose dimensions that match the display frame for banners, thumbnails, or interface images.</p>
+          </article>
+          <article>
+            <h3>Resize for game assets</h3>
+            <p>Standardize portraits, objects, or support images so they are easier to manage inside the project.</p>
+          </article>
+          <article>
+            <h3>Resize for the next tool</h3>
+            <p>Use it when you want clean input dimensions before moving into pixel art conversion or animation sheet assembly.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel seo-content">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Step 3</p>
+            <h2>Resize the batch and check the result</h2>
+          </div>
+        </div>
+        <p class="seo-copy">
+          Click `Resize all` to process the full batch. Once the previews
+          appear, check whether any asset looks stretched or loses important
+          detail. If the output is not right, adjust the width and height and
+          rerun the resize immediately in the same tool.
+        </p>
+      </section>
+
+      <section class="panel seo-content">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Step 4</p>
+            <h2>Download the files and continue with other tools</h2>
+          </div>
+        </div>
+        <ul class="content-list">
+          <li>Use `Download all` to export every resized PNG file.</li>
+          <li>Move into the <a class="text-link" href="./pixel-art-converter.html">Pixel Art Converter</a> if you want a pixel-style result next.</li>
+          <li>Move into the <a class="text-link" href="./spritesheet-generator.html">Spritesheet Generator</a> if the resized images are animation frames.</li>
+        </ul>
+      </section>
+
+      <section class="panel faq-section" aria-labelledby="image-resizer-faq">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">FAQ</p>
+            <h2 id="image-resizer-faq">Common questions</h2>
+          </div>
+        </div>
+        <div class="faq-list">
+          <details>
+            <summary>When should I use the image resizer?</summary>
+            <p>Use it when you want to standardize asset sizes before the next processing step or before adding files directly to your project.</p>
+          </details>
+          <details>
+            <summary>Can I resize many images at the same time?</summary>
+            <p>Yes. The tool is designed for batch workflows, so it is useful when you need to process many files in one pass.</p>
+          </details>
+          <details>
+            <summary>How should I choose width and height?</summary>
+            <p>Choose the dimensions required by your next tool or by the asset size rules already used in your game project.</p>
+          </details>
+        </div>
+      </section>
+
+      <section class="panel seo-content" aria-labelledby="related-image-resizer">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Related</p>
+            <h2 id="related-image-resizer">Useful next tools</h2>
+          </div>
+        </div>
+        <ul class="content-list">
+          <li><a class="text-link" href="./image-resizer.html">Open the Image Resizer</a></li>
+          <li><a class="text-link" href="./pixel-art-converter.html">Convert images into pixel art</a></li>
+          <li><a class="text-link" href="./spritesheet-generator.html">Build spritesheets from resized images</a></li>
+          <li><a class="text-link" href="./map-editor.html">Use the assets in the tile map editor</a></li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>
+        <span class="footer-brand">Pixel Tools</span>
+        is a browser-based pixel game toolkit with pixel art conversion,
+        spritesheet export, and a 2D tile map editor.
+      </p>
+      <p class="footer-contact">
+        Created by DK. Contact: <a href="https://www.facebook.com/hoandk20h" target="_blank" rel="noreferrer">Facebook</a>
+        <span aria-hidden="true">•</span>
+        <a href="mailto:dkhoankieu@gmail.com">dkhoankieu@gmail.com</a>
+      </p>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="./about.html">About</a>
+        <a href="./contact.html">Contact</a>
+        <a href="./privacy.html">Privacy Policy</a>
+        <a href="./terms.html">Terms</a>
+      </nav>
+    </footer>
+  </body>
+</html>
