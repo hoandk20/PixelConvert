@@ -8,13 +8,13 @@
   </url>
   <url>
     <loc>https://pixeltool.io.vn/map-editor.html</loc>
-    <lastmod>2026-04-14</lastmod>
+    <lastmod>2026-05-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://pixeltool.io.vn/pixel-art-converter.html</loc>
-    <lastmod>2026-04-14</lastmod>
+    <lastmod>2026-05-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -26,19 +26,19 @@
   </url>
   <url>
     <loc>https://pixeltool.io.vn/image-resizer.html</loc>
-    <lastmod>2026-04-14</lastmod>
+    <lastmod>2026-05-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://pixeltool.io.vn/about.html</loc>
-    <lastmod>2026-04-14</lastmod>
+    <lastmod>2026-05-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://pixeltool.io.vn/contact.html</loc>
-    <lastmod>2026-04-14</lastmod>
+    <lastmod>2026-05-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
@@ -68,14 +68,32 @@
   </url>
   <url>
     <loc>https://pixeltool.io.vn/best-tile-size-for-2d-games.html</loc>
-    <lastmod>2026-04-14</lastmod>
+    <lastmod>2026-05-05</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://pixeltool.io.vn/free-pixel-tools.html</loc>
-    <lastmod>2026-04-14</lastmod>
+    <lastmod>2026-05-05</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://pixeltool.io.vn/how-to-use-pixel-art-converter.html</loc>
+    <lastmod>2026-05-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://pixeltool.io.vn/how-to-use-spritesheet-generator.html</loc>
+    <lastmod>2026-05-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://pixeltool.io.vn/how-to-use-image-resizer.html</loc>
+    <lastmod>2026-05-05</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>
 </urlset>

@@ -94,6 +94,67 @@
               "@type": "Answer",
               "text": "Yes. The generator lets you control columns, cell size, padding, fit mode, background, and JSON output format."
             }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I make a spritesheet online?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Upload frame images, set columns, cell size, padding, and fit mode, build the spritesheet, then download the combined PNG and JSON metadata."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "When should I use the Spritesheet Generator after Pixel Art Converter?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Use the Spritesheet Generator after Pixel Art Converter when your converted images represent frames, poses, or animation states that need to be assembled into one atlas file."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What should I do after building a spritesheet?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "After building a spritesheet, you can import it into a game engine, use it in a tile map editor, or continue testing frame layout and metadata formatting for your project."
+            }
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        "name": "How to make a spritesheet online",
+        "description": "A short browser workflow for combining uploaded frames into a spritesheet PNG with JSON metadata.",
+        "totalTime": "PT3M",
+        "tool": [
+          {
+            "@type": "HowToTool",
+            "name": "Spritesheet Generator"
+          }
+        ],
+        "step": [
+          {
+            "@type": "HowToStep",
+            "name": "Upload frame images",
+            "text": "Add one or more frames by drag and drop, file selection, or clipboard paste."
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Set layout options",
+            "text": "Choose columns, cell size, frame sizing mode, padding, fit mode, background, and JSON format."
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Build the spritesheet",
+            "text": "Generate the preview canvas to review the sheet layout and frame arrangement."
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Download PNG and JSON",
+            "text": "Export the spritesheet PNG and matching metadata file for your engine or workflow."
           }
         ]
       }
@@ -133,6 +194,23 @@
           desktop workflow.
         </p>
       </header>
+
+      <section class="panel seo-intro">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Quick Answer</p>
+            <h2>How to make a spritesheet online</h2>
+          </div>
+        </div>
+        <p class="seo-copy">
+          To make a spritesheet online, upload your frame images, set the
+          layout options such as <strong>columns</strong>,
+          <strong>cell size</strong>, and <strong>padding</strong>, then build
+          the sheet and export both the <strong>PNG atlas</strong> and
+          <strong>JSON metadata</strong>. This tool works best when you already
+          have a sequence of frames ready for animation or atlas-based import.
+        </p>
+      </section>
 
       <section class="panel controls">
         <div class="section-heading">
@@ -268,6 +346,58 @@
       <section class="panel seo-content">
         <div class="section-heading">
           <div>
+            <p class="eyebrow">How To</p>
+            <h2>Build a spritesheet in four steps</h2>
+          </div>
+        </div>
+        <ul class="content-list">
+          <li>Upload the frames you want to combine into one sheet.</li>
+          <li>Set the columns, cell size, padding, fit mode, and metadata format.</li>
+          <li>Build the spritesheet to preview the frame layout on the canvas.</li>
+          <li>Download the PNG atlas and JSON file for your engine or asset workflow.</li>
+        </ul>
+      </section>
+
+      <section class="panel seo-content">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Tool Choice</p>
+            <h2>When to use Spritesheet Generator vs Pixel Art Converter</h2>
+          </div>
+        </div>
+        <div class="seo-grid">
+          <article>
+            <h3>Use Spritesheet Generator</h3>
+            <p>Choose this tool when you already have multiple frames and need them packed into one atlas PNG with matching metadata.</p>
+          </article>
+          <article>
+            <h3>Use Pixel Art Converter</h3>
+            <p>Choose the <a class="text-link" href="./pixel-art-converter.html">Pixel Art Converter</a> when you still need to turn regular images into pixel-style frame assets first.</p>
+          </article>
+          <article>
+            <h3>Use both in sequence</h3>
+            <p>Convert frames into pixel-style outputs first, then assemble those outputs into a spritesheet when the animation or asset pack is ready.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel seo-content">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Next Step</p>
+            <h2>What to do after building a spritesheet</h2>
+          </div>
+        </div>
+        <ul class="content-list">
+          <li>Import the PNG and JSON into your game engine when the next job is animation playback or atlas-based asset loading.</li>
+          <li>Open the <a class="text-link" href="./map-editor.html">2D Tile Map Editor</a> if the sheet is meant for tile placement or tileset testing.</li>
+          <li>Go back to the <a class="text-link" href="./pixel-art-converter.html">Pixel Art Converter</a> or <a class="text-link" href="./image-resizer.html">Image Resizer</a> if the source frames still need visual cleanup or size standardization.</li>
+        </ul>
+      </section>
+
+      <section class="panel seo-content">
+        <div class="section-heading">
+          <div>
             <p class="eyebrow">Use Cases</p>
             <h2>When to use this spritesheet generator</h2>
           </div>
@@ -367,6 +497,33 @@
             <p>
               Yes. The generator lets you control columns, cell size, padding,
               fit mode, background, and JSON output format.
+            </p>
+          </details>
+          <details>
+            <summary>How do I make a spritesheet online?</summary>
+            <p>
+              Upload frame images, set the layout options, build the
+              spritesheet, then download the PNG atlas and JSON metadata. This
+              is the fastest browser workflow when your animation frames are
+              already prepared.
+            </p>
+          </details>
+          <details>
+            <summary>When should I use the Spritesheet Generator after Pixel Art Converter?</summary>
+            <p>
+              Use it after the
+              <a class="text-link" href="./pixel-art-converter.html">Pixel Art Converter</a>
+              when your converted images represent frames or animation states
+              that now need to be packed into one atlas.
+            </p>
+          </details>
+          <details>
+            <summary>What should I do after building a spritesheet?</summary>
+            <p>
+              Import the sheet into a game engine, test it in the
+              <a class="text-link" href="./map-editor.html">2D Tile Map Editor</a>,
+              or refine the source frames further if the layout or visual style
+              still needs work.
             </p>
           </details>
         </div>

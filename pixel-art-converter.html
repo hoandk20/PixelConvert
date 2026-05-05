@@ -69,6 +69,147 @@
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What does the Pixel Art Converter do?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The Pixel Art Converter turns uploaded images into fixed-size pixel art outputs such as 16x16, 32x32, and 64x64 PNG files directly in the browser."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Which fit mode should I choose?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Contain is the safest default because it keeps the full image visible. Cover fills the full square and may crop edges. Stretch forces the image into the selected size and can distort it."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I convert multiple images at once?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. The tool supports batch upload and batch PNG export so you can process many images in one pass."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How do I convert an image to pixel art online?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Upload your image, choose an output size such as 16x16, 32x32, or 64x64, pick a fit mode, set the background option, then run the converter and download the PNG result."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What size should I use for pixel art sprites?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "16x16 works for tiny icons and compact tiles, 32x32 is a practical default for many sprites, and 64x64 is better when you want larger shapes and more readable detail."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Should I use a transparent background for pixel art?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "A transparent background is usually best for sprites, icons, and game assets because it keeps the export flexible. A solid background is better when you need a fixed preview color."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What is the difference between Contain, Cover, and Stretch in pixel art conversion?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Contain keeps the whole image visible inside the target square. Cover fills the square more tightly and may crop edges. Stretch forces the image into the target dimensions and can distort the subject."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What are common mistakes when converting images to pixel art?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Common mistakes include choosing an output size that is too small for the subject, using Stretch when shape accuracy matters, converting cluttered source images, and exporting with a solid background when transparency is needed later."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "When should I use Pixel Art Converter instead of Image Resizer?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Use Pixel Art Converter when you want a retro, fixed-pixel look and preset square outputs such as 16x16, 32x32, or 64x64. Use Image Resizer when you only need to change image dimensions without focusing on pixel-art style output."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Who is the Pixel Art Converter best for?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The Pixel Art Converter is best for game developers, pixel artists, UI designers, and hobby creators who need fast sprite, icon, or retro-style asset preparation directly in the browser."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What can I make with the Pixel Art Converter?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "You can use the Pixel Art Converter to create pixel-style sprites, icons, avatars, props, simple tiles, and retro-inspired UI assets from regular source images."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What should I do after converting images to pixel art?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "After conversion, you can move the outputs into a spritesheet generator to build animation sheets, or into a tile map editor if the assets are meant for map layouts and tile-based workflows."
+            }
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        "name": "How to convert an image to pixel art online",
+        "description": "A short workflow for turning an uploaded image into pixel art with fixed output sizes in the browser.",
+        "totalTime": "PT2M",
+        "tool": [
+          {
+            "@type": "HowToTool",
+            "name": "Pixel Art Converter"
+          }
+        ],
+        "step": [
+          {
+            "@type": "HowToStep",
+            "name": "Upload the image",
+            "text": "Add one or more images by drag and drop, file selection, or clipboard paste."
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Choose the output size",
+            "text": "Select a target size such as 16x16, 32x32, or 64x64 depending on the asset you want to make."
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Set fit mode and background",
+            "text": "Use Contain to keep the whole subject visible, Cover to fill the square more tightly, or Stretch when distortion is acceptable. Choose a transparent or solid background."
+          },
+          {
+            "@type": "HowToStep",
+            "name": "Convert and download",
+            "text": "Run the conversion and download single PNG files or export all results in one batch."
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
         "@type": "BreadcrumbList",
         "itemListElement": [
           {
@@ -98,6 +239,23 @@
           or 64x64, then export pixel-ready PNG files directly in the browser.
         </p>
       </header>
+
+      <section class="panel seo-intro">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Quick Answer</p>
+            <h2>How to convert an image to pixel art</h2>
+          </div>
+        </div>
+        <p class="seo-copy">
+          To convert an image to pixel art online, upload the image, choose an
+          output size such as <strong>16x16</strong>, <strong>32x32</strong>,
+          or <strong>64x64</strong>, select the best fit mode, then export the
+          result as a PNG. For most sprites, <strong>32x32</strong> with
+          <strong>Contain</strong> and a <strong>transparent background</strong>
+          is the safest starting point.
+        </p>
+      </section>
 
       <section class="panel controls">
         <div class="section-heading">
@@ -186,6 +344,182 @@
       <section class="panel seo-content">
         <div class="section-heading">
           <div>
+            <p class="eyebrow">How To</p>
+            <h2>Convert images to pixel art in four steps</h2>
+          </div>
+        </div>
+        <ul class="content-list">
+          <li>Upload one image or batch-upload multiple files into the converter.</li>
+          <li>Choose a target size. Start with <code>32x32</code> for general sprites, <code>16x16</code> for tiny icons, and <code>64x64</code> for larger readable shapes.</li>
+          <li>Pick <code>Contain</code> to preserve the full subject, <code>Cover</code> to fill the square more tightly, or <code>Stretch</code> only when you accept distortion.</li>
+          <li>Use a transparent background for game assets, run the conversion, then download the PNG results.</li>
+        </ul>
+      </section>
+
+      <section class="panel seo-content">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Best Settings</p>
+            <h2>Choose the right output for your asset type</h2>
+          </div>
+        </div>
+        <div class="seo-grid">
+          <article>
+            <h3>Icons and tiny UI assets</h3>
+            <p>Use <strong>16x16</strong> when the image needs to stay compact and simple. Keep shapes bold because tiny details disappear quickly.</p>
+          </article>
+          <article>
+            <h3>Sprites and characters</h3>
+            <p><strong>32x32</strong> is the best default for many pixel sprites because it balances clarity, scale, and export size.</p>
+          </article>
+          <article>
+            <h3>Larger objects and portraits</h3>
+            <p>Choose <strong>64x64</strong> when you need more readable silhouettes, bigger props, or stronger visual detail after downscaling.</p>
+          </article>
+        </div>
+        <p class="seo-copy">
+          If you are unsure, start with <strong>32x32</strong>,
+          <strong>Contain</strong>, and a <strong>transparent</strong>
+          background. That combination is usually the most flexible for later
+          steps such as spritesheet assembly or map placement.
+        </p>
+      </section>
+
+      <section class="panel seo-content">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Fit Modes</p>
+            <h2>Contain vs Cover vs Stretch</h2>
+          </div>
+        </div>
+        <div class="seo-grid">
+          <article>
+            <h3>Contain</h3>
+            <p>Best when you want to keep the full subject visible. This is usually the safest choice for sprites, icons, and imported artwork.</p>
+          </article>
+          <article>
+            <h3>Cover</h3>
+            <p>Best when you need the square fully filled and can accept cropped edges. It works better for centered portraits and close-up objects.</p>
+          </article>
+          <article>
+            <h3>Stretch</h3>
+            <p>Best only when exact square fill matters more than natural proportions. Use it carefully because it can warp characters and item shapes.</p>
+          </article>
+        </div>
+        <p class="seo-copy">
+          If the image has one clear subject, start with
+          <strong>Contain</strong>. Switch to <strong>Cover</strong> only when
+          the empty margins are more distracting than light cropping. Use
+          <strong>Stretch</strong> last.
+        </p>
+      </section>
+
+      <section class="panel seo-content">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Common Mistakes</p>
+            <h2>Avoid the most common pixel conversion errors</h2>
+          </div>
+        </div>
+        <ul class="content-list">
+          <li>Do not start with a source image that has too many small details. Clean silhouettes convert better than busy compositions.</li>
+          <li>Do not choose <code>16x16</code> when the subject needs facial detail, props, or readable outlines. Move up to <code>32x32</code> or <code>64x64</code>.</li>
+          <li>Do not use <code>Stretch</code> when proportion matters. It is the fastest way to make sprites feel distorted.</li>
+          <li>Do not export with a solid background if the asset will later go into a spritesheet, interface, or map with transparency.</li>
+        </ul>
+      </section>
+
+      <section class="panel seo-content">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Best For</p>
+            <h2>Who should use the Pixel Art Converter</h2>
+          </div>
+        </div>
+        <div class="seo-grid">
+          <article>
+            <h3>Game developers</h3>
+            <p>Useful for quickly preparing sprite candidates, props, icons, and tile-ready artwork before moving into sheets or maps.</p>
+          </article>
+          <article>
+            <h3>Pixel artists and hobby creators</h3>
+            <p>Helpful when you want to test how a regular image reads at a smaller retro scale before redrawing or refining by hand.</p>
+          </article>
+          <article>
+            <h3>UI and asset designers</h3>
+            <p>Good for making small retro-style badges, avatars, profile art, and compact visual elements for themed interfaces.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel seo-content">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Tool Choice</p>
+            <h2>When to use Pixel Art Converter vs Image Resizer</h2>
+          </div>
+        </div>
+        <div class="seo-grid">
+          <article>
+            <h3>Use Pixel Art Converter</h3>
+            <p>Choose this tool when the goal is a pixel-art look, square sprite-style outputs, and settings such as fit mode and transparent export.</p>
+          </article>
+          <article>
+            <h3>Use Image Resizer</h3>
+            <p>Choose the <a class="text-link" href="./image-resizer.html">Image Resizer</a> when you only need fixed width and height values without focusing on a retro pixel-art result.</p>
+          </article>
+          <article>
+            <h3>Use both in sequence</h3>
+            <p>Resize first when source assets need consistent dimensions, then convert to pixel outputs when you want a more game-ready visual style.</p>
+          </article>
+        </div>
+        <p class="seo-copy">
+          In short, <strong>Image Resizer</strong> standardizes dimensions,
+          while <strong>Pixel Art Converter</strong> standardizes a pixel-style
+          output. They solve related but different jobs.
+        </p>
+      </section>
+
+      <section class="panel seo-content">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Use Cases</p>
+            <h2>What you can make with the Pixel Art Converter</h2>
+          </div>
+        </div>
+        <div class="seo-grid">
+          <article>
+            <h3>Sprites and characters</h3>
+            <p>Turn source artwork into compact sprite candidates for platformers, RPG assets, enemies, NPCs, and small animated objects.</p>
+          </article>
+          <article>
+            <h3>Icons and avatars</h3>
+            <p>Create retro-style profile images, badges, item icons, ability markers, and themed interface elements with a smaller pixel footprint.</p>
+          </article>
+          <article>
+            <h3>Tiles and props</h3>
+            <p>Prepare environmental pieces, decorative props, and tile-like assets before arranging them into sheets or testing them in a map layout.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel seo-content">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Next Step</p>
+            <h2>What to do after converting images</h2>
+          </div>
+        </div>
+        <ul class="content-list">
+          <li>Use the <a class="text-link" href="./spritesheet-generator.html">Spritesheet Generator</a> when the converted images need to become animation frames in one PNG atlas.</li>
+          <li>Use the <a class="text-link" href="./map-editor.html">2D Tile Map Editor</a> when the converted outputs are meant for tile placement, environment building, or layout testing.</li>
+          <li>Use the <a class="text-link" href="./image-resizer.html">Image Resizer</a> first on future batches when your source files need consistent dimensions before pixel conversion.</li>
+        </ul>
+      </section>
+
+      <section class="panel seo-content">
+        <div class="section-heading">
+          <div>
             <p class="eyebrow">More Tools</p>
             <h2>Continue with the rest of the toolkit</h2>
           </div>
@@ -222,6 +556,134 @@
           <li><a class="text-link" href="./best-tile-size-for-2d-games.html">Best tile size for 2D games</a></li>
           <li><a class="text-link" href="./map-editor.html">Open the 2D tile map editor</a></li>
         </ul>
+      </section>
+      <section class="panel faq-section" aria-labelledby="pixel-tool-faq">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">FAQ</p>
+            <h2 id="pixel-tool-faq">Common questions about the Pixel Art Converter</h2>
+          </div>
+        </div>
+        <div class="faq-list">
+          <details>
+            <summary>What does the Pixel Art Converter do?</summary>
+            <p>
+              It turns uploaded images into fixed-size pixel art outputs such as
+              16x16, 32x32, and 64x64 PNG files directly in the browser.
+            </p>
+          </details>
+          <details>
+            <summary>Which fit mode should I choose?</summary>
+            <p>
+              <code>Contain</code> is the safest default because it keeps the
+              full image visible. <code>Cover</code> fills the square more
+              aggressively, and <code>Stretch</code> can distort the image.
+            </p>
+          </details>
+          <details>
+            <summary>Can I convert multiple images at once?</summary>
+            <p>
+              Yes. The tool supports batch upload and batch export, which makes
+              it useful for preparing many assets quickly.
+            </p>
+          </details>
+          <details>
+            <summary>How do I convert an image to pixel art online?</summary>
+            <p>
+              Upload the image, choose a target size, set the fit mode and
+              background, then convert and download the PNG result. For most
+              use cases, <code>32x32</code> with <code>Contain</code> is a good
+              default.
+            </p>
+          </details>
+          <details>
+            <summary>What size should I use for pixel art sprites?</summary>
+            <p>
+              <code>16x16</code> works for tiny icons and compact tiles.
+              <code>32x32</code> is a practical default for many sprite assets.
+              <code>64x64</code> gives larger shapes more room and keeps them
+              easier to read.
+            </p>
+          </details>
+          <details>
+            <summary>Should I use a transparent background?</summary>
+            <p>
+              Yes, in most sprite and game-asset workflows. Transparent exports
+              are easier to place into a spritesheet, UI, or tile map without
+              needing to remove a flat background later.
+            </p>
+          </details>
+          <details>
+            <summary>When should I use Cover instead of Contain?</summary>
+            <p>
+              Use <code>Cover</code> when filling the whole square matters more
+              than keeping every edge visible. Use <code>Contain</code> when you
+              want to preserve the full subject without cropping.
+            </p>
+          </details>
+          <details>
+            <summary>Can I use this before making a spritesheet?</summary>
+            <p>
+              Yes. Converting images into consistent pixel outputs is often a
+              good preparation step before arranging frames in the
+              <a class="text-link" href="./spritesheet-generator.html">Spritesheet Generator</a>.
+            </p>
+          </details>
+          <details>
+            <summary>What is the difference between Contain, Cover, and Stretch?</summary>
+            <p>
+              <code>Contain</code> keeps the whole image visible.
+              <code>Cover</code> fills the square more tightly and may crop the
+              edges. <code>Stretch</code> forces the image into the output size
+              and can distort the result.
+            </p>
+          </details>
+          <details>
+            <summary>What are common mistakes when converting images to pixel art?</summary>
+            <p>
+              The most common mistakes are choosing an output size that is too
+              small, converting cluttered images, using
+              <code>Stretch</code> too early, and exporting a solid background
+              when transparent PNG output is needed later.
+            </p>
+          </details>
+          <details>
+            <summary>When should I use Pixel Art Converter instead of Image Resizer?</summary>
+            <p>
+              Use the Pixel Art Converter when you want a retro pixel-style
+              result with square outputs such as <code>16x16</code>,
+              <code>32x32</code>, or <code>64x64</code>. Use the
+              <a class="text-link" href="./image-resizer.html">Image Resizer</a>
+              when you only need to change width and height values.
+            </p>
+          </details>
+          <details>
+            <summary>Who is this tool best for?</summary>
+            <p>
+              It is best for game developers, pixel artists, UI designers, and
+              hobby creators who need fast browser-based sprite, icon, or
+              retro-style asset preparation.
+            </p>
+          </details>
+          <details>
+            <summary>What can I make with the Pixel Art Converter?</summary>
+            <p>
+              You can make pixel-style sprites, icons, avatars, props, simple
+              tiles, and retro-themed UI assets from regular images, especially
+              when you want a fast browser-based starting point.
+            </p>
+          </details>
+          <details>
+            <summary>What should I do after converting images to pixel art?</summary>
+            <p>
+              Move the outputs into the
+              <a class="text-link" href="./spritesheet-generator.html">Spritesheet Generator</a>
+              for animation sheets or the
+              <a class="text-link" href="./map-editor.html">2D Tile Map Editor</a>
+              for tile-based layout work, depending on the workflow.
+            </p>
+          </details>
+        </div>
       </section>
     </main>
 
