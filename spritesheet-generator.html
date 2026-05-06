@@ -3,16 +3,35 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script id="aclib" type="text/javascript" src="//acscdn.com/script/aclib.js"></script>
-    <script type="text/javascript">
-      aclib.runAutoTag({
-        zoneId: 'v3gzmo3bzm',
-      });
+    <script>
+      window.addEventListener(
+        "load",
+        () => {
+          const loadAds = () => {
+            const script = document.createElement("script");
+            script.src = "https://acscdn.com/script/aclib.js";
+            script.async = true;
+            script.onload = () => {
+              window.aclib?.runAutoTag({
+                zoneId: "v3gzmo3bzm",
+              });
+            };
+            document.head.appendChild(script);
+          };
+
+          if ("requestIdleCallback" in window) {
+            window.requestIdleCallback(loadAds, { timeout: 2500 });
+          } else {
+            window.setTimeout(loadAds, 1500);
+          }
+        },
+        { once: true }
+      );
     </script>
-    <title>Free Spritesheet Generator Online | Pixel Tools</title>
+    <title>Free Spritesheet Generator Online with JSON Export | Pixel Tools</title>
     <meta
       name="description"
-      content="Use a free spritesheet generator online to build PNG atlases from uploaded frames, control columns and padding, and export JSON metadata."
+      content="Create spritesheets online for free from uploaded frames, control columns and padding, and export both PNG atlases and JSON metadata."
     />
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <meta name="author" content="DK" />
@@ -22,28 +41,36 @@
     <link rel="apple-touch-icon" href="./favicon.png" />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://pixeltool.io.vn/spritesheet-generator.html" />
-    <meta property="og:title" content="Free Spritesheet Generator Online | Pixel Tools" />
+    <meta property="og:title" content="Free Spritesheet Generator Online with JSON Export | Pixel Tools" />
     <meta
       property="og:description"
-      content="Use a free spritesheet generator online to build PNG atlases from uploaded frames, control columns and padding, and export JSON metadata."
+      content="Create spritesheets online for free from uploaded frames, control columns and padding, and export both PNG atlases and JSON metadata."
     />
     <meta property="og:site_name" content="Pixel Tools" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:image" content="https://pixeltool.io.vn/og-preview.svg" />
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:url" content="https://pixeltool.io.vn/spritesheet-generator.html" />
-    <meta name="twitter:title" content="Free Spritesheet Generator Online | Pixel Tools" />
+    <meta name="twitter:title" content="Free Spritesheet Generator Online with JSON Export | Pixel Tools" />
     <meta
       name="twitter:description"
-      content="Use a free spritesheet generator online to build PNG atlases from uploaded frames, control columns and padding, and export JSON metadata."
+      content="Create spritesheets online for free from uploaded frames, control columns and padding, and export both PNG atlases and JSON metadata."
     />
     <meta name="twitter:image" content="https://pixeltool.io.vn/og-preview.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
-      rel="stylesheet"
+      rel="preload"
+      as="style"
+      onload="this.onload=null;this.rel='stylesheet'"
     />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
     <link rel="stylesheet" href="./styles.css" />
     <script src="./visit-counter.js" defer></script>
     <script type="application/ld+json">
@@ -463,6 +490,8 @@
         <ul class="content-list">
           <li><a class="text-link" href="./free-pixel-tools.html">Free pixel tools overview</a></li>
           <li><a class="text-link" href="./how-to-use-spritesheet-generator.html">How to use the spritesheet generator</a></li>
+          <li><a class="text-link" href="./spritesheet-generator-json-export.html">Spritesheet generator JSON export guide</a></li>
+          <li><a class="text-link" href="./spritesheet-generator-for-godot.html">Spritesheet generator for Godot guide</a></li>
           <li><a class="text-link" href="./how-to-make-pixel-art-spritesheets.html">How to make pixel art spritesheets</a></li>
           <li><a class="text-link" href="./best-tile-size-for-2d-games.html">Best tile size for 2D games</a></li>
           <li><a class="text-link" href="./pixel-art-converter.html">Open the pixel art converter</a></li>
@@ -542,6 +571,7 @@
         <a href="mailto:dkhoankieu@gmail.com">dkhoankieu@gmail.com</a>
       </p>
       <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="./pixel-art-guides.html">Guides</a>
         <a href="./about.html">About</a>
         <a href="./contact.html">Contact</a>
         <a href="./privacy.html">Privacy Policy</a>

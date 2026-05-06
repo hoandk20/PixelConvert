@@ -3,11 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script id="aclib" type="text/javascript" src="//acscdn.com/script/aclib.js"></script>
-    <script type="text/javascript">
-      aclib.runAutoTag({
-        zoneId: 'v3gzmo3bzm',
-      });
+    <script>
+      window.addEventListener(
+        "load",
+        () => {
+          const loadAds = () => {
+            const script = document.createElement("script");
+            script.src = "https://acscdn.com/script/aclib.js";
+            script.async = true;
+            script.onload = () => {
+              window.aclib?.runAutoTag({
+                zoneId: "v3gzmo3bzm",
+              });
+            };
+            document.head.appendChild(script);
+          };
+
+          if ("requestIdleCallback" in window) {
+            window.requestIdleCallback(loadAds, { timeout: 2500 });
+          } else {
+            window.setTimeout(loadAds, 1500);
+          }
+        },
+        { once: true }
+      );
     </script>
     <title>How to Use the Image Resizer | Pixel Tools</title>
     <meta
@@ -42,8 +61,16 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
-      rel="stylesheet"
+      rel="preload"
+      as="style"
+      onload="this.onload=null;this.rel='stylesheet'"
     />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
     <link rel="stylesheet" href="./styles.css" />
     <script src="./visit-counter.js" defer></script>
     <script type="application/ld+json">
@@ -250,6 +277,7 @@
         <a href="mailto:dkhoankieu@gmail.com">dkhoankieu@gmail.com</a>
       </p>
       <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="./pixel-art-guides.html">Guides</a>
         <a href="./about.html">About</a>
         <a href="./contact.html">Contact</a>
         <a href="./privacy.html">Privacy Policy</a>

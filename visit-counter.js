@@ -38,4 +38,17 @@ function trackPageVisit() {
     });
 }
 
-trackPageVisit();
+function scheduleVisitTracking() {
+  if ("requestIdleCallback" in window) {
+    window.requestIdleCallback(trackPageVisit, { timeout: 2000 });
+    return;
+  }
+
+  window.setTimeout(trackPageVisit, 1200);
+}
+
+if (document.readyState === "complete") {
+  scheduleVisitTracking();
+} else {
+  window.addEventListener("load", scheduleVisitTracking, { once: true });
+}

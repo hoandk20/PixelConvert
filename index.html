@@ -3,16 +3,35 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script id="aclib" type="text/javascript" src="//acscdn.com/script/aclib.js"></script>
-    <script type="text/javascript">
-      aclib.runAutoTag({
-        zoneId: 'v3gzmo3bzm',
-      });
+    <script>
+      window.addEventListener(
+        "load",
+        () => {
+          const loadAds = () => {
+            const script = document.createElement("script");
+            script.src = "https://acscdn.com/script/aclib.js";
+            script.async = true;
+            script.onload = () => {
+              window.aclib?.runAutoTag({
+                zoneId: "v3gzmo3bzm",
+              });
+            };
+            document.head.appendChild(script);
+          };
+
+          if ("requestIdleCallback" in window) {
+            window.requestIdleCallback(loadAds, { timeout: 2500 });
+          } else {
+            window.setTimeout(loadAds, 1500);
+          }
+        },
+        { once: true }
+      );
     </script>
-    <title>Pixel Tools | Pixel Art Converter, Spritesheet & 2D Tile Map Editor</title>
+    <title>Free Pixel Art Converter, Spritesheet Generator & Tile Map Editor | Pixel Tools</title>
     <meta
       name="description"
-      content="Convert images to pixel art, build spritesheets, and launch a 2D tile map editor with tile import, map painting, JSON save/load, and PNG export."
+      content="Use free browser-based pixel tools to convert images to pixel art, generate spritesheets, resize assets, and build 2D tile maps with PNG and JSON export."
     />
     <meta name="robots" content="index, follow, max-image-preview:large" />
     <meta name="author" content="DK" />
@@ -25,7 +44,7 @@
     <meta property="og:url" content="https://pixeltool.io.vn/" />
     <meta
       property="og:title"
-      content="Pixel Tools | Pixel Art Converter, Spritesheet & 2D Tile Map Editor"
+      content="Free Pixel Art Converter, Spritesheet Generator & Tile Map Editor | Pixel Tools"
     />
     <meta
       property="og:description"
@@ -42,7 +61,7 @@
     />
     <meta
       name="twitter:description"
-      content="Convert images to pixel art, export spritesheets, and build 2D tile maps with browser-based tools."
+      content="Use free browser-based pixel tools to convert images to pixel art, generate spritesheets, resize assets, and build 2D tile maps."
     />
     <meta name="twitter:image" content="https://pixeltool.io.vn/og-preview.svg" />
     <link rel="manifest" href="./site.webmanifest" />
@@ -50,8 +69,16 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
-      rel="stylesheet"
+      rel="preload"
+      as="style"
+      onload="this.onload=null;this.rel='stylesheet'"
     />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
     <link rel="stylesheet" href="./styles.css" />
     <script src="./visit-counter.js" defer></script>
     <script type="application/ld+json">
@@ -81,6 +108,15 @@
           "Tile map JSON save and load",
           "Tile map PNG export"
         ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Pixel Tools",
+        "url": "https://pixeltool.io.vn/",
+        "description": "Browser-based pixel art, spritesheet, image resize, and 2D tile map tools."
       }
     </script>
     <script type="application/ld+json">
@@ -363,7 +399,18 @@
             <h2>Learn the workflow behind the tools</h2>
           </div>
         </div>
+        <p class="seo-copy">
+          Visit the <a class="text-link" href="./pixel-art-guides.html">Pixel Art Guides hub</a> if you want all tutorials grouped in one place by workflow stage.
+        </p>
         <div class="seo-grid">
+          <article>
+            <h3>32x32 pixel art converter</h3>
+            <p>
+              Learn why 32x32 is a strong default for sprites, icons, and
+              compact game assets before choosing a larger or smaller size.
+            </p>
+            <a class="text-link" href="./32x32-pixel-art-converter.html">Read the 32x32 guide</a>
+          </article>
           <article>
             <h3>How to make pixel art spritesheets</h3>
             <p>
@@ -371,6 +418,22 @@
               picking cell sizes, and exporting PNG plus JSON metadata.
             </p>
             <a class="text-link" href="./how-to-make-pixel-art-spritesheets.html">Read the spritesheet workflow guide</a>
+          </article>
+          <article>
+            <h3>Spritesheet generator JSON export</h3>
+            <p>
+              Learn when exporting JSON metadata matters for animation frames,
+              atlas coordinates, and engine-ready sprite workflows.
+            </p>
+            <a class="text-link" href="./spritesheet-generator-json-export.html">Read the JSON export guide</a>
+          </article>
+          <article>
+            <h3>Spritesheet generator for Godot</h3>
+            <p>
+              Learn how to prepare browser-built spritesheets for Godot-style
+              2D workflows with cleaner atlas layout and reusable metadata.
+            </p>
+            <a class="text-link" href="./spritesheet-generator-for-godot.html">Read the Godot guide</a>
           </article>
           <article>
             <h3>How to use the tile map editor</h3>
@@ -449,6 +512,7 @@
         <a href="mailto:dkhoankieu@gmail.com">dkhoankieu@gmail.com</a>
       </p>
       <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="./pixel-art-guides.html">Guides</a>
         <a href="./about.html">About</a>
         <a href="./contact.html">Contact</a>
         <a href="./privacy.html">Privacy Policy</a>

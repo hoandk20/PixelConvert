@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      window.addEventListener(
+        "load",
+        () => {
+          const loadAds = () => {
+            const script = document.createElement("script");
+            script.src = "https://acscdn.com/script/aclib.js";
+            script.async = true;
+            script.onload = () => {
+              window.aclib?.runAutoTag({
+                zoneId: "v3gzmo3bzm",
+              });
+            };
+            document.head.appendChild(script);
+          };
+
+          if ("requestIdleCallback" in window) {
+            window.requestIdleCallback(loadAds, { timeout: 2500 });
+          } else {
+            window.setTimeout(loadAds, 1500);
+          }
+        },
+        { once: true }
+      );
+    </script>
+    <title>Pixel Art Guides, Spritesheet Tutorials & Tile Map Workflow Articles | Pixel Tools</title>
+    <meta
+      name="description"
+      content="Browse Pixel Tools guides for pixel art conversion, spritesheet workflows, JSON export, tile map planning, and free browser-based 2D asset tutorials."
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="author" content="DK" />
+    <meta name="theme-color" content="#241748" />
+    <link rel="canonical" href="https://pixeltool.io.vn/pixel-art-guides.html" />
+    <link rel="icon" href="./favicon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="./favicon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://pixeltool.io.vn/pixel-art-guides.html" />
+    <meta property="og:title" content="Pixel Art Guides, Spritesheet Tutorials & Tile Map Workflow Articles | Pixel Tools" />
+    <meta
+      property="og:description"
+      content="Browse Pixel Tools guides for pixel art conversion, spritesheet workflows, JSON export, tile map planning, and free browser-based 2D asset tutorials."
+    />
+    <meta property="og:site_name" content="Pixel Tools" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:image" content="https://pixeltool.io.vn/og-preview.svg" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:url" content="https://pixeltool.io.vn/pixel-art-guides.html" />
+    <meta name="twitter:title" content="Pixel Art Guides, Spritesheet Tutorials & Tile Map Workflow Articles | Pixel Tools" />
+    <meta
+      name="twitter:description"
+      content="Browse Pixel Tools guides for pixel art conversion, spritesheet workflows, JSON export, tile map planning, and free browser-based 2D asset tutorials."
+    />
+    <meta name="twitter:image" content="https://pixeltool.io.vn/og-preview.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="preload"
+      as="style"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+    <link rel="stylesheet" href="./styles.css" />
+    <script src="./visit-counter.js" defer></script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "CollectionPage",
+        "headline": "Pixel Art Guides",
+        "description": "A hub page for Pixel Tools guides covering pixel art conversion, spritesheets, JSON export, and tile map workflows.",
+        "author": {
+          "@type": "Person",
+          "name": "DK"
+        },
+        "publisher": {
+          "@type": "Organization",
+          "name": "Pixel Tools"
+        },
+        "mainEntityOfPage": "https://pixeltool.io.vn/pixel-art-guides.html",
+        "image": "https://pixeltool.io.vn/og-preview.svg",
+        "dateModified": "2026-05-06"
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        "name": "Pixel Art Guides",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "url": "https://pixeltool.io.vn/how-to-use-pixel-art-converter.html",
+            "name": "How to Use the Pixel Art Converter"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "url": "https://pixeltool.io.vn/32x32-pixel-art-converter.html",
+            "name": "32x32 Pixel Art Converter"
+          },
+          {
+            "@type": "ListItem",
+            "position": 3,
+            "url": "https://pixeltool.io.vn/how-to-make-pixel-art-spritesheets.html",
+            "name": "How to Make Pixel Art Spritesheets"
+          },
+          {
+            "@type": "ListItem",
+            "position": 4,
+            "url": "https://pixeltool.io.vn/spritesheet-generator-json-export.html",
+            "name": "Spritesheet Generator JSON Export"
+          },
+          {
+            "@type": "ListItem",
+            "position": 5,
+            "url": "https://pixeltool.io.vn/spritesheet-generator-for-godot.html",
+            "name": "Spritesheet Generator for Godot"
+          },
+          {
+            "@type": "ListItem",
+            "position": 6,
+            "url": "https://pixeltool.io.vn/how-to-use-the-tile-map-editor.html",
+            "name": "How to Use the Tile Map Editor"
+          },
+          {
+            "@type": "ListItem",
+            "position": 7,
+            "url": "https://pixeltool.io.vn/best-tile-size-for-2d-games.html",
+            "name": "Best Tile Size for 2D Games"
+          }
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://pixeltool.io.vn/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Pixel Art Guides",
+            "item": "https://pixeltool.io.vn/pixel-art-guides.html"
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="hero hero-compact">
+        <a class="text-link" href="./index.html">Back to main tools</a>
+        <p class="eyebrow">Guide Hub</p>
+        <h1>Pixel art guides, spritesheet tutorials, and tile map workflow articles</h1>
+        <p class="hero-copy">
+          This page collects the main Pixel Tools guides in one place so you can
+          move from pixel conversion to spritesheets, metadata export, and tile
+          map planning without hunting through separate pages.
+        </p>
+        <div class="action-row">
+          <a class="cta-link cta-link-primary" href="./pixel-art-converter.html">Open the main tools</a>
+          <a class="cta-link" href="./free-pixel-tools.html">Browse the tool hub</a>
+          <a class="cta-link" href="./spritesheet-generator.html">Go to spritesheets</a>
+        </div>
+      </header>
+
+      <section class="panel seo-intro">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Overview</p>
+            <h2>How this guide hub is organized</h2>
+          </div>
+        </div>
+        <p class="seo-copy">
+          The guides below are grouped by workflow stage. Start with pixel art
+          conversion if you are still shaping source images, move into
+          spritesheet articles when frames need atlas export, and use the map
+          planning guides when the assets are ready for layout and level work.
+        </p>
+      </section>
+
+      <section class="panel seo-content">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Pixel Art</p>
+            <h2>Start with conversion and size decisions</h2>
+          </div>
+        </div>
+        <div class="seo-grid">
+          <article>
+            <h3>How to use the Pixel Art Converter</h3>
+            <p>Learn the full workflow for source images, fit modes, output sizes, and batch PNG export.</p>
+            <a class="text-link" href="./how-to-use-pixel-art-converter.html">Read guide</a>
+          </article>
+          <article>
+            <h3>32x32 pixel art converter</h3>
+            <p>See why 32x32 is a practical default for sprites, icons, props, and general-purpose game assets.</p>
+            <a class="text-link" href="./32x32-pixel-art-converter.html">Read guide</a>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel seo-content">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Spritesheets</p>
+            <h2>Move into atlas building and metadata export</h2>
+          </div>
+        </div>
+        <div class="seo-grid">
+          <article>
+            <h3>How to make pixel art spritesheets</h3>
+            <p>Follow a broader workflow for preparing frames, choosing layout settings, and exporting atlas data cleanly.</p>
+            <a class="text-link" href="./how-to-make-pixel-art-spritesheets.html">Read guide</a>
+          </article>
+          <article>
+            <h3>Spritesheet generator JSON export</h3>
+            <p>Learn when PNG plus JSON is more useful than PNG alone for animation and engine-ready sprite workflows.</p>
+            <a class="text-link" href="./spritesheet-generator-json-export.html">Read guide</a>
+          </article>
+          <article>
+            <h3>Spritesheet generator for Godot</h3>
+            <p>See how to prepare browser-built atlases for Godot-style 2D workflows with clear frame order and reusable metadata.</p>
+            <a class="text-link" href="./spritesheet-generator-for-godot.html">Read guide</a>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel seo-content">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Tile Maps</p>
+            <h2>Finish with scale planning and layout workflows</h2>
+          </div>
+        </div>
+        <div class="seo-grid">
+          <article>
+            <h3>How to use the tile map editor</h3>
+            <p>Learn how to import tilesets, set up layouts, paint maps, and export structured project data.</p>
+            <a class="text-link" href="./how-to-use-the-tile-map-editor.html">Read guide</a>
+          </article>
+          <article>
+            <h3>Best tile size for 2D games</h3>
+            <p>Compare 16x16, 24x24, 32x32, and larger tile sizes to choose the right scale for your project.</p>
+            <a class="text-link" href="./best-tile-size-for-2d-games.html">Read guide</a>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel seo-content" aria-labelledby="related-guide-hub">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Related</p>
+            <h2 id="related-guide-hub">Useful starting points</h2>
+          </div>
+        </div>
+        <ul class="content-list">
+          <li><a class="text-link" href="./free-pixel-tools.html">Free pixel tools overview</a></li>
+          <li><a class="text-link" href="./pixel-art-converter.html">Open the Pixel Art Converter</a></li>
+          <li><a class="text-link" href="./spritesheet-generator.html">Open the Spritesheet Generator</a></li>
+          <li><a class="text-link" href="./map-editor.html">Open the 2D Tile Map Editor</a></li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>
+        <span class="footer-brand">Pixel Tools</span>
+        organizes pixel art, spritesheet, and tile map guides so browser-based
+        2D asset workflows are easier to learn and connect.
+      </p>
+      <p class="footer-contact">
+        Created by DK. Contact: <a href="https://www.facebook.com/hoandk20h" target="_blank" rel="noreferrer">Facebook</a>
+        <span aria-hidden="true">•</span>
+        <a href="mailto:dkhoankieu@gmail.com">dkhoankieu@gmail.com</a>
+      </p>
+      <nav class="footer-nav" aria-label="Footer navigation">
+        <a href="./pixel-art-guides.html">Guides</a>
+        <a href="./about.html">About</a>
+        <a href="./contact.html">Contact</a>
+        <a href="./privacy.html">Privacy Policy</a>
+        <a href="./terms.html">Terms</a>
+      </nav>
+    </footer>
+  </body>
+</html>
